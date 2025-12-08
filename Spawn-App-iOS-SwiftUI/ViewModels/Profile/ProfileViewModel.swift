@@ -29,7 +29,7 @@ class ProfileViewModel: ObservableObject {
 	)
 
 	// New properties for friendship status
-	@Published var friendshipStatus: FriendshipStatus = MockAPIService.isMocking ? .friends : .unknown
+	@Published var friendshipStatus: FriendshipStatus = .unknown
 	@Published var isLoadingFriendshipStatus: Bool = false
 	@Published var pendingFriendRequestId: UUID?
 	@Published var userActivities: [FullFeedActivityDTO] = []
@@ -268,21 +268,19 @@ class ProfileViewModel: ObservableObject {
 		print("📡 Calendar: Fetching activities for user \(userId)")
 
 		// Check authentication status
-		if !MockAPIService.isMocking {
-			let hasAccessToken = KeychainService.shared.load(key: "accessToken") != nil
-			let hasRefreshToken = KeychainService.shared.load(key: "refreshToken") != nil
-			let isLoggedIn = UserAuthViewModel.shared.isLoggedIn
-			print(
-				"🔐 Calendar: Authentication status - Access token: \(hasAccessToken ? "✅" : "❌"), Refresh token: \(hasRefreshToken ? "✅" : "❌"), Logged in: \(isLoggedIn ? "✅" : "❌")"
-			)
+		let hasAccessToken = KeychainService.shared.load(key: "accessToken") != nil
+		let hasRefreshToken = KeychainService.shared.load(key: "refreshToken") != nil
+		let isLoggedIn = UserAuthViewModel.shared.isLoggedIn
+		print(
+			"🔐 Calendar: Authentication status - Access token: \(hasAccessToken ? "✅" : "❌"), Refresh token: \(hasRefreshToken ? "✅" : "❌"), Logged in: \(isLoggedIn ? "✅" : "❌")"
+		)
 
-			if !hasAccessToken && !hasRefreshToken {
-				print("❌ Calendar: No authentication tokens found - user may need to log in")
-				self.errorMessage = "Authentication required - please log in again"
-				self.allCalendarActivities = []
-				self.isLoadingCalendar = false
-				return
-			}
+		if !hasAccessToken && !hasRefreshToken {
+			print("❌ Calendar: No authentication tokens found - user may need to log in")
+			self.errorMessage = "Authentication required - please log in again"
+			self.allCalendarActivities = []
+			self.isLoadingCalendar = false
+			return
 		}
 
 		// Use centralized DataType configuration
@@ -958,7 +956,11 @@ class ProfileViewModel: ObservableObject {
 			self.errorMessage = nil
 
 			// Refresh friends cache to remove the blocked user from friends list
-			await AppCache.shared.refreshFriends()
+			// Trigger via DataService read with apiOnly to refresh cache
+			if let userId = UserAuthViewModel.shared.spawnUser?.id {
+				let _: DataResult<[FullFriendUserDTO]> = await dataService.read(
+					.friends(userId: userId), cachePolicy: .apiOnly)
+			}
 
 		case .failure(let error):
 			self.errorMessage = ErrorFormattingService.shared.formatError(error)
@@ -976,8 +978,11 @@ class ProfileViewModel: ObservableObject {
 			self.friendshipStatus = .none
 			self.errorMessage = nil
 
-			// Refresh friends cache for consistency
-			await AppCache.shared.refreshFriends()
+			// Refresh friends cache for consistency via DataService
+			if let userId = UserAuthViewModel.shared.spawnUser?.id {
+				let _: DataResult<[FullFriendUserDTO]> = await dataService.read(
+					.friends(userId: userId), cachePolicy: .apiOnly)
+			}
 
 		case .failure(let error):
 			self.errorMessage = ErrorFormattingService.shared.formatError(error)

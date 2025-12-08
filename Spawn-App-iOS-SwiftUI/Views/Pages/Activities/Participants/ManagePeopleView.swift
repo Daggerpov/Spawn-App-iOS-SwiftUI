@@ -20,11 +20,7 @@ struct ManagePeopleView: View {
 		self.activityTitle = activityTitle
 		self.activityTypeDTO = activityTypeDTO
 		self._friendsViewModel = StateObject(
-			wrappedValue: FriendsTabViewModel(
-				userId: user.id,
-				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: user.id) as IAPIService : APIService() as IAPIService
-			)
+			wrappedValue: FriendsTabViewModel(userId: user.id)
 		)
 		self._activityTypeViewModel = StateObject(
 			wrappedValue: ActivityTypeViewModel(
@@ -324,45 +320,28 @@ struct ManagePeopleView: View {
 			isPinned: activityType.isPinned
 		)
 
-		do {
-			// Make direct API call to update the activity type
-			let endpoint = "users/\(user.id)/activity-types"
-			guard let url = URL(string: APIService.baseURL + endpoint) else {
-				print("❌ Invalid URL for activity type update")
-				isLoading = false
-				return
-			}
+		let batchUpdateDTO = BatchActivityTypeUpdateDTO(
+			updatedActivityTypes: [updatedActivityTypeDTO],
+			deletedActivityTypeIds: []
+		)
 
-			let batchUpdateDTO = BatchActivityTypeUpdateDTO(
-				updatedActivityTypes: [updatedActivityTypeDTO],
-				deletedActivityTypeIds: []
-			)
+		// Use DataService with WriteOperationType
+		let dataService = DataService.shared
+		let operationType = WriteOperationType.batchUpdateActivityTypes(userId: user.id, update: batchUpdateDTO)
+		let result: DataResult<[ActivityTypeDTO]> = await dataService.write(operationType, body: batchUpdateDTO)
 
-			let apiService: IAPIService =
-				MockAPIService.isMocking
-				? MockAPIService(userId: user.id) : APIService()
-
-			let updatedActivityTypes: [ActivityTypeDTO] = try await apiService.updateData(
-				batchUpdateDTO,
-				to: url,
-				parameters: nil
-			)
-
+		switch result {
+		case .success(let updatedActivityTypes, _):
 			// Update the view model with the confirmed data from API
 			activityTypeViewModel.activityTypes = updatedActivityTypes
-
-			// Update cache with confirmed data
-			AppCache.shared.updateActivityTypesForUser(updatedActivityTypes, userId: user.id)
 
 			// Post notification for UI updates
 			NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
 
-		} catch {
-			print("❌ Error updating activity type: \(error)")
+		case .failure(let error):
+			print("❌ Error updating activity type: \(ErrorFormattingService.shared.formatError(error))")
 			// On error, refresh from cache/API to get correct state
-			Task {
-				await activityTypeViewModel.fetchActivityTypes()
-			}
+			await activityTypeViewModel.fetchActivityTypes()
 		}
 
 		isLoading = false

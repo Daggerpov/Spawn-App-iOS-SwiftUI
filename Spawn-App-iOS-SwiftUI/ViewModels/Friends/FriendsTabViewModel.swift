@@ -35,46 +35,42 @@ class FriendsTabViewModel: ObservableObject {
 	private var appCache: AppCache  // Keep for cache subscriptions (reactive updates)
 	// nonisolated(unsafe) for notificationObservers since it's accessed in deinit
 	private nonisolated(unsafe) var notificationObservers: [NSObjectProtocol] = []
-	private var apiService: IAPIService  // Keep for dynamic search operations (query-based, not cacheable)
 
-	init(userId: UUID, apiService: IAPIService) {
+	init(userId: UUID) {
 		self.userId = userId
-		self.apiService = apiService  // Still needed for search/filter endpoints
 		self.dataService = DataService.shared
 		self.appCache = AppCache.shared
 
 		// FriendsTabViewModel init
+		// Subscribe to AppCache for reactive updates (acceptable pattern per DataService guide)
 
-		if !MockAPIService.isMocking {
-
-			// Subscribe to AppCache friends updates
-			appCache.friendsPublisher
-				.receive(on: DispatchQueue.main)
-				.sink { [weak self] cachedFriends in
-					guard let self = self else { return }
-					let userFriends = cachedFriends[self.userId] ?? []
-					self.friends = userFriends
-					if !self.isSearching {
-						self.filteredFriends = userFriends
-					}
+		// Subscribe to AppCache friends updates
+		appCache.friendsPublisher
+			.receive(on: DispatchQueue.main)
+			.sink { [weak self] cachedFriends in
+				guard let self = self else { return }
+				let userFriends = cachedFriends[self.userId] ?? []
+				self.friends = userFriends
+				if !self.isSearching {
+					self.filteredFriends = userFriends
 				}
-				.store(in: &cancellables)
+			}
+			.store(in: &cancellables)
 
-			// Subscribe to AppCache recommended friends updates
-			appCache.recommendedFriendsPublisher
-				.receive(on: DispatchQueue.main)
-				.sink { [weak self] cachedRecommendedFriends in
-					guard let self = self else { return }
-					let userRecommendedFriends = cachedRecommendedFriends[self.userId] ?? []
-					self.recommendedFriends = userRecommendedFriends
-					if !self.isSearching {
-						self.filteredRecommendedFriends = userRecommendedFriends
-					}
+		// Subscribe to AppCache recommended friends updates
+		appCache.recommendedFriendsPublisher
+			.receive(on: DispatchQueue.main)
+			.sink { [weak self] cachedRecommendedFriends in
+				guard let self = self else { return }
+				let userRecommendedFriends = cachedRecommendedFriends[self.userId] ?? []
+				self.recommendedFriends = userRecommendedFriends
+				if !self.isSearching {
+					self.filteredRecommendedFriends = userRecommendedFriends
 				}
-				.store(in: &cancellables)
+			}
+			.store(in: &cancellables)
 
-			// Removed AppCache subscriptions for friend requests and sent friend requests to prevent cache from overriding API results
-		}
+		// Note: AppCache subscriptions for friend requests and sent friend requests removed to prevent cache from overriding API results
 
 		// Listen for friend-related changes to keep this tab in sync
 		let friendRequestsObserver = NotificationCenter.default.addObserver(
@@ -146,78 +142,64 @@ class FriendsTabViewModel: ObservableObject {
 			isLoading = true
 		}
 
-		// Use the backend's filtered endpoint
-		if let url = URL(
-			string: APIService.baseURL
-				+ "users/filtered/\(userId)?searchQuery=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-		) {
-			do {
-				let searchedUserResult: SearchedUserResult = try await self.apiService.fetchData(
-					from: url, parameters: nil)
+		// Use DataService for filtered search
+		let result: DataResult<SearchedUserResult> = await dataService.read(
+			.filteredUsers(userId: userId, query: query),
+			cachePolicy: .apiOnly  // Search results should always be fresh
+		)
 
-				await MainActor.run {
-					// Parse the unified results and separate by relationship type
-					self.filteredIncomingFriendRequests = searchedUserResult.users
-						.filter { $0.relationshipType == UserRelationshipType.incomingFriendRequest }
-						.compactMap { result in
-							guard let friendRequestId = result.friendRequestId else { return nil }
-							return FetchFriendRequestDTO(id: friendRequestId, senderUser: result.user)
-						}
+		switch result {
+		case .success(let searchedUserResult, _):
+			await MainActor.run {
+				// Parse the unified results and separate by relationship type
+				self.filteredIncomingFriendRequests = searchedUserResult.users
+					.filter { $0.relationshipType == UserRelationshipType.incomingFriendRequest }
+					.compactMap { result in
+						guard let friendRequestId = result.friendRequestId else { return nil }
+						return FetchFriendRequestDTO(id: friendRequestId, senderUser: result.user)
+					}
 
-					self.filteredOutgoingFriendRequests = searchedUserResult.users
-						.filter { $0.relationshipType == UserRelationshipType.outgoingFriendRequest }
-						.compactMap { result in
-							guard let friendRequestId = result.friendRequestId else { return nil }
-							// For outgoing requests, the user in the result is the receiver
-							return FetchSentFriendRequestDTO(id: friendRequestId, receiverUser: result.user)
-						}
+				self.filteredOutgoingFriendRequests = searchedUserResult.users
+					.filter { $0.relationshipType == UserRelationshipType.outgoingFriendRequest }
+					.compactMap { result in
+						guard let friendRequestId = result.friendRequestId else { return nil }
+						// For outgoing requests, the user in the result is the receiver
+						return FetchSentFriendRequestDTO(id: friendRequestId, receiverUser: result.user)
+					}
 
-					self.filteredRecommendedFriends = searchedUserResult.users
-						.filter { $0.relationshipType == UserRelationshipType.recommendedFriend }
-						.map { result in
-							RecommendedFriendUserDTO(
-								id: result.user.id,
-								username: result.user.username,
-								profilePicture: result.user.profilePicture,
-								name: result.user.name,
-								bio: result.user.bio,
-								email: result.user.email,
-								mutualFriendCount: result.mutualFriendCount ?? 0
-							)
-						}
+				self.filteredRecommendedFriends = searchedUserResult.users
+					.filter { $0.relationshipType == UserRelationshipType.recommendedFriend }
+					.map { result in
+						RecommendedFriendUserDTO(
+							id: result.user.id,
+							username: result.user.username,
+							profilePicture: result.user.profilePicture,
+							name: result.user.name,
+							bio: result.user.bio,
+							email: result.user.email,
+							mutualFriendCount: result.mutualFriendCount ?? 0
+						)
+					}
 
-					self.filteredFriends = searchedUserResult.users
-						.filter { $0.relationshipType == UserRelationshipType.friend }
-						.map { result in
-							FullFriendUserDTO(
-								id: result.user.id,
-								username: result.user.username,
-								profilePicture: result.user.profilePicture,
-								name: result.user.name,
-								bio: result.user.bio,
-								email: result.user.email
-							)
-						}
+				self.filteredFriends = searchedUserResult.users
+					.filter { $0.relationshipType == UserRelationshipType.friend }
+					.map { result in
+						FullFriendUserDTO(
+							id: result.user.id,
+							username: result.user.username,
+							profilePicture: result.user.profilePicture,
+							name: result.user.name,
+							bio: result.user.bio,
+							email: result.user.email
+						)
+					}
 
-					self.isLoading = false
-				}
-			} catch let error as APIError {
-				print("Error fetching filtered results: \(ErrorFormattingService.shared.formatAPIError(error))")
-				// Fallback to local filtering if the API call fails
-				await localFilterResults(query: query)
-				await MainActor.run {
-					self.isLoading = false
-				}
-			} catch {
-				print("Error fetching filtered results: \(ErrorFormattingService.shared.formatError(error))")
-				// Fallback to local filtering if the API call fails
-				await localFilterResults(query: query)
-				await MainActor.run {
-					self.isLoading = false
-				}
+				self.isLoading = false
 			}
-		} else {
-			print("Invalid URL for filtered search")
+
+		case .failure(let error):
+			print("Error fetching filtered results: \(ErrorFormattingService.shared.formatError(error))")
+			// Fallback to local filtering if the API call fails
 			await localFilterResults(query: query)
 			await MainActor.run {
 				self.isLoading = false
@@ -263,8 +245,8 @@ class FriendsTabViewModel: ObservableObject {
 	func removeFromRecommended(friendId: UUID) {
 		recommendedFriends.removeAll { $0.id == friendId }
 		filteredRecommendedFriends.removeAll { $0.id == friendId }
-		// Update cache to reflect the change
-		appCache.updateRecommendedFriendsForUser(recommendedFriends, userId: userId)
+		// Note: Cache will be updated automatically when friend request is sent
+		// via DataService cache invalidation keys
 	}
 
 	// Remove user from recently spawned with list after adding
@@ -702,29 +684,20 @@ class FriendsTabViewModel: ObservableObject {
 			isLoading = true
 		}
 
-		do {
-			// API endpoint for getting recently spawned with users
-			guard let url = URL(string: APIService.baseURL + "users/\(userId)/recent-users") else {
-				await MainActor.run {
-					isLoading = false
-				}
-				return
-			}
+		// Use DataService for recently spawned with users
+		let result: DataResult<[RecentlySpawnedUserDTO]> = await dataService.read(
+			.recentlySpawnedWith(userId: userId),
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
 
-			let fetchedUsers: [RecentlySpawnedUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
-
+		switch result {
+		case .success(let fetchedUsers, _):
 			await MainActor.run {
 				self.recentlySpawnedWith = fetchedUsers
 				self.isLoading = false
 			}
-		} catch let error as APIError {
-			print("Error fetching recently spawned users: \(ErrorFormattingService.shared.formatAPIError(error))")
-			// If API fails, use empty array
-			await MainActor.run {
-				self.recentlySpawnedWith = []
-				self.isLoading = false
-			}
-		} catch {
+
+		case .failure(let error):
 			print("Error fetching recently spawned users: \(ErrorFormattingService.shared.formatError(error))")
 			// If API fails, use empty array
 			await MainActor.run {
@@ -744,49 +717,19 @@ class FriendsTabViewModel: ObservableObject {
 
 		// Don't set isLoading here as it's already set in the search flow
 
-		if MockAPIService.isMocking {
-			// Filter mock data for testing
-			let lowercasedSearchText = searchText.lowercased()
-			let filteredResults = BaseUserDTO.mockUsers.filter { user in
-				let name = FormatterService.shared.formatName(user: user).lowercased()
-				let username = (user.username ?? "").lowercased()
+		// Use DataService for user search
+		let result: DataResult<[BaseUserDTO]> = await dataService.read(
+			.userSearch(requestingUserId: userId, query: searchText),
+			cachePolicy: .apiOnly  // Search results should always be fresh
+		)
 
-				return name.contains(lowercasedSearchText) || username.contains(lowercasedSearchText)
-			}
-			await MainActor.run {
-				searchResults = filteredResults
-			}
-			return
-		}
-
-		do {
-			// API endpoint for searching users: /api/v1/users/search?searchQuery={searchText}
-			guard let url = URL(string: APIService.baseURL + "users/search") else {
-				print("Invalid URL for user search")
-				await MainActor.run {
-					searchResults = []
-				}
-				return
-			}
-
-			let fetchedUsers: [BaseUserDTO] = try await apiService.fetchData(
-				from: url,
-				parameters: [
-					"searchQuery": searchText,
-					"requestingUserId": userId.uuidString,
-				]
-			)
-
-			// Ensure updating on the main thread
+		switch result {
+		case .success(let fetchedUsers, _):
 			await MainActor.run {
 				self.searchResults = fetchedUsers
 			}
-		} catch let error as APIError {
-			print("Error performing user search: \(ErrorFormattingService.shared.formatAPIError(error))")
-			await MainActor.run {
-				self.searchResults = []
-			}
-		} catch {
+
+		case .failure(let error):
 			print("Error performing user search: \(ErrorFormattingService.shared.formatError(error))")
 			await MainActor.run {
 				self.searchResults = []

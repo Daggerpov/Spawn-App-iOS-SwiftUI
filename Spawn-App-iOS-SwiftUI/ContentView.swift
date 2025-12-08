@@ -42,10 +42,7 @@ struct ContentView: View {
 	init(user: BaseUserDTO, deepLinkManager: DeepLinkManager = DeepLinkManager.shared) {
 		self.user = user
 		self.deepLinkManager = deepLinkManager
-		let friendsVM = FriendsTabViewModel(
-			userId: user.id,
-			apiService: MockAPIService.isMocking
-				? MockAPIService(userId: user.id) : APIService())
+		let friendsVM = FriendsTabViewModel(userId: user.id)
 		self._friendsViewModel = StateObject(wrappedValue: friendsVM)
 
 		// Create shared FeedViewModel for both ActivityFeedView and MapView

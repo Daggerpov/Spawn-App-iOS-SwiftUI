@@ -21,11 +21,7 @@ struct InviteFriendsView: View {
 		self.user = user
 		// Initialize the view models with _: syntax for StateObject
 		self._friendsViewModel = StateObject(
-			wrappedValue: FriendsTabViewModel(
-				userId: user.id,
-				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: user.id) : APIService()
-			)
+			wrappedValue: FriendsTabViewModel(userId: user.id)
 		)
 	}
 

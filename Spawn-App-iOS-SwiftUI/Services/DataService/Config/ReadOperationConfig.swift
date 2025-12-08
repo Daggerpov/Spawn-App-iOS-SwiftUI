@@ -95,6 +95,17 @@ enum DataType {
 	/// Get notification preferences for a user
 	case notificationPreferences(userId: UUID)
 
+	// MARK: - User Search
+
+	/// Search for users by query
+	case userSearch(requestingUserId: UUID, query: String)
+
+	/// Filtered users for friend tab search (includes relationship status)
+	case filteredUsers(userId: UUID, query: String)
+
+	/// Recently spawned with users
+	case recentlySpawnedWith(userId: UUID)
+
 	// MARK: - Configuration Properties
 
 	/// API endpoint path for this data type
@@ -150,11 +161,20 @@ enum DataType {
 		case .reportsByUser(let reporterId):
 			return "reports/fetch/reporter/\(reporterId)"
 		case .reportsAboutUser(let userId):
-			return "reports/\(userId)"
+			return "reports/fetch/content-owner/\(userId)"
 
 		// Notifications
 		case .notificationPreferences(let userId):
 			return "notifications/preferences/\(userId)"
+
+		// User Search
+		case .userSearch:
+			return "users/search"
+		case .filteredUsers(let userId, let query):
+			let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
+			return "users/filtered/\(userId)?searchQuery=\(encoded)"
+		case .recentlySpawnedWith(let userId):
+			return "users/\(userId)/recent-users"
 		}
 	}
 
@@ -216,6 +236,14 @@ enum DataType {
 		// Notifications
 		case .notificationPreferences(let userId):
 			return "notificationPreferences_\(userId)"
+
+		// User Search (not cacheable - dynamic query results)
+		case .userSearch(let requestingUserId, let query):
+			return "userSearch_\(requestingUserId)_\(query.hashValue)"
+		case .filteredUsers(let userId, let query):
+			return "filteredUsers_\(userId)_\(query.hashValue)"
+		case .recentlySpawnedWith(let userId):
+			return "recentlySpawnedWith_\(userId)"
 		}
 	}
 
@@ -277,6 +305,19 @@ enum DataType {
 		case .reportsByUser, .reportsAboutUser, .notificationPreferences:
 			return nil
 
+		case .userSearch(let requestingUserId, let query):
+			return [
+				"searchQuery": query,
+				"requestingUserId": requestingUserId.uuidString,
+			]
+
+		case .filteredUsers:
+			// Query is already embedded in the endpoint URL
+			return nil
+
+		case .recentlySpawnedWith:
+			return nil
+
 		default:
 			return nil
 		}
@@ -329,6 +370,12 @@ enum DataType {
 			return "Reports About User"
 		case .notificationPreferences:
 			return "Notification Preferences"
+		case .userSearch:
+			return "User Search"
+		case .filteredUsers:
+			return "Filtered Users"
+		case .recentlySpawnedWith:
+			return "Recently Spawned With"
 		}
 	}
 }

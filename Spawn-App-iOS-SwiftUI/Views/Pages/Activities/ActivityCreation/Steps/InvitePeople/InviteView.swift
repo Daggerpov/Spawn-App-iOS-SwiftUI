@@ -15,18 +15,13 @@ struct InviteView: View {
 
 	// Add view models for friends
 	@StateObject private var friendsViewModel: FriendsTabViewModel
-	@ObservedObject private var appCache = AppCache.shared
 
 	init(user: BaseUserDTO) {
 		self.user = user
 
 		// Initialize the view models with _: syntax for StateObject
 		self._friendsViewModel = StateObject(
-			wrappedValue: FriendsTabViewModel(
-				userId: user.id,
-				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: user.id) : APIService()
-			)
+			wrappedValue: FriendsTabViewModel(userId: user.id)
 		)
 	}
 
@@ -97,13 +92,9 @@ struct InviteView: View {
 					return
 				}
 
-				if appCache.friends.isEmpty {
-					await friendsViewModel.fetchAllData()
-				} else {
-					// Use cached friends data
-					friendsViewModel.friends = appCache.getCurrentUserFriends()
-					friendsViewModel.filteredFriends = appCache.getCurrentUserFriends()
-				}
+				// Load cached data first for instant display, then fetch fresh data
+				friendsViewModel.loadCachedData()
+				await friendsViewModel.fetchAllData()
 			}
 		}
 	}

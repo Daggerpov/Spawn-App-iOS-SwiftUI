@@ -18,20 +18,7 @@ class ActivityTypeViewModel: ObservableObject {
 	private var dataService: DataService
 	private var cancellables = Set<AnyCancellable>()
 
-	// MARK: - Constants
-	private enum APIEndpoints {
-		static func activityTypes(userId: UUID) -> String {
-			return "users/\(userId)/activity-types"
-		}
-	}
-
 	// MARK: - Helper Methods
-
-	/// Constructs a URL for the activity types endpoint
-	private func buildActivityTypesURL() -> URL? {
-		let endpoint = APIEndpoints.activityTypes(userId: userId)
-		return URL(string: APIService.baseURL + endpoint)
-	}
 
 	/// Sets loading state
 	private func setLoadingState(_ loading: Bool, error: String? = nil) {
@@ -52,19 +39,16 @@ class ActivityTypeViewModel: ObservableObject {
 		self.userId = userId
 		self.dataService = dataService ?? DataService.shared
 
-		// Subscribe to cache updates if not mocking - using AppCache for reactive updates is acceptable
-		if !MockAPIService.isMocking {
-			// Subscribe to cached activity types updates for this specific user
-			AppCache.shared.activityTypesPublisher
-				.receive(on: DispatchQueue.main)
-				.sink { [weak self] cachedActivityTypes in
-					guard let self = self else { return }
-					if let userActivityTypes = cachedActivityTypes[self.userId], !userActivityTypes.isEmpty {
-						self.activityTypes = userActivityTypes
-					}
+		// Subscribe to cache updates for reactive updates (acceptable pattern per DataService guide)
+		AppCache.shared.activityTypesPublisher
+			.receive(on: DispatchQueue.main)
+			.sink { [weak self] cachedActivityTypes in
+				guard let self = self else { return }
+				if let userActivityTypes = cachedActivityTypes[self.userId], !userActivityTypes.isEmpty {
+					self.activityTypes = userActivityTypes
 				}
-				.store(in: &cancellables)
-		}
+			}
+			.store(in: &cancellables)
 	}
 
 	// MARK: - Backend API Methods

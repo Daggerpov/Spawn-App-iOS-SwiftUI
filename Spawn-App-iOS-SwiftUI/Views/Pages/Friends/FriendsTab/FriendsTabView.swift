@@ -43,10 +43,7 @@ struct FriendsTabView: View {
 			self.viewModel = existingViewModel
 		} else {
 			// Fallback for when no view model is provided (like in previews)
-			self.viewModel = FriendsTabViewModel(
-				userId: user.id,
-				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: user.id) : APIService())
+			self.viewModel = FriendsTabViewModel(userId: user.id)
 		}
 	}
 
