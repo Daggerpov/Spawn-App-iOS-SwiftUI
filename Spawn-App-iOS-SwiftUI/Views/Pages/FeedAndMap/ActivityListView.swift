@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ActivityListView: View {
-	@ObservedObject var viewModel: FeedViewModel
+	var viewModel: FeedViewModel
 	@ObservedObject private var locationManager = LocationManager.shared
 	var user: BaseUserDTO
 	var bound: Int = .max

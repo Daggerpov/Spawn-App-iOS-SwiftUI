@@ -7,13 +7,14 @@
 
 import Foundation
 
+@Observable
 @MainActor
-class FriendRequestViewModel: ObservableObject {
+final class FriendRequestViewModel {
 	var dataService: DataService
 	var userId: UUID
 	var friendRequestId: UUID
 
-	@Published var creationMessage: String = ""
+	var creationMessage: String = ""
 
 	init(userId: UUID, friendRequestId: UUID, dataService: DataService? = nil) {
 		self.dataService = dataService ?? DataService.shared

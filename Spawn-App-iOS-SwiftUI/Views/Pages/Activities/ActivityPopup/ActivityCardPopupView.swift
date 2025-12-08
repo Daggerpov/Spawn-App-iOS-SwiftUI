@@ -8,9 +8,9 @@ import MapKit
 import SwiftUI
 
 struct ActivityCardPopupView: View {
-	@StateObject private var viewModel: ActivityInfoViewModel
-	@StateObject private var mapViewModel: MapViewModel
-	@StateObject private var cardViewModel: ActivityCardViewModel
+	@State private var viewModel: ActivityInfoViewModel
+	@State private var mapViewModel: MapViewModel
+	@State private var cardViewModel: ActivityCardViewModel
 	@ObservedObject private var locationManager = LocationManager.shared
 	@ObservedObject var activity: FullFeedActivityDTO
 	var activityColor: Color
@@ -48,15 +48,15 @@ struct ActivityCardPopupView: View {
 		let cachedActivity = AppCache.shared.getActivityById(activity.id) ?? activity
 
 		self.activity = cachedActivity
-		self._viewModel = StateObject(
+		self._viewModel = State(
 			wrappedValue: ActivityInfoViewModel(
 				activity: cachedActivity,
 				locationManager: LocationManager.shared
 			)
 		)
 		let mapVM = MapViewModel(activity: cachedActivity)
-		_mapViewModel = StateObject(wrappedValue: mapVM)
-		self._cardViewModel = StateObject(
+		_mapViewModel = State(wrappedValue: mapVM)
+		self._cardViewModel = State(
 			wrappedValue: ActivityCardViewModel(
 				userId: UserAuthViewModel.shared.spawnUser?.id ?? BaseUserDTO.danielAgapov.id,
 				activity: cachedActivity

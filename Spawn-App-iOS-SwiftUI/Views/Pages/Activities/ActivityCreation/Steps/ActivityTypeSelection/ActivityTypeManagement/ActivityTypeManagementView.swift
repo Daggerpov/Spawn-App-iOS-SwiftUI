@@ -14,14 +14,14 @@ struct ActivityTypeManagementView: View {
 	@State private var backgroundRefreshTask: Task<Void, Never>?
 
 	// Use the ActivityTypeViewModel for managing activity types
-	@StateObject private var viewModel: ActivityTypeViewModel
+	@State private var viewModel: ActivityTypeViewModel
 
 	init(activityTypeDTO: ActivityTypeDTO) {
 		self.activityTypeDTO = activityTypeDTO
 
 		// Initialize the view model with userId
 		let userId = UserAuthViewModel.shared.spawnUser?.id ?? UUID()
-		self._viewModel = StateObject(wrappedValue: ActivityTypeViewModel(userId: userId))
+		self._viewModel = State(wrappedValue: ActivityTypeViewModel(userId: userId))
 	}
 
 	// Computed property to get the current activity type data from view model

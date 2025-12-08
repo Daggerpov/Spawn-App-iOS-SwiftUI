@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct FeedView: View {
-	@StateObject private var viewModel: FeedViewModel
+	@State private var viewModel: FeedViewModel
 	@ObservedObject private var locationManager = LocationManager.shared
 	// Using AppCache as a singleton instead of environment object
 
@@ -31,8 +31,8 @@ struct FeedView: View {
 
 	init(user: BaseUserDTO) {
 		self.user = user
-		_viewModel = StateObject(
-			wrappedValue: FeedViewModel(
+		_viewModel = State(
+			initialValue: FeedViewModel(
 				userId: user.id
 			)
 		)

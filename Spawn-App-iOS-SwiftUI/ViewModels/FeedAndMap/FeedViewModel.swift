@@ -8,13 +8,13 @@
 @preconcurrency import Combine
 import Foundation
 
+@Observable
 @MainActor
-class FeedViewModel: ObservableObject {
-	@Published var activities: [FullFeedActivityDTO] = []
-	@Published var activityTypes: [ActivityTypeDTO] = []
+final class FeedViewModel {
+	var activities: [FullFeedActivityDTO] = []
 
 	// Use the ActivityTypeViewModel for managing activity types
-	@Published var activityTypeViewModel: ActivityTypeViewModel
+	var activityTypeViewModel: ActivityTypeViewModel
 
 	var userId: UUID
 	private var dataService: DataService
@@ -24,32 +24,32 @@ class FeedViewModel: ObservableObject {
 	private var activitiesUpdateThrottle: AnyCancellable?
 	private let activitiesSubject = PassthroughSubject<[FullFeedActivityDTO], Never>()
 
-	// Periodic refresh timer - nonisolated for deinit access
-	private nonisolated(unsafe) var refreshTimer: Timer?
+	/// Periodic refresh timer
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit.
+	/// Thread safety is ensured by only accessing from MainActor context (via Timer's main runloop)
+	/// and in deinit (which runs after all other accesses complete).
+	@ObservationIgnored private nonisolated(unsafe) var refreshTimer: Timer?
 
-	// Periodic local cleanup timer for expired activities - nonisolated for deinit access
-	private nonisolated(unsafe) var cleanupTimer: Timer?
+	/// Periodic local cleanup timer for expired activities
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit.
+	@ObservationIgnored private nonisolated(unsafe) var cleanupTimer: Timer?
 
 	// MARK: - Computed Properties
 
 	/// Returns activity types sorted with pinned ones first, then alphabetically
+	/// Delegates to ActivityTypeViewModel which maintains the canonical activity types
 	var sortedActivityTypes: [ActivityTypeDTO] {
-		return activityTypes.sorted { first, second in
-			// Pinned types come first
-			if first.isPinned != second.isPinned {
-				return first.isPinned
-			}
-			// If both are pinned or both are not pinned, sort alphabetically by title
-			return first.title.localizedCaseInsensitiveCompare(second.title) == .orderedAscending
-		}
+		return activityTypeViewModel.sortedActivityTypes
 	}
 
 	init(userId: UUID) {
 		self.userId = userId
-		self.dataService = DataService.shared
+		let dataServiceInstance = DataService.shared
+		self.dataService = dataServiceInstance
 
+		print("🔧 FeedViewModel.init() called for userId: \(userId)")
 		// Initialize the activity type view model
-		self.activityTypeViewModel = ActivityTypeViewModel(userId: userId, dataService: dataService)
+		self.activityTypeViewModel = ActivityTypeViewModel(userId: userId, dataService: dataServiceInstance)
 
 		// Throttle activities updates to prevent overwhelming MapView
 		activitiesUpdateThrottle =
@@ -58,14 +58,6 @@ class FeedViewModel: ObservableObject {
 			.sink { [weak self] newActivities in
 				self?.activities = newActivities
 			}
-
-		// Subscribe to activity type changes to update the UI
-		activityTypeViewModel.$activityTypes
-			.receive(on: DispatchQueue.main)
-			.sink { [weak self] newActivityTypes in
-				self?.activityTypes = newActivityTypes
-			}
-			.store(in: &cancellables)
 
 		// Register for activity creation notifications
 		NotificationCenter.default.publisher(for: .activityCreated)
@@ -94,17 +86,6 @@ class FeedViewModel: ObservableObject {
 			}
 			.store(in: &cancellables)
 
-		// Register for activity type changes for immediate UI refresh
-		NotificationCenter.default.publisher(for: .activityTypesChanged)
-			.sink { [weak self] _ in
-				// Force immediate UI refresh by updating activity types from the view model
-				if let self = self {
-					self.activityTypes = self.activityTypeViewModel.activityTypes
-					self.objectWillChange.send()
-				}
-			}
-			.store(in: &cancellables)
-
 		// Register for activity refresh notifications
 		NotificationCenter.default.publisher(for: .shouldRefreshActivities)
 			.sink { [weak self] _ in
@@ -122,7 +103,6 @@ class FeedViewModel: ObservableObject {
 	}
 
 	deinit {
-		// Timer cleanup is safe from deinit since timers are nonisolated(unsafe)
 		refreshTimer?.invalidate()
 		refreshTimer = nil
 		cleanupTimer?.invalidate()

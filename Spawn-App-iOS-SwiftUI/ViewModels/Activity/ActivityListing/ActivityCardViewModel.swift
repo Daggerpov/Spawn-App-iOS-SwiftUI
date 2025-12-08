@@ -7,9 +7,10 @@
 
 import Foundation
 
+@Observable
 @MainActor
-class ActivityCardViewModel: ObservableObject {
-	@Published var isParticipating: Bool = false
+final class ActivityCardViewModel {
+	var isParticipating: Bool = false
 	var dataService: DataService
 	var userId: UUID
 	var activity: FullFeedActivityDTO

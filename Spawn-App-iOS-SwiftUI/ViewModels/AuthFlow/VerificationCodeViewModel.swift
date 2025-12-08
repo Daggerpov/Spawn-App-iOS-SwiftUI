@@ -5,19 +5,22 @@
 //  Created by Daniel Agapov on 2025-01-28.
 //
 
-import Combine
 import Foundation
 
+@Observable
 @MainActor
-class VerificationCodeViewModel: ObservableObject {
-	@Published var code: [String] = Array(repeating: "", count: 6)
-	@Published var previousCode: [String] = Array(repeating: "", count: 6)
-	@Published var focusedIndex: Int? = 0
-	@Published var secondsRemaining: Int = 30
-	@Published var isResendEnabled: Bool = false
+final class VerificationCodeViewModel {
+	var code: [String] = Array(repeating: "", count: 6)
+	var previousCode: [String] = Array(repeating: "", count: 6)
+	var focusedIndex: Int? = 0
+	var secondsRemaining: Int = 30
+	var isResendEnabled: Bool = false
 
-	// nonisolated(unsafe) for timer since it's accessed in deinit
-	private nonisolated(unsafe) var timer: Timer?
+	/// Timer for countdown - uses weak self pattern in callbacks
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit.
+	/// Thread safety is ensured by only accessing from MainActor context (via Timer's main runloop)
+	/// and in deinit (which runs after all other accesses complete).
+	@ObservationIgnored private nonisolated(unsafe) var timer: Timer?
 	private var userAuthViewModel: UserAuthViewModel
 
 	var isFormValid: Bool {
@@ -33,7 +36,7 @@ class VerificationCodeViewModel: ObservableObject {
 	}
 
 	deinit {
-		// Timer invalidation is safe to call from deinit since it doesn't access actor-isolated state
+		// Safe to access nonisolated(unsafe) timer here - deinit runs after all references are released
 		timer?.invalidate()
 		timer = nil
 	}

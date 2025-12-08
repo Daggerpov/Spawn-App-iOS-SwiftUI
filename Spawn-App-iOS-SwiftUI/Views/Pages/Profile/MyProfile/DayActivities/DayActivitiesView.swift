@@ -5,8 +5,8 @@ struct DayActivitiesView: View {
 	let onDismiss: () -> Void
 	let onActivitySelected: (CalendarActivityDTO) -> Void
 
-	@StateObject private var viewModel: DayActivitiesViewModel
-	@ObservedObject private var locationManager = LocationManager.shared
+	@State private var viewModel: DayActivitiesViewModel
+	private var locationManager = LocationManager.shared
 
 	init(
 		date: Date,
@@ -19,7 +19,7 @@ struct DayActivitiesView: View {
 
 		// Initialize the view model with empty activities array for now
 		// The activities will be loaded based on the date
-		self._viewModel = StateObject(
+		self._viewModel = State(
 			wrappedValue: DayActivitiesViewModel(
 				activities: [],  // Will be populated in onAppear
 				dataService: DataService.shared
@@ -37,7 +37,7 @@ struct DayActivitiesView: View {
 		self.onDismiss = onDismiss
 		self.onActivitySelected = onActivitySelected
 
-		self._viewModel = StateObject(
+		self._viewModel = State(
 			wrappedValue: DayActivitiesViewModel(
 				activities: activities,
 				dataService: DataService.shared

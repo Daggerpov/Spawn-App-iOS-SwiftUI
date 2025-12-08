@@ -6,41 +6,46 @@
 //
 
 @preconcurrency import Combine
-import Foundation
 import SwiftUI
 
+@Observable
 @MainActor
-class FriendsTabViewModel: ObservableObject {
-	@Published var incomingFriendRequests: [FetchFriendRequestDTO] = []
-	@Published var outgoingFriendRequests: [FetchSentFriendRequestDTO] = []
-	@Published var recommendedFriends: [RecommendedFriendUserDTO] = []
-	@Published var friends: [FullFriendUserDTO] = []
-	@Published var filteredFriends: [FullFriendUserDTO] = []
-	@Published var filteredRecommendedFriends: [RecommendedFriendUserDTO] = []
-	@Published var filteredIncomingFriendRequests: [FetchFriendRequestDTO] = []
-	@Published var filteredOutgoingFriendRequests: [FetchSentFriendRequestDTO] = []
-	@Published var isSearching: Bool = false
-	@Published var searchQuery: String = ""
-	@Published var isLoading: Bool = false
+final class FriendsTabViewModel {
+	var incomingFriendRequests: [FetchFriendRequestDTO] = []
+	var outgoingFriendRequests: [FetchSentFriendRequestDTO] = []
+	var recommendedFriends: [RecommendedFriendUserDTO] = []
+	var friends: [FullFriendUserDTO] = []
+	var filteredFriends: [FullFriendUserDTO] = []
+	var filteredRecommendedFriends: [RecommendedFriendUserDTO] = []
+	var filteredIncomingFriendRequests: [FetchFriendRequestDTO] = []
+	var filteredOutgoingFriendRequests: [FetchSentFriendRequestDTO] = []
+	var isSearching: Bool = false
+	var searchQuery: String = ""
+	var isLoading: Bool = false
 
-	@Published var recentlySpawnedWith: [RecentlySpawnedUserDTO] = []
-	@Published var searchResults: [BaseUserDTO] = []
+	var recentlySpawnedWith: [RecentlySpawnedUserDTO] = []
+	var searchResults: [BaseUserDTO] = []
 
-	@Published var friendRequestCreationMessage: String = ""
-	@Published var createdFriendRequest: FetchFriendRequestDTO?
+	var friendRequestCreationMessage: String = ""
+	var createdFriendRequest: FetchFriendRequestDTO?
 
 	var userId: UUID
 	private var dataService: DataService
+	// Keep cancellables for Combine cache subscriptions
 	private var cancellables = Set<AnyCancellable>()
 	private var appCache: AppCache  // Keep for cache subscriptions (reactive updates)
-	// nonisolated(unsafe) for notificationObservers since it's accessed in deinit
-	private nonisolated(unsafe) var notificationObservers: [NSObjectProtocol] = []
+	/// Notification observers that need to be removed in deinit
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit.
+	/// Thread safety is ensured by only mutating from MainActor context during init
+	/// and in deinit (which runs after all other accesses complete).
+	@ObservationIgnored private nonisolated(unsafe) var notificationObservers: [NSObjectProtocol] = []
 
 	init(userId: UUID) {
 		self.userId = userId
 		self.dataService = DataService.shared
 		self.appCache = AppCache.shared
 
+		print("🔧 FriendsTabViewModel.init() called for userId: \(userId)")
 		// FriendsTabViewModel init
 		// Subscribe to AppCache for reactive updates (acceptable pattern per DataService guide)
 
@@ -94,7 +99,7 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	deinit {
-		print("🧹 [VM] FriendsTabViewModel deinit - cleaning up observers")
+		// Safe to access nonisolated(unsafe) notificationObservers here - deinit runs after all references are released
 		// Remove all notification observers to prevent memory leaks and blocking
 		for observer in notificationObservers {
 			NotificationCenter.default.removeObserver(observer)
@@ -104,7 +109,7 @@ class FriendsTabViewModel: ObservableObject {
 
 	// Call this method to connect the search view model to this view model
 	func connectSearchViewModel(_ searchViewModel: SearchViewModel) {
-		searchViewModel.$debouncedSearchText
+		searchViewModel.debouncedSearchTextPublisher
 			.sink { [weak self] query in
 				self?.searchQuery = query
 				if query.isEmpty {

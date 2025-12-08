@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MyReportsView: View {
-	@StateObject private var viewModel = MyReportsViewModel()
+	@State private var viewModel = MyReportsViewModel()
 	@ObservedObject var userAuth = UserAuthViewModel.shared
 	@Environment(\.presentationMode) var presentationMode
 

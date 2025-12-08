@@ -4,12 +4,15 @@
 //
 //  Created by Shane on 6/15/25.
 //
+
 import MapKit
 import SwiftUI
 
+@Observable
 @MainActor
-class MapViewModel: Identifiable, ObservableObject {
-	@ObservedObject var activity: FullFeedActivityDTO
+final class MapViewModel: Identifiable {
+	// Note: activity is still ObservableObject; will be migrated separately
+	var activity: FullFeedActivityDTO
 	let id = UUID()
 
 	var lat: Double {
@@ -44,6 +47,5 @@ class MapViewModel: Identifiable, ObservableObject {
 	// Add method to update activity reference
 	func updateActivity(_ newActivity: FullFeedActivityDTO) {
 		self.activity = newActivity
-		objectWillChange.send()
 	}
 }

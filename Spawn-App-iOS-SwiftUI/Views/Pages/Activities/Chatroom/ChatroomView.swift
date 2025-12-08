@@ -13,7 +13,7 @@ struct ChatroomView: View {
 	var user: BaseUserDTO = UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov
 	@ObservedObject var activity: FullFeedActivityDTO
 	var backgroundColor: Color
-	@StateObject var viewModel: ChatViewModel
+	@State var viewModel: ChatViewModel
 	@Environment(\.dismiss) private var dismiss
 	@Environment(\.colorScheme) var colorScheme
 
@@ -21,7 +21,7 @@ struct ChatroomView: View {
 		self.activity = activity
 		self.backgroundColor = backgroundColor
 		let userId = user.id
-		self._viewModel = StateObject(wrappedValue: ChatViewModel(senderUserId: userId, activity: activity))
+		self._viewModel = State(wrappedValue: ChatViewModel(senderUserId: userId, activity: activity))
 	}
 
 	// Helper function to send messages for ChatroomView

@@ -8,7 +8,7 @@ struct ChatroomContentView: View {
 	@ObservedObject var activity: FullFeedActivityDTO
 	var backgroundColor: Color
 	var isExpanded: Bool
-	@StateObject var viewModel: ChatViewModel
+	@State var viewModel: ChatViewModel
 	let onBack: () -> Void
 
 	init(activity: FullFeedActivityDTO, backgroundColor: Color, isExpanded: Bool, onBack: @escaping () -> Void) {
@@ -17,7 +17,7 @@ struct ChatroomContentView: View {
 		self.isExpanded = isExpanded
 		self.onBack = onBack
 		let userId = user.id
-		self._viewModel = StateObject(wrappedValue: ChatViewModel(senderUserId: userId, activity: activity))
+		self._viewModel = State(wrappedValue: ChatViewModel(senderUserId: userId, activity: activity))
 	}
 
 	// Helper function to send messages for ChatroomContentView

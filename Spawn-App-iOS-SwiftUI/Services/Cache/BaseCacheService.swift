@@ -34,7 +34,8 @@ class BaseCacheService {
 	// MARK: - Properties
 
 	/// Pending save task for debouncing
-	/// nonisolated(unsafe) for deinit access
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit.
+	/// Thread safety is ensured by only cancelling in deinit (which runs after all other accesses complete).
 	private nonisolated(unsafe) var pendingSaveTask: Task<Void, Never>?
 
 	/// Debounce interval for saving to disk
@@ -44,7 +45,9 @@ class BaseCacheService {
 	var lastChecked: [UUID: [String: Date]] = [:]
 
 	/// Timer for periodic save
-	/// nonisolated(unsafe) for deinit access
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit.
+	/// Thread safety is ensured by only accessing from MainActor context (via Timer's main runloop)
+	/// and in deinit (which runs after all other accesses complete).
 	private nonisolated(unsafe) var periodicSaveTimer: Timer?
 
 	// MARK: - Initialization
@@ -60,8 +63,11 @@ class BaseCacheService {
 	}
 
 	deinit {
+		// Safe to access nonisolated(unsafe) properties here - deinit runs after all references are released
 		periodicSaveTimer?.invalidate()
+		periodicSaveTimer = nil
 		pendingSaveTask?.cancel()
+		pendingSaveTask = nil
 	}
 
 	// MARK: - Timestamp Management

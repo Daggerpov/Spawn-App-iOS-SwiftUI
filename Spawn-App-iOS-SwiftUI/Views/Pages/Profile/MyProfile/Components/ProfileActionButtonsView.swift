@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ProfileActionButtonsView: View {
 	var user: BaseUserDTO
-	@ObservedObject var profileViewModel: ProfileViewModel
+	var profileViewModel: ProfileViewModel
 	@Environment(\.colorScheme) private var colorScheme
 	var shareProfile: () -> Void
 

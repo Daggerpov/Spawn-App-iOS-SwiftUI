@@ -5,7 +5,7 @@ import UserNotifications
 
 @available(iOS 16.0, *)
 @MainActor
-class NotificationService: NSObject, ObservableObject {
+final class NotificationService: NSObject, ObservableObject {
 	static let shared = NotificationService()
 
 	@Published var isNotificationsEnabled = false

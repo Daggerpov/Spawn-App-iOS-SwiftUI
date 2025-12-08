@@ -7,16 +7,17 @@
 
 import Foundation
 
+@Observable
 @MainActor
-class ActivityDescriptionViewModel: ObservableObject {
-	@Published var users: [BaseUserDTO]?
+final class ActivityDescriptionViewModel {
+	var users: [BaseUserDTO]?
 	var activity: FullFeedActivityDTO
 	var senderUserId: UUID
 	var dataService: DataService
 	var creationMessage: String?
-	@Published var isParticipating: Bool = false
-	@Published var errorMessage: String?
-	@Published var isLoading: Bool = false
+	var isParticipating: Bool = false
+	var errorMessage: String?
+	var isLoading: Bool = false
 
 	// MARK: - Helper Methods
 
@@ -57,15 +58,11 @@ class ActivityDescriptionViewModel: ObservableObject {
 	/// Optimistically updates the activity title
 	func updateActivityTitle(_ newTitle: String) {
 		activity.title = newTitle
-
-		// Notify UI
-		objectWillChange.send()
 	}
 
 	/// Optimistically updates the activity icon immediately in the UI
 	func optimisticallyUpdateActivityIcon(_ newIcon: String) {
 		activity.icon = newIcon
-		objectWillChange.send()
 	}
 
 	/// Optimistically updates both title and icon
@@ -76,7 +73,6 @@ class ActivityDescriptionViewModel: ObservableObject {
 		if let icon = icon {
 			activity.icon = icon
 		}
-		objectWillChange.send()
 	}
 
 	/// Saves activity changes to the backend using partial update endpoint

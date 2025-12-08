@@ -7,8 +7,7 @@
 import SwiftUI
 
 struct RecommendedFriendView: View {
-	// Use ObservedObject for proper state observation
-	@ObservedObject var viewModel: FriendsTabViewModel
+	var viewModel: FriendsTabViewModel
 	var friend: RecommendedFriendUserDTO
 	@State private var opacity: CGFloat = 1.0
 	@Binding var selectedFriend: FullFriendUserDTO?

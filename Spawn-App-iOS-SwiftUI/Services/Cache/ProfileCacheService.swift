@@ -11,7 +11,7 @@ import SwiftUI
 
 /// Cache service for profile-related data
 @MainActor
-class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
+final class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
 	static let shared = ProfileCacheService()
 
 	// MARK: - Cached Data

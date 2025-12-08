@@ -10,19 +10,17 @@ import SwiftUI
 struct InviteView: View {
 	let user: BaseUserDTO
 	@Environment(\.dismiss) private var dismiss
-	@ObservedObject var activityCreationViewModel = ActivityCreationViewModel.shared
-	@StateObject private var searchViewModel = SearchViewModel()
-
-	// Add view models for friends
-	@StateObject private var friendsViewModel: FriendsTabViewModel
+	var activityCreationViewModel = ActivityCreationViewModel.shared
+	// CRITICAL FIX: Use optional ViewModels to prevent repeated init() calls
+	// when SwiftUI recreates this view struct. Initialize lazily in .task.
+	@State private var searchViewModel: SearchViewModel?
+	@State private var friendsViewModel: FriendsTabViewModel?
+	@State private var isInitialized = false
 
 	init(user: BaseUserDTO) {
 		self.user = user
-
-		// Initialize the view models with _: syntax for StateObject
-		self._friendsViewModel = StateObject(
-			wrappedValue: FriendsTabViewModel(userId: user.id)
-		)
+		// CRITICAL: Do NOT initialize ViewModels here.
+		// ViewModels are initialized lazily in .task to prevent repeated init() calls.
 	}
 
 	var body: some View {
@@ -34,44 +32,51 @@ struct InviteView: View {
 					.foregroundColor(universalAccentColor)
 					.padding(.top, 30)
 
-				// Friends section
-				ScrollView {
-					VStack(spacing: 20) {
-						// Invited section
-						if !activityCreationViewModel.selectedFriends.isEmpty {
-							invitedFriendsSection
+				// Friends section - only show when initialized
+				if isInitialized {
+					ScrollView {
+						VStack(spacing: 20) {
+							// Invited section
+							if !activityCreationViewModel.selectedFriends.isEmpty {
+								invitedFriendsSection
+							}
+
+							// Suggested friends section - now using real friends data
+							friendsListSection
+						}
+						.padding(.horizontal)
+					}
+
+					// Search bar at bottom
+					VStack {
+						// Search bar
+						if let searchVM = searchViewModel {
+							SearchView(searchPlaceholderText: "Search", viewModel: searchVM)
+								.padding(.top)
 						}
 
-						// Suggested friends section - now using real friends data
-						friendsListSection
+						// Done button
+						Button(action: {
+							dismiss()
+						}) {
+							Text(
+								"Done Inviting (\(activityCreationViewModel.selectedFriends.count) friends)"
+							)
+							.font(.headline)
+							.foregroundColor(.white)
+							.frame(maxWidth: .infinity)
+							.padding()
+							.background(universalSecondaryColor)
+							.cornerRadius(25)
+							.padding(.horizontal)
+							.padding(.bottom, 15)
+						}
 					}
-					.padding(.horizontal)
+					.background(universalBackgroundColor)
+				} else {
+					// Minimal loading state
+					Spacer()
 				}
-
-				// Search bar at bottom
-				VStack {
-					// Search bar
-					SearchView(searchPlaceholderText: "Search", viewModel: searchViewModel)
-						.padding(.top)
-
-					// Done button
-					Button(action: {
-						dismiss()
-					}) {
-						Text(
-							"Done Inviting (\(activityCreationViewModel.selectedFriends.count) friends)"
-						)
-						.font(.headline)
-						.foregroundColor(.white)
-						.frame(maxWidth: .infinity)
-						.padding()
-						.background(universalSecondaryColor)
-						.cornerRadius(25)
-						.padding(.horizontal)
-						.padding(.bottom, 15)
-					}
-				}
-				.background(universalBackgroundColor)
 			}
 			.background(universalBackgroundColor)
 			.navigationBarBackButtonHidden(true)
@@ -83,18 +88,27 @@ struct InviteView: View {
 						.foregroundColor(universalAccentColor)
 				}
 			)
-			.onAppear {
-				friendsViewModel.connectSearchViewModel(searchViewModel)
-			}
 			.task {
+				// CRITICAL: Initialize ViewModels lazily to prevent repeated init() calls
+				if searchViewModel == nil {
+					searchViewModel = SearchViewModel()
+				}
+				if friendsViewModel == nil {
+					friendsViewModel = FriendsTabViewModel(userId: user.id)
+				}
+
+				guard let friendsVM = friendsViewModel, let searchVM = searchViewModel else { return }
+				friendsVM.connectSearchViewModel(searchVM)
+				isInitialized = true
+
 				// Check if task was cancelled (user navigated away)
 				if Task.isCancelled {
 					return
 				}
 
 				// Load cached data first for instant display, then fetch fresh data
-				friendsViewModel.loadCachedData()
-				await friendsViewModel.fetchAllData()
+				friendsVM.loadCachedData()
+				await friendsVM.fetchAllData()
 			}
 		}
 	}
@@ -176,38 +190,44 @@ struct InviteView: View {
 				.padding(.leading, 10)
 
 			VStack(spacing: 15) {
-				if friendsViewModel.friends.isEmpty {
-					Text("You have no friends yet")
-						.foregroundColor(.gray)
-						.padding(.vertical)
-				} else {
-					// Use filtered friends directly from the view model
-					let filteredFriends =
-						searchViewModel.searchText.isEmpty
-						? friendsViewModel.friends
-						: friendsViewModel.friends.filter { friend in
-							let searchText = searchViewModel.searchText.lowercased()
-							return (friend.username ?? "").lowercased().contains(searchText)
-								|| (friend.name?.lowercased().contains(searchText) ?? false)
-								|| (friend.email?.lowercased().contains(searchText) ?? false)
-						}
-
-					if filteredFriends.isEmpty {
-						Text("No friends match your search")
+				if let friendsVM = friendsViewModel, let searchVM = searchViewModel {
+					if friendsVM.friends.isEmpty {
+						Text("You have no friends yet")
 							.foregroundColor(.gray)
 							.padding(.vertical)
 					} else {
-						ForEach(filteredFriends) { friend in
-							FriendListRow(
-								friend: friend,
-								isSelected: activityCreationViewModel.selectedFriends
-									.contains(friend)
-							)
-							.onTapGesture {
-								toggleFriendSelection(friend)
+						// Use filtered friends directly from the view model
+						let filteredFriends =
+							searchVM.searchText.isEmpty
+							? friendsVM.friends
+							: friendsVM.friends.filter { friend in
+								let searchText = searchVM.searchText.lowercased()
+								return (friend.username ?? "").lowercased().contains(searchText)
+									|| (friend.name?.lowercased().contains(searchText) ?? false)
+									|| (friend.email?.lowercased().contains(searchText) ?? false)
+							}
+
+						if filteredFriends.isEmpty {
+							Text("No friends match your search")
+								.foregroundColor(.gray)
+								.padding(.vertical)
+						} else {
+							ForEach(filteredFriends) { friend in
+								FriendListRow(
+									friend: friend,
+									isSelected: activityCreationViewModel.selectedFriends
+										.contains(friend)
+								)
+								.onTapGesture {
+									toggleFriendSelection(friend)
+								}
 							}
 						}
 					}
+				} else {
+					Text("Loading...")
+						.foregroundColor(.gray)
+						.padding(.vertical)
 				}
 			}
 		}
@@ -296,6 +316,5 @@ extension FullFriendUserDTO {
 
 @available(iOS 17.0, *)
 #Preview {
-	@Previewable @ObservedObject var appCache = AppCache.shared
-	InviteView(user: .danielAgapov).environmentObject(appCache)
+	InviteView(user: .danielAgapov).environmentObject(AppCache.shared)
 }

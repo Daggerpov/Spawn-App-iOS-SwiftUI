@@ -2,7 +2,7 @@ import SwiftUI
 
 struct FriendActivitiesShowAllView: View {
 	let user: Nameable
-	@ObservedObject var profileViewModel: ProfileViewModel
+	var profileViewModel: ProfileViewModel
 	@Binding var showActivityDetails: Bool
 
 	@Environment(\.presentationMode) var presentationMode

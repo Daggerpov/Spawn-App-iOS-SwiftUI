@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ActivityConfirmationView: View {
-	@ObservedObject var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
+	var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
 	@ObservedObject var themeService = ThemeService.shared
 	@Binding var showShareSheet: Bool
 	@Environment(\.colorScheme) private var colorScheme

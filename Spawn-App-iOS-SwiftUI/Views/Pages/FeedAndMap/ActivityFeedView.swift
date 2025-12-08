@@ -8,9 +8,9 @@ import SwiftUI
 
 struct ActivityFeedView: View {
 	var user: BaseUserDTO
-	@ObservedObject var viewModel: FeedViewModel
+	var viewModel: FeedViewModel
 	@ObservedObject private var locationManager = LocationManager.shared
-	@ObservedObject private var tutorialViewModel = TutorialViewModel.shared
+	private var tutorialViewModel = TutorialViewModel.shared
 	@State private var showingActivityPopup: Bool = false
 	@State private var activityInPopup: FullFeedActivityDTO?
 	@State private var colorInPopup: Color?

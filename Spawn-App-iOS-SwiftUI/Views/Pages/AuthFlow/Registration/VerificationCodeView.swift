@@ -2,7 +2,7 @@ import SwiftUI
 
 struct VerificationCodeView: View {
 	@ObservedObject var userAuthViewModel: UserAuthViewModel
-	@StateObject private var viewModel: VerificationCodeViewModel
+	@State private var viewModel: VerificationCodeViewModel
 	@FocusState private var focusedIndex: Int?
 	@Environment(\.dismiss) var dismiss
 	@ObservedObject var themeService = ThemeService.shared
@@ -10,7 +10,7 @@ struct VerificationCodeView: View {
 
 	init(userAuthViewModel: UserAuthViewModel) {
 		self.userAuthViewModel = userAuthViewModel
-		self._viewModel = StateObject(wrappedValue: VerificationCodeViewModel(userAuthViewModel: userAuthViewModel))
+		self._viewModel = State(wrappedValue: VerificationCodeViewModel(userAuthViewModel: userAuthViewModel))
 	}
 
 	private var inputBackgroundColor: Color {

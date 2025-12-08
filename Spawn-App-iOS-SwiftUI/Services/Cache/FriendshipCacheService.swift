@@ -11,7 +11,7 @@ import SwiftUI
 
 /// Cache service for friendship-related data
 @MainActor
-class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
+final class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 	static let shared = FriendshipCacheService()
 
 	// MARK: - Cached Data

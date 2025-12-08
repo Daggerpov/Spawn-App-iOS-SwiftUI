@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct BlockedUsersView: View {
-	@StateObject private var viewModel = BlockedUsersViewModel()
+	@State private var viewModel = BlockedUsersViewModel()
 	@ObservedObject var userAuth = UserAuthViewModel.shared
 	@Environment(\.presentationMode) var presentationMode
 	@State private var showUnblockConfirmation = false
@@ -51,10 +51,16 @@ struct BlockedUsersView: View {
 			loadBlockedUsers()
 		}
 		.alert("Unblock User", isPresented: $showUnblockConfirmation) {
-			Button("Cancel", role: .cancel) {}
+			Button("Cancel", role: .cancel) {
+				print("🔄 [BlockedUsersView] Alert: Cancel button tapped")
+			}
 			Button("Unblock", role: .destructive) {
+				print("🔄 [BlockedUsersView] Alert: Unblock button tapped")
 				if let user = userToUnblock {
+					print("🔄 [BlockedUsersView] Alert: userToUnblock found: \(user.blockedUsername)")
 					unblockUser(user)
+				} else {
+					print("❌ [BlockedUsersView] Alert: userToUnblock is nil!")
 				}
 			}
 		} message: {
@@ -96,6 +102,7 @@ struct BlockedUsersView: View {
 					BlockedUserRow(
 						blockedUser: blockedUser,
 						onUnblock: {
+							print("🔄 [BlockedUsersView] Unblock row button pressed for: \(blockedUser.blockedUsername)")
 							userToUnblock = blockedUser
 							showUnblockConfirmation = true
 						}
@@ -148,7 +155,18 @@ struct BlockedUsersView: View {
 	}
 
 	private func unblockUser(_ blockedUser: BlockedUserDTO) {
-		guard let currentUserId = userAuth.spawnUser?.id else { return }
+		guard let currentUserId = userAuth.spawnUser?.id else {
+			print("❌ [BlockedUsersView] Cannot unblock: currentUserId is nil")
+			notificationMessage = "Unable to unblock user. Please try logging in again."
+			withAnimation {
+				showNotification = true
+			}
+			return
+		}
+
+		print(
+			"🔄 [BlockedUsersView] Attempting to unblock user: \(blockedUser.blockedUsername) (id: \(blockedUser.blockedId))"
+		)
 
 		Task {
 			await viewModel.unblockUser(
@@ -156,10 +174,22 @@ struct BlockedUsersView: View {
 				blockedId: blockedUser.blockedId
 			)
 
-			await MainActor.run {
-				notificationMessage = "\(blockedUser.blockedUsername) has been unblocked"
-				withAnimation {
-					showNotification = true
+			// Check if there was an error
+			if let errorMessage = viewModel.errorMessage {
+				print("❌ [BlockedUsersView] Unblock failed: \(errorMessage)")
+				await MainActor.run {
+					notificationMessage = "Failed to unblock user: \(errorMessage)"
+					withAnimation {
+						showNotification = true
+					}
+				}
+			} else {
+				print("✅ [BlockedUsersView] Successfully unblocked user: \(blockedUser.blockedUsername)")
+				await MainActor.run {
+					notificationMessage = "\(blockedUser.blockedUsername) has been unblocked"
+					withAnimation {
+						showNotification = true
+					}
 				}
 			}
 		}

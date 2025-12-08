@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct TutorialOverlayView: View {
-	@ObservedObject var tutorialViewModel = TutorialViewModel.shared
+	var tutorialViewModel = TutorialViewModel.shared
 	@Environment(\.colorScheme) var colorScheme
 
 	let activityTypesFrame: CGRect?

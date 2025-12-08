@@ -7,7 +7,7 @@ struct ActivityTypeFriendMenuView: View {
 	let navigateToProfile: () -> Void
 	@Environment(\.dismiss) private var dismiss
 	@State private var isLoading: Bool = true
-	@StateObject private var activityTypeViewModel = ActivityTypeViewModel(
+	@State private var activityTypeViewModel = ActivityTypeViewModel(
 		userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
 
 	private var firstName: String {

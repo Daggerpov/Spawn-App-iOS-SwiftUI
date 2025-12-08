@@ -5,18 +5,16 @@
 //  Created by Daniel Agapov on 2025-05-05.
 //
 
-import Combine
-import Foundation
 import SwiftUI
 
+@Observable
 @MainActor
-class DayActivitiesViewModel: ObservableObject {
-	@Published var activities: [CalendarActivityDTO] = []
-	@Published var headerTitle: String = "Activities"
-	@Published private var fetchedActivities: [UUID: FullFeedActivityDTO] = [:]
+final class DayActivitiesViewModel {
+	var activities: [CalendarActivityDTO] = []
+	var headerTitle: String = "Activities"
+	private var fetchedActivities: [UUID: FullFeedActivityDTO] = [:]
 
 	private var dataService: DataService
-	private var cancellables = Set<AnyCancellable>()
 
 	init(activities: [CalendarActivityDTO], dataService: DataService? = nil) {
 		self.activities = activities

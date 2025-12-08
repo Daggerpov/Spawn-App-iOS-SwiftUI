@@ -12,7 +12,7 @@ import SwiftUI
 // MARK: - Activity Annotation
 
 /// Custom annotation type that carries the activity data needed for rendering
-class ActivityAnnotation: NSObject, MKAnnotation {
+final class ActivityAnnotation: NSObject, MKAnnotation {
 	let activityId: UUID
 	dynamic var coordinate: CLLocationCoordinate2D
 	var title: String?

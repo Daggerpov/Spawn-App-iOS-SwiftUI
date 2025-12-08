@@ -2,7 +2,7 @@ import SwiftUI
 
 struct UserActivitiesSection: View {
 	var user: Nameable
-	@ObservedObject var profileViewModel: ProfileViewModel
+	var profileViewModel: ProfileViewModel
 	@ObservedObject private var locationManager = LocationManager.shared
 	@Binding var showActivityDetails: Bool
 	@State private var showFriendActivities: Bool = false

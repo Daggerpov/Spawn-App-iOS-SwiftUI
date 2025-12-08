@@ -8,13 +8,13 @@
 import SwiftUI
 
 struct ActivityLocationView: View {
-	@StateObject private var viewModel: ActivityInfoViewModel
+	@State private var viewModel: ActivityInfoViewModel
 	static let fontSize: CGFloat = 14
 	let font: Font = .onestSemiBold(size: fontSize)
 	@Environment(\.colorScheme) private var colorScheme
 
 	init(activity: FullFeedActivityDTO, locationManager: LocationManager) {
-		self._viewModel = StateObject(
+		self._viewModel = State(
 			wrappedValue: ActivityInfoViewModel(
 				activity: activity,
 				locationManager: locationManager

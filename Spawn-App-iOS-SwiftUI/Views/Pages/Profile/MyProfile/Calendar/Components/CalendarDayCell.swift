@@ -52,19 +52,11 @@ struct CalendarDayCell: View {
 		// Use the same logic as the feed view - always use ActivityColorService assignment
 		// Priority: activityId first (main activity), then calendar activity id as fallback
 		if let activityId = activity.activityId {
-			let color = getActivityColor(for: activityId)
-			let hexColor = getActivityColorHex(for: activityId)
-			print(
-				"🎨 ProfileCalendarView: Using activityId \(activityId) color \(hexColor) for calendar activity \(activity.id)"
-			)
-			return color
+			return getActivityColor(for: activityId)
 		}
 
 		// For calendar-only activities without activityId, use the calendar activity's own id
-		let color = getActivityColor(for: activity.id)
-		let hexColor = getActivityColorHex(for: activity.id)
-		print("🎨 ProfileCalendarView: Using calendar activity id \(activity.id) color \(hexColor)")
-		return color
+		return getActivityColor(for: activity.id)
 
 		// Note: We ignore backend colorHexCode entirely like the feed view does
 	}

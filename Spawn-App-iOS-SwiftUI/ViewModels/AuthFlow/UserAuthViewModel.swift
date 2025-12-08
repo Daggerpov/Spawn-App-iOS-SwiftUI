@@ -12,7 +12,7 @@ import SwiftUI
 import UIKit
 
 @MainActor
-class UserAuthViewModel: NSObject, ObservableObject {
+final class UserAuthViewModel: NSObject, ObservableObject {
 	static let shared: UserAuthViewModel = UserAuthViewModel(
 		apiService: MockAPIService.isMocking ? MockAPIService() : APIService())  // Singleton instance
 	@Published var errorMessage: String?

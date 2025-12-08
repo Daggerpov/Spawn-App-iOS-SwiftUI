@@ -301,7 +301,7 @@ struct ActivityTypeSelectionCard: View {
 
 // ViewModel for managing activity types
 @MainActor
-class AddToActivityTypeViewModel: ObservableObject {
+final class AddToActivityTypeViewModel: ObservableObject {
 	@Published var activityTypes: [ActivityTypeDTO] = []
 	@Published var isLoading = false
 	@Published var errorMessage: String?

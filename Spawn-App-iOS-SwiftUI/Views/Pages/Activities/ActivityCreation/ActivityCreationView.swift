@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct ActivityCreationView: View {
-	@ObservedObject var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
-	@ObservedObject var tutorialViewModel = TutorialViewModel.shared
+	@Bindable var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
+	var tutorialViewModel = TutorialViewModel.shared
 	@Environment(\.dismiss) private var dismiss
 
 	@State private var currentStep: ActivityCreationStep

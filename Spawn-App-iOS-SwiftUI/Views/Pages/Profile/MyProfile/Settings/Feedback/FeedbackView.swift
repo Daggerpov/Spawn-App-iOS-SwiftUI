@@ -10,7 +10,7 @@ import SwiftUI
 
 // MARK: - Main Feedback View
 struct FeedbackView: View {
-	@StateObject private var viewModel: FeedbackViewModel
+	@State private var viewModel: FeedbackViewModel
 	@Environment(\.dismiss) private var dismiss
 	@Environment(\.colorScheme) private var colorScheme
 
@@ -26,7 +26,7 @@ struct FeedbackView: View {
 	init(userId: UUID?, email: String?, dataService: DataService = DataService.shared) {
 		self.userId = userId
 		self.email = email
-		_viewModel = StateObject(wrappedValue: FeedbackViewModel(dataService: dataService))
+		_viewModel = State(wrappedValue: FeedbackViewModel(dataService: dataService))
 	}
 
 	var body: some View {
