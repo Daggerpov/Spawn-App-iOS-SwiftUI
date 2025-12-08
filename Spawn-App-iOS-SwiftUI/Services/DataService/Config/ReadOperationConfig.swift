@@ -66,7 +66,7 @@ enum DataType {
 	case profileSocialMedia(userId: UUID)
 
 	/// Profile activities (both upcoming and past)
-	case profileActivities(userId: UUID)
+	case profileActivities(userId: UUID, requestingUserId: UUID)
 
 	// MARK: - Calendar
 
@@ -144,7 +144,7 @@ enum DataType {
 			return "users/\(userId)/interests"
 		case .profileSocialMedia(let userId):
 			return "users/\(userId)/social-media"
-		case .profileActivities(let userId):
+		case .profileActivities(let userId, _):
 			return "activities/profile/\(userId)"
 
 		// Calendar
@@ -214,7 +214,7 @@ enum DataType {
 			return "profileInterests-\(userId)"
 		case .profileSocialMedia(let userId):
 			return "profileSocialMedia-\(userId)"
-		case .profileActivities(let userId):
+		case .profileActivities(let userId, _):
 			return "profileActivities-\(userId)"
 
 		// Calendar
@@ -263,15 +263,7 @@ enum DataType {
 			}
 			return nil
 
-		case .profileActivities:
-			// Profile activities require requesting user ID as parameter
-			// Use MainActor.assumeIsolated since this is called from UI code
-			let requestingUserId: UUID? = MainActor.assumeIsolated {
-				UserAuthViewModel.shared.spawnUser?.id
-			}
-			guard let requestingUserId = requestingUserId else {
-				return nil
-			}
+		case .profileActivities(_, let requestingUserId):
 			return ["requestingUserId": requestingUserId.uuidString]
 
 		case .calendar(_, let month, let year, let requestingUserId):
@@ -534,7 +526,7 @@ extension DataType {
 				userId: userId
 			)
 
-		case .profileActivities(let userId):
+		case .profileActivities(let userId, _):
 			return ProfileDictionaryCacheConfig<[ProfileActivityDTO]>(
 				dictionary: { $0.profileActivities },
 				updater: { appCache in appCache.updateProfileActivities },
