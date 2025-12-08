@@ -550,30 +550,42 @@ class NotificationService: NSObject, ObservableObject {
 			return
 		}
 
+		// Get the current user ID for DataService calls
+		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+			print("Cannot handle notification - no logged in user")
+			return
+		}
+
 		Task {
 			switch type {
 			case "friend-accepted":
 				// When a friend request is accepted, refresh friends and friend requests
 				print("🔄 [CACHE] Friend request accepted - refreshing friends and friend requests")
-				await appCache.refreshFriends()
-				await appCache.refreshFriendRequests()
-				await appCache.refreshSentFriendRequests()
+				let _: DataResult<[FullFriendUserDTO]> = await DataService.shared.read(
+					.friends(userId: userId), cachePolicy: .apiOnly)
+				let _: DataResult<[FetchFriendRequestDTO]> = await DataService.shared.read(
+					.friendRequests(userId: userId), cachePolicy: .apiOnly)
+				let _: DataResult<[FetchSentFriendRequestDTO]> = await DataService.shared.read(
+					.sentFriendRequests(userId: userId), cachePolicy: .apiOnly)
 
 			case "activity-updated":
 				// When an activity is updated, refresh activities
 				print("🔄 [CACHE] Activity updated - refreshing activities")
-				await appCache.refreshActivities()
+				let _: DataResult<[FullFeedActivityDTO]> = await DataService.shared.read(
+					.activities(userId: userId), cachePolicy: .apiOnly)
 
 			case "friend-request":
 				// When a new friend request is received/sent, refresh both incoming and sent friend requests
 				print("🔄 [CACHE] Friend request received/sent - refreshing friend requests")
-				await appCache.refreshFriendRequests()
-				await appCache.refreshSentFriendRequests()
+				let _: DataResult<[FetchFriendRequestDTO]> = await DataService.shared.read(
+					.friendRequests(userId: userId), cachePolicy: .apiOnly)
+				let _: DataResult<[FetchSentFriendRequestDTO]> = await DataService.shared.read(
+					.sentFriendRequests(userId: userId), cachePolicy: .apiOnly)
 
 			case "profile-updated":
 				// When a friend's profile is updated, refresh other profiles
-				if let userId = userInfo["userId"] as? String,
-					let uuid = UUID(uuidString: userId)
+				if let profileUserId = userInfo["userId"] as? String,
+					let uuid = UUID(uuidString: profileUserId)
 				{
 					// Check if this is a profile we already have cached
 					if appCache.otherProfiles[uuid] != nil {

@@ -69,14 +69,15 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, @pre
 		print("🔄 CustomAppDelegate: App will enter foreground")
 
 		// Only refresh if user is logged in
-		guard UserAuthViewModel.shared.isLoggedIn, UserAuthViewModel.shared.spawnUser != nil else {
+		guard UserAuthViewModel.shared.isLoggedIn, let userId = UserAuthViewModel.shared.spawnUser?.id else {
 			print("🔄 Skipping refresh - no logged in user")
 			return
 		}
 
 		print("🔄 Refreshing activities for logged in user")
 		Task {
-			await AppCache.shared.refreshActivities()
+			let _: DataResult<[FullFeedActivityDTO]> = await DataService.shared.read(
+				.activities(userId: userId), cachePolicy: .apiOnly)
 			// Notify all listeners to refresh activities
 			NotificationCenter.default.post(name: .shouldRefreshActivities, object: nil)
 		}

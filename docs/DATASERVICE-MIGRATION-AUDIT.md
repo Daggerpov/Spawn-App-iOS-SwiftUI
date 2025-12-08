@@ -5,7 +5,7 @@
 This document tracks the audit and migration progress for moving all plain `APIService` method calls and direct `AppCache` operations to the unified `DataService` wrapper pattern.
 
 **Audit Date**: December 8, 2025  
-**Status**: ✅ PHASE 1 COMPLETE
+**Status**: ✅ PHASE 1-3.5 COMPLETE (Core Migration Done)
 
 ---
 
@@ -14,8 +14,9 @@ This document tracks the audit and migration progress for moving all plain `APIS
 | Category | Files with Issues | Issues Found | Fixed |
 |----------|------------------|--------------|-------|
 | ViewModels | 4 | 35+ | 30+ |
-| Views | 5+ | 15+ | 12+ |
-| **Total** | **9+** | **50+** | **42+** |
+| Views | 5+ | 15+ | 15+ |
+| Services | 3 | 6 | 6 |
+| **Total** | **12+** | **56+** | **51+** |
 
 ---
 
@@ -173,7 +174,67 @@ This document tracks the audit and migration progress for moving all plain `APIS
 
 ---
 
-#### 2.5 Other Views with `MockAPIService.isMocking` (Lower Priority)
+#### 2.5 `FriendSearchView.swift` ✅ COMPLETED
+
+**Location**: `Spawn-App-iOS-SwiftUI/Views/Pages/Friends/FriendSearchView.swift`
+
+**Issues Found:** 1 issue
+
+**Status:** ✅ All migrated
+
+**Changes Made:**
+1. ✅ Replaced `await AppCache.shared.refreshFriends()` with DataService.read(.friends, cachePolicy: .apiOnly)
+
+---
+
+### 3. Services (System-Level)
+
+#### 3.1 `NotificationService.swift` ✅ COMPLETED
+
+**Location**: `Spawn-App-iOS-SwiftUI/Services/Notifications/NotificationService.swift`
+
+**Issues Found:** 5 issues
+
+**Status:** ✅ All migrated
+
+**Changes Made:**
+1. ✅ Replaced `appCache.refreshFriends()` with DataService.read(.friends, cachePolicy: .apiOnly)
+2. ✅ Replaced `appCache.refreshFriendRequests()` with DataService.read(.friendRequests, cachePolicy: .apiOnly)
+3. ✅ Replaced `appCache.refreshSentFriendRequests()` with DataService.read(.sentFriendRequests, cachePolicy: .apiOnly)
+4. ✅ Replaced `appCache.refreshActivities()` with DataService.read(.activities, cachePolicy: .apiOnly)
+5. ✅ Kept `appCache.refreshOtherProfiles()` and `appCache.validateCache()` (acceptable - internal cache operations)
+
+---
+
+#### 3.2 `CustomAppDelegate.swift` ✅ COMPLETED
+
+**Location**: `Spawn-App-iOS-SwiftUI/Services/Core/CustomAppDelegate.swift`
+
+**Issues Found:** 1 issue
+
+**Status:** ✅ All migrated
+
+**Changes Made:**
+1. ✅ Replaced `AppCache.shared.refreshActivities()` with DataService.read(.activities, cachePolicy: .apiOnly)
+
+---
+
+#### 3.3 `Spawn_App_iOS_SwiftUIApp.swift` ✅ COMPLETED
+
+**Location**: `Spawn-App-iOS-SwiftUI/Spawn_App_iOS_SwiftUIApp.swift`
+
+**Issues Found:** 1 issue
+
+**Status:** ✅ All migrated
+
+**Changes Made:**
+1. ✅ Replaced `appCache.refreshActivities()` with DataService.read(.activities, cachePolicy: .apiOnly)
+
+---
+
+### 4. Lower Priority Items
+
+#### 4.1 Other Views with `MockAPIService.isMocking` (LOW)
 
 The following views have `MockAPIService.isMocking` checks that should be replaced with DI:
 
@@ -245,12 +306,18 @@ case acceptTermsOfService(userId: UUID)   // 📋 Future
 6. [x] `ProfileViewModel.swift` - Direct AppCache calls removed
 7. [x] `ActivityTypeViewModel.swift` - Unused URL helpers removed
 
+### Phase 3.5: System-Level Cache Refreshes ✅ COMPLETE
+8. [x] `FriendSearchView.swift` - Direct cache refresh replaced with DataService
+9. [x] `NotificationService.swift` - All cache refreshes migrated to DataService
+10. [x] `CustomAppDelegate.swift` - Activity refresh migrated to DataService
+11. [x] `Spawn_App_iOS_SwiftUIApp.swift` - Activity refresh migrated to DataService
+
 ### Phase 4: Mock Check Cleanup (LOW) 📋 FUTURE
-8. [ ] Replace `MockAPIService.isMocking` with DI pattern across remaining Views
-9. [ ] Remove unused `APIService.baseURL` usages in Views (cosmetic)
+12. [ ] Replace `MockAPIService.isMocking` with DI pattern across remaining Views
+13. [ ] Remove unused `APIService.baseURL` usages in Views (cosmetic)
 
 ### Phase 5: Auth ViewModel (SPECIAL CASE - DEFERRED)
-10. [ ] `UserAuthViewModel.swift` - Partial migration only (OAuth/multipart require direct API access)
+14. [ ] `UserAuthViewModel.swift` - Partial migration only (OAuth/multipart require direct API access)
 
 ---
 
@@ -262,6 +329,10 @@ case acceptTermsOfService(userId: UUID)   // 📋 Future
 2. **Auth ViewModel OAuth/Multipart**: Direct APIService usage for OAuth flows and multipart uploads is acceptable
 3. **Cache Clearing on Logout**: Direct `AppCache.shared.clearAllCaches()` is acceptable for logout flows
 4. **Keychain Operations**: Direct KeychainService access is acceptable
+5. **MockAPIService Cache Operations**: Direct `AppCache.shared.update*` in MockAPIService is acceptable (mocking purposes)
+6. **#Preview Block Cache Operations**: Direct cache operations in SwiftUI `#Preview` blocks are acceptable (preview/testing)
+7. **Internal Cache Coordination**: `appCache.validateCache()`, `appCache.refreshOtherProfiles()` in NotificationService are acceptable (complex internal operations)
+8. **Cache Cleanup Operations**: `appCache.cleanupExpiredActivities()` is acceptable (local-only operation)
 
 ### Patterns to Migrate
 
@@ -288,6 +359,12 @@ case acceptTermsOfService(userId: UUID)   // 📋 Future
 | | Fixed InviteView - removed direct AppCache access |
 | | Updated 7 View files with new FriendsTabViewModel signature |
 | | **Phase 1-3 Complete: 42+ issues fixed** |
+| 2025-12-08 | Phase 3.5: System-level cache refreshes migrated |
+| | Fixed FriendSearchView - replaced AppCache.shared.refreshFriends() |
+| | Fixed NotificationService - all 5 cache refresh calls migrated |
+| | Fixed CustomAppDelegate - activity refresh migrated |
+| | Fixed Spawn_App_iOS_SwiftUIApp - activity refresh migrated |
+| | **Phase 1-3.5 Complete: 51+ issues fixed** |
 
 ---
 

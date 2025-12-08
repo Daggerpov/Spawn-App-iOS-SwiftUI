@@ -120,9 +120,10 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 		switch phase {
 		case .active:
 			// Only refresh activities if user is logged in
-			if userAuth.isLoggedIn, userAuth.spawnUser != nil {
+			if userAuth.isLoggedIn, let userId = userAuth.spawnUser?.id {
 				Task {
-					await appCache.refreshActivities()
+					let _: DataResult<[FullFeedActivityDTO]> = await DataService.shared.read(
+						.activities(userId: userId), cachePolicy: .apiOnly)
 					// Clean up any expired activities after refresh
 					appCache.cleanupExpiredActivities()
 				}

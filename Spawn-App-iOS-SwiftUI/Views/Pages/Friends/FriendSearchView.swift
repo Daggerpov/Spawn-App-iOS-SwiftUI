@@ -504,7 +504,8 @@ struct FriendRowView: View {
 			)
 
 			// Refresh friends cache to remove the blocked user from friends list
-			await AppCache.shared.refreshFriends()
+			let _: DataResult<[FullFriendUserDTO]> = await DataService.shared.read(
+				.friends(userId: blockerId), cachePolicy: .apiOnly)
 
 		} catch {
 			print("Failed to block user: \(error.localizedDescription)")
