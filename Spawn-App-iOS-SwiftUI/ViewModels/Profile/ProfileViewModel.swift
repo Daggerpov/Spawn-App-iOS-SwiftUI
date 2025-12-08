@@ -1,3 +1,4 @@
+@preconcurrency import Combine
 import SwiftUI
 
 @Observable
@@ -38,6 +39,7 @@ final class ProfileViewModel {
 	var isLoadingUserActivities: Bool = false
 
 	private let dataService: DataService
+	private var cancellables = Set<AnyCancellable>()
 
 	init(
 		userId: UUID? = nil,
@@ -45,6 +47,36 @@ final class ProfileViewModel {
 	) {
 		self.dataService = dataService ?? DataService.shared
 		print("🔧 ProfileViewModel.init() called for userId: \(userId?.uuidString ?? "nil")")
+
+		// Register for activity creation notifications to refresh calendar
+		NotificationCenter.default.publisher(for: .activityCreated)
+			.sink { [weak self] _ in
+				Task {
+					// Force refresh from API to show new activity immediately
+					await self?.fetchAllCalendarActivities(forceRefresh: true)
+				}
+			}
+			.store(in: &cancellables)
+
+		// Register for activity update notifications to refresh calendar
+		NotificationCenter.default.publisher(for: .activityUpdated)
+			.sink { [weak self] _ in
+				Task {
+					// Force refresh from API to show updated activity immediately
+					await self?.fetchAllCalendarActivities(forceRefresh: true)
+				}
+			}
+			.store(in: &cancellables)
+
+		// Register for activity deletion notifications to refresh calendar
+		NotificationCenter.default.publisher(for: .activityDeleted)
+			.sink { [weak self] _ in
+				Task {
+					// Force refresh from API to remove deleted activity immediately
+					await self?.fetchAllCalendarActivities(forceRefresh: true)
+				}
+			}
+			.store(in: &cancellables)
 	}
 
 	func fetchUserStats(userId: UUID) async {
@@ -257,7 +289,7 @@ final class ProfileViewModel {
 		}
 	}
 
-	func fetchAllCalendarActivities() async {
+	func fetchAllCalendarActivities(forceRefresh: Bool = false) async {
 		self.isLoadingCalendar = true
 
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
@@ -267,7 +299,7 @@ final class ProfileViewModel {
 			return
 		}
 
-		print("📡 Calendar: Fetching activities for user \(userId)")
+		print("📡 Calendar: Fetching activities for user \(userId) (forceRefresh: \(forceRefresh))")
 
 		// Check authentication status
 		let hasAccessToken = KeychainService.shared.load(key: "accessToken") != nil
@@ -286,19 +318,15 @@ final class ProfileViewModel {
 		}
 
 		// Use centralized DataType configuration
+		// Use .apiOnly when force refreshing to get fresh data immediately
+		let cachePolicy: CachePolicy = forceRefresh ? .apiOnly : .cacheFirst(backgroundRefresh: true)
 		let result: DataResult<[CalendarActivityDTO]> = await dataService.read(
-			.calendarAll(userId: userId, requestingUserId: nil)
+			.calendarAll(userId: userId, requestingUserId: nil),
+			cachePolicy: cachePolicy
 		)
 
 		switch result {
 		case .success(let activities, _):
-			if !activities.isEmpty {
-				print("📅 Calendar: Sample activity dates:")
-				for activity in activities.prefix(3) {
-					print("   - \(activity.date): \(activity.title ?? "No title")")
-				}
-			}
-
 			self.allCalendarActivities = activities
 			self.isLoadingCalendar = false
 
@@ -857,25 +885,20 @@ final class ProfileViewModel {
 
 	// New method to fetch profile activities (both upcoming and past)
 	func fetchProfileActivities(profileUserId: UUID) async {
-		print("🔄 ProfileViewModel: Fetching profile activities for user: \(profileUserId)")
+		guard let requestingUserId = UserAuthViewModel.shared.spawnUser?.id else {
+			print("❌ ProfileViewModel: Cannot fetch profile activities - no authenticated user")
+			self.profileActivities = []
+			self.isLoadingUserActivities = false
+			return
+		}
 
 		let result: DataResult<[ProfileActivityDTO]> = await dataService.read(
-			.profileActivities(userId: profileUserId),
+			.profileActivities(userId: profileUserId, requestingUserId: requestingUserId),
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
 
 		switch result {
 		case .success(let activities, _):
-			// Log activity details
-			if !activities.isEmpty {
-				print("📋 ProfileViewModel: Activity details:")
-				for (index, activity) in activities.enumerated() {
-					print(
-						"  \(index + 1). \(activity.title ?? "No title") - \(activity.startTime?.formatted() ?? "No time")"
-					)
-				}
-			}
-
 			self.profileActivities = activities
 			self.isLoadingUserActivities = false
 

@@ -76,8 +76,8 @@ struct UserProfileView: View {
 						)
 					}
 
-					// If they're friends, fetch their activities (critical for profile content)
-					if profileViewModel.friendshipStatus == .friends {
+					// Fetch activities if they're friends OR if viewing own profile
+					if profileViewModel.friendshipStatus == .friends || profileViewModel.friendshipStatus == .themself {
 						await profileViewModel.fetchProfileActivities(
 							profileUserId: user.id
 						)

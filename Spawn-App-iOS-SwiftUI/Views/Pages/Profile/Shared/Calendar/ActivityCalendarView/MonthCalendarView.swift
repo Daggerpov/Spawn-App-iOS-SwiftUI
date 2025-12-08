@@ -78,13 +78,6 @@ struct MonthCalendarView: View {
 			calendar.isDate(activity.dateAsDate, inSameDayAs: date)
 		}
 
-		// Add debug logging for this view as well
-		if !filteredActivities.isEmpty {
-			print(
-				"📅 ActivityCalendarView: Day \(Calendar.current.component(.day, from: date)) has \(filteredActivities.count) activities"
-			)
-		}
-
 		return filteredActivities
 	}
 

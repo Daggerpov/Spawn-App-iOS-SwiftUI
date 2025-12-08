@@ -19,6 +19,7 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 	@Published var recommendedFriends: [UUID: [RecommendedFriendUserDTO]] = [:]
 	@Published var friendRequests: [UUID: [FetchFriendRequestDTO]] = [:]
 	@Published var sentFriendRequests: [UUID: [FetchSentFriendRequestDTO]] = [:]
+	@Published var recentlySpawnedWith: [UUID: [RecentlySpawnedUserDTO]] = [:]
 
 	// MARK: - Constants
 	private enum CacheKeys {
@@ -26,6 +27,7 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 		static let recommendedFriends = "recommendedFriends"
 		static let friendRequests = "friendRequests"
 		static let sentFriendRequests = "sentFriendRequests"
+		static let recentlySpawnedWith = "recentlySpawnedWith"
 		static let lastChecked = "friendshipCache_lastChecked"
 	}
 
@@ -372,6 +374,45 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 		await sentTask
 	}
 
+	// MARK: - Recently Spawned With Methods
+
+	/// Get recently spawned with users for a user
+	func getRecentlySpawnedWith(for userId: UUID) -> [RecentlySpawnedUserDTO] {
+		return recentlySpawnedWith[userId] ?? []
+	}
+
+	/// Update recently spawned with users for a user
+	func updateRecentlySpawnedWithForUser(_ users: [RecentlySpawnedUserDTO], userId: UUID) {
+		recentlySpawnedWith[userId] = users
+		setLastCheckedForUser(userId, cacheType: CacheKeys.recentlySpawnedWith, date: Date())
+		saveToDisk()
+
+		// Preload profile pictures for recently spawned with users
+		Task {
+			await preloadProfilePicturesForRecentlySpawnedWith([userId: users])
+		}
+	}
+
+	/// Refresh recently spawned with users from the backend
+	func refreshRecentlySpawnedWith() async {
+		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+			print("Cannot refresh recently spawned with: No logged in user")
+			return
+		}
+
+		await genericRefresh(endpoint: "users/\(userId)/recent-users") {
+			[weak self] (users: [RecentlySpawnedUserDTO]) in
+			guard let self = self else { return }
+			self.updateRecentlySpawnedWithForUser(users, userId: userId)
+		}
+	}
+
+	/// Clear recently spawned with users for a user
+	func clearRecentlySpawnedWithForUser(_ userId: UUID) {
+		recentlySpawnedWith.removeValue(forKey: userId)
+		saveToDisk()
+	}
+
 	// MARK: - CacheService Protocol
 
 	func clearAllCaches() {
@@ -379,6 +420,7 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 		recommendedFriends = [:]
 		friendRequests = [:]
 		sentFriendRequests = [:]
+		recentlySpawnedWith = [:]
 		lastChecked = [:]
 
 		// Clear UserDefaults data on background task
@@ -387,6 +429,7 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 			UserDefaults.standard.removeObject(forKey: CacheKeys.recommendedFriends)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.friendRequests)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.sentFriendRequests)
+			UserDefaults.standard.removeObject(forKey: CacheKeys.recentlySpawnedWith)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.lastChecked)
 		}
 	}
@@ -396,6 +439,7 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 		clearRecommendedFriendsForUser(userId)
 		clearFriendRequestsForUser(userId)
 		clearSentFriendRequestsForUser(userId)
+		clearRecentlySpawnedWithForUser(userId)
 
 		// Clear cache timestamps for this user
 		clearLastCheckedForUser(userId)
@@ -414,11 +458,13 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 		async let recommendedTask: () = refreshRecommendedFriends()
 		async let requestsTask: () = refreshFriendRequests()
 		async let sentRequestsTask: () = refreshSentFriendRequests()
+		async let recentlySpawnedTask: () = refreshRecentlySpawnedWith()
 
 		await friendsTask
 		await recommendedTask
 		await requestsTask
 		await sentRequestsTask
+		await recentlySpawnedTask
 	}
 
 	/// Diagnostic method to force refresh all data with detailed logging
@@ -434,6 +480,7 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 		print("   - Friend requests: \(friendRequests[userId]?.count ?? 0)")
 		print("   - Sent friend requests: \(sentFriendRequests[userId]?.count ?? 0)")
 		print("   - Recommended friends: \(recommendedFriends[userId]?.count ?? 0)")
+		print("   - Recently spawned with: \(recentlySpawnedWith[userId]?.count ?? 0)")
 
 		await forceRefreshAll()
 
@@ -442,6 +489,7 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 		print("   - Friend requests: \(friendRequests[userId]?.count ?? 0)")
 		print("   - Sent friend requests: \(sentFriendRequests[userId]?.count ?? 0)")
 		print("   - Recommended friends: \(recommendedFriends[userId]?.count ?? 0)")
+		print("   - Recently spawned with: \(recentlySpawnedWith[userId]?.count ?? 0)")
 	}
 
 	// MARK: - Persistence
@@ -452,6 +500,7 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 		let capturedRecommended = self.recommendedFriends
 		let capturedRequests = self.friendRequests
 		let capturedSentRequests = self.sentFriendRequests
+		let capturedRecentlySpawnedWith = self.recentlySpawnedWith
 		let capturedTimestamps = self.lastChecked
 
 		debouncedSaveToDisk { [weak self] in
@@ -462,6 +511,7 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 			self.saveToDefaults(capturedRecommended, key: CacheKeys.recommendedFriends)
 			self.saveToDefaults(capturedRequests, key: CacheKeys.friendRequests)
 			self.saveToDefaults(capturedSentRequests, key: CacheKeys.sentFriendRequests)
+			self.saveToDefaults(capturedRecentlySpawnedWith, key: CacheKeys.recentlySpawnedWith)
 			self.saveToDefaults(capturedTimestamps, key: CacheKeys.lastChecked)
 		}
 	}
@@ -485,6 +535,10 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 			self?.loadFromDefaults(key: CacheKeys.sentFriendRequests)
 		}.value
 
+		let recentlySpawned: [UUID: [RecentlySpawnedUserDTO]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.recentlySpawnedWith)
+		}.value
+
 		let timestamps: [UUID: [String: Date]]? = await Task.detached { [weak self] in
 			self?.loadFromDefaults(key: CacheKeys.lastChecked)
 		}.value
@@ -494,6 +548,7 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 		if let recommended { self.recommendedFriends = recommended }
 		if let requests { self.friendRequests = requests }
 		if let sentRequests { self.sentFriendRequests = sentRequests }
+		if let recentlySpawned { self.recentlySpawnedWith = recentlySpawned }
 		if let timestamps { self.lastChecked = timestamps }
 	}
 
@@ -559,6 +614,30 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 							_ = await profilePictureCache.getCachedImageWithRefresh(
 								for: request.receiverUser.id,
 								from: receiverPicture,
+								maxAge: 6 * 60 * 60  // 6 hours
+							)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/// Preload profile pictures for recently spawned with users
+	private func preloadProfilePicturesForRecentlySpawnedWith(_ recentlySpawnedWith: [UUID: [RecentlySpawnedUserDTO]])
+		async
+	{
+		let profilePictureCache = ProfilePictureCache.shared
+
+		// Use withTaskGroup to preload all profile pictures in parallel
+		await withTaskGroup(of: Void.self) { group in
+			for (_, users) in recentlySpawnedWith {
+				for recentUser in users {
+					if let profilePicture = recentUser.user.profilePicture {
+						group.addTask {
+							_ = await profilePictureCache.getCachedImageWithRefresh(
+								for: recentUser.user.id,
+								from: profilePicture,
 								maxAge: 6 * 60 * 60  // 6 hours
 							)
 						}
