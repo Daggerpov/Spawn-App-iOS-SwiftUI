@@ -2,10 +2,10 @@ import SwiftUI
 
 struct ManagePeopleView: View {
 	@Environment(\.dismiss) private var dismiss
-	@StateObject private var searchViewModel = SearchViewModel()
-	@StateObject private var friendsViewModel: FriendsTabViewModel
-	@StateObject private var activityTypeViewModel: ActivityTypeViewModel
-	@ObservedObject var activityCreationViewModel = ActivityCreationViewModel.shared
+	@State private var searchViewModel = SearchViewModel()
+	@State private var friendsViewModel: FriendsTabViewModel
+	@State private var activityTypeViewModel: ActivityTypeViewModel
+	var activityCreationViewModel = ActivityCreationViewModel.shared
 	@State private var searchText = ""
 	@State private var selectedFriends: Set<UUID> = []
 	@State private var isSuggestedCollapsed = false
@@ -19,10 +19,10 @@ struct ManagePeopleView: View {
 		self.user = user
 		self.activityTitle = activityTitle
 		self.activityTypeDTO = activityTypeDTO
-		self._friendsViewModel = StateObject(
+		self._friendsViewModel = State(
 			wrappedValue: FriendsTabViewModel(userId: user.id)
 		)
-		self._activityTypeViewModel = StateObject(
+		self._activityTypeViewModel = State(
 			wrappedValue: ActivityTypeViewModel(
 				userId: user.id,
 				dataService: DataService.shared

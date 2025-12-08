@@ -11,7 +11,7 @@ import SwiftUI
 
 /// Cache service for activity-related data
 @MainActor
-class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
+final class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 	static let shared = ActivityCacheService()
 
 	// MARK: - Cached Data

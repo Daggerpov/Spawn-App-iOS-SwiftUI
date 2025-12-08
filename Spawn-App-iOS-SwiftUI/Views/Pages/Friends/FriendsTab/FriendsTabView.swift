@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct FriendsTabView: View {
-	@ObservedObject var viewModel: FriendsTabViewModel
-	@ObservedObject var userAuth = UserAuthViewModel.shared
+	var viewModel: FriendsTabViewModel
+	private var userAuth = UserAuthViewModel.shared
 	let user: BaseUserDTO
 
 	@State private var showingFriendRequestPopup: Bool = false
@@ -21,7 +21,7 @@ struct FriendsTabView: View {
 	@State private var friendRequestOffset: CGFloat = 1000
 	// ------------
 
-	@StateObject private var searchViewModel = SearchViewModel()
+	@State private var searchViewModel = SearchViewModel()
 
 	// Profile menu state variables
 	@State private var showProfileMenu: Bool = false

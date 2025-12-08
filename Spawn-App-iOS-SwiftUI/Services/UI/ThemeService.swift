@@ -43,7 +43,7 @@ enum AppColorScheme: String, CaseIterable, Sendable {
 /// Theme service for managing app color scheme
 /// Main actor isolated since it uses @Published and ObservableObject
 @MainActor
-class ThemeService: ObservableObject {
+final class ThemeService: ObservableObject {
 	static let shared = ThemeService()
 
 	@Published var colorScheme: AppColorScheme = .system {

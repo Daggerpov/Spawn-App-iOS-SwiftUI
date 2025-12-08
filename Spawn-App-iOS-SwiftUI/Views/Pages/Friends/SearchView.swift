@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct SearchView: View {
-	@ObservedObject var viewModel: SearchViewModel
+	@Bindable var viewModel: SearchViewModel
 	var searchPlaceholderText: String
 
 	init(searchPlaceholderText: String, viewModel: SearchViewModel) {
@@ -47,7 +47,6 @@ struct SearchView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-	@Previewable @ObservedObject var appCache = AppCache.shared
-	@Previewable @StateObject var viewModel: SearchViewModel = SearchViewModel()
-	SearchView(searchPlaceholderText: "Search for friends", viewModel: viewModel).environmentObject(appCache)
+	@Previewable @State var viewModel: SearchViewModel = SearchViewModel()
+	SearchView(searchPlaceholderText: "Search for friends", viewModel: viewModel).environmentObject(AppCache.shared)
 }

@@ -229,7 +229,7 @@ struct UnifiedMapView: UIViewRepresentable {
 
 	// MARK: - Coordinator
 
-	class Coordinator: NSObject, MKMapViewDelegate {
+	final class Coordinator: NSObject, MKMapViewDelegate {
 		var parent: UnifiedMapView
 
 		// Track state to prevent unnecessary updates

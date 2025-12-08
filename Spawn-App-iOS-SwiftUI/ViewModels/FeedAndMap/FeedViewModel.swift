@@ -9,7 +9,7 @@
 import Foundation
 
 @MainActor
-class FeedViewModel: ObservableObject {
+final class FeedViewModel: ObservableObject {
 	@Published var activities: [FullFeedActivityDTO] = []
 	@Published var activityTypes: [ActivityTypeDTO] = []
 
@@ -59,13 +59,8 @@ class FeedViewModel: ObservableObject {
 				self?.activities = newActivities
 			}
 
-		// Subscribe to activity type changes to update the UI
-		activityTypeViewModel.$activityTypes
-			.receive(on: DispatchQueue.main)
-			.sink { [weak self] newActivityTypes in
-				self?.activityTypes = newActivityTypes
-			}
-			.store(in: &cancellables)
+		// Initialize activity types from the view model
+		self.activityTypes = activityTypeViewModel.activityTypes
 
 		// Register for activity creation notifications
 		NotificationCenter.default.publisher(for: .activityCreated)

@@ -10,7 +10,7 @@ import MessageUI
 import SwiftUI
 
 @MainActor
-class SMSShareService: NSObject, ObservableObject {
+final class SMSShareService: NSObject, ObservableObject {
 	static let shared = SMSShareService()
 
 	private override init() {

@@ -18,8 +18,8 @@ enum FriendListDisplayMode {
 
 struct FriendSearchView: View {
 	@Environment(\.dismiss) private var dismiss
-	@StateObject private var searchViewModel = SearchViewModel()
-	@StateObject private var viewModel: FriendsTabViewModel
+	@State private var searchViewModel = SearchViewModel()
+	@State private var viewModel: FriendsTabViewModel
 
 	// Mode determines what content to display
 	var displayMode: FriendListDisplayMode
@@ -27,7 +27,7 @@ struct FriendSearchView: View {
 	init(userId: UUID? = nil, displayMode: FriendListDisplayMode = .search) {
 		let id =
 			userId ?? (UserDefaults.standard.string(forKey: "currentUserId").flatMap { UUID(uuidString: $0) } ?? UUID())
-		self._viewModel = StateObject(
+		self._viewModel = State(
 			wrappedValue: FriendsTabViewModel(userId: id)
 		)
 		self.displayMode = displayMode
@@ -261,11 +261,15 @@ struct FriendRowView: View {
 	@State private var showBlockDialog: Bool = false
 	@State private var showAddToActivityType: Bool = false
 	@State private var blockReason: String = ""
-	@ObservedObject var userAuth = UserAuthViewModel.shared
 
 	// Computed property for the user object
 	private var userForProfile: Nameable {
 		return user ?? friend ?? recommendedFriend ?? user!
+	}
+
+	// Access singleton directly
+	private var userAuth: UserAuthViewModel {
+		UserAuthViewModel.shared
 	}
 
 	var body: some View {

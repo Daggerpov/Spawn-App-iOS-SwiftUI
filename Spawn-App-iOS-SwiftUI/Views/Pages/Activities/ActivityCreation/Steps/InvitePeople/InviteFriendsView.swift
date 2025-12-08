@@ -8,19 +8,19 @@
 import SwiftUI
 
 struct InviteFriendsView: View {
-	@ObservedObject var activityCreationViewModel: ActivityCreationViewModel =
+	var activityCreationViewModel: ActivityCreationViewModel =
 		ActivityCreationViewModel.shared
-	@StateObject private var searchViewModel = SearchViewModel()
+	@State private var searchViewModel = SearchViewModel()
 
 	// Add view models for friends
-	@StateObject private var friendsViewModel: FriendsTabViewModel
+	@State private var friendsViewModel: FriendsTabViewModel
 
 	let user: BaseUserDTO
 
 	init(user: BaseUserDTO) {
 		self.user = user
-		// Initialize the view models with _: syntax for StateObject
-		self._friendsViewModel = StateObject(
+		// Initialize the view models with _: syntax for State
+		self._friendsViewModel = State(
 			wrappedValue: FriendsTabViewModel(userId: user.id)
 		)
 	}
@@ -176,7 +176,7 @@ struct InviteFriendsView: View {
 }
 
 struct IndividualFriendView: View {
-	@ObservedObject var activityCreationViewModel: ActivityCreationViewModel =
+	var activityCreationViewModel: ActivityCreationViewModel =
 		ActivityCreationViewModel.shared
 
 	var friend: FullFriendUserDTO
@@ -184,11 +184,8 @@ struct IndividualFriendView: View {
 
 	init(friend: FullFriendUserDTO) {
 		self.friend = friend
-		if activityCreationViewModel.selectedFriends.contains(friend) {
-			self._isSelected = State(initialValue: true)
-		} else {
-			self._isSelected = State(initialValue: false)
-		}
+		// Note: isSelected will be initialized based on the current state in onAppear
+		self._isSelected = State(initialValue: false)
 	}
 
 	var body: some View {
@@ -241,6 +238,10 @@ struct IndividualFriendView: View {
 				)
 				.stroke(universalAccentColor, lineWidth: 2)
 			}
+		}
+		.onAppear {
+			// Initialize selection state based on current selected friends
+			isSelected = activityCreationViewModel.selectedFriends.contains(friend)
 		}
 	}
 }

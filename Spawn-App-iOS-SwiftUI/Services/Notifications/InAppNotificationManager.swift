@@ -2,7 +2,7 @@ import Combine
 import SwiftUI
 
 @MainActor
-class InAppNotificationManager: ObservableObject {
+final class InAppNotificationManager: ObservableObject {
 	static let shared = InAppNotificationManager()
 
 	@Published var isShowingNotification = false

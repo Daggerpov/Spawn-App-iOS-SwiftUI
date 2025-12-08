@@ -13,9 +13,9 @@ This document tracks the progress of migrating from `ObservableObject` + `@Publi
 | Category | Total | Migrated | Remaining |
 |----------|-------|----------|-----------|
 | High Priority | 5 | 2 | 3 |
-| Medium Priority | 4 | 3 | 1 |
-| Lower Priority | 12 | 9 | 3 |
-| **Total** | **21** | **14** | **7** |
+| Medium Priority | 4 | 4 | 0 |
+| Lower Priority | 12 | 12 | 0 |
+| **Total** | **21** | **18** | **3** |
 
 ---
 
@@ -38,7 +38,7 @@ This document tracks the progress of migrating from `ObservableObject` + `@Publi
 | `FriendRequestViewModel` | ✅ Completed | Migrated Dec 8, 2025 (not used in Views yet) |
 | `FriendRequestsViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
 | `ChatViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
-| `FriendsTabViewModel` | ⏳ Pending | Uses Combine for cache subscriptions |
+| `FriendsTabViewModel` | ✅ Completed | Migrated Dec 8, 2025 (kept Combine for cache subs) |
 
 ### Lower Priority (Supporting Features)
 
@@ -47,13 +47,13 @@ This document tracks the progress of migrating from `ObservableObject` + `@Publi
 | `FeedbackViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
 | `BlockedUsersViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
 | `MyReportsViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
-| `SearchViewModel` | ⏳ Pending | Uses Combine for debouncing |
+| `SearchViewModel` | ✅ Completed | Migrated Dec 8, 2025 (kept Combine for debouncing) |
 | `ActivityCardViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
 | `ActivityDescriptionViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
 | `ActivityInfoViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
 | `ActivityStatusViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
-| `ActivityTypeViewModel` | ⏳ Pending | Uses Combine for cache subscriptions |
-| `DayActivitiesViewModel` | ⏳ Pending | Uses Combine (may not need it) |
+| `ActivityTypeViewModel` | ✅ Completed | Migrated Dec 8, 2025 (kept Combine for cache subs) |
+| `DayActivitiesViewModel` | ✅ Completed | Migrated Dec 8, 2025 (removed unused Combine) |
 | `TutorialViewModel` | ✅ Completed | Migrated Dec 8, 2025 (singleton) |
 | `VerificationCodeViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
 
@@ -234,6 +234,63 @@ Starting with simpler ViewModels to establish patterns before tackling complex o
   - `ViewModels/AuthFlow/VerificationCodeViewModel.swift` - Added `@Observable`, removed `@Published`, removed `import Combine`
   - `Views/Pages/AuthFlow/Registration/VerificationCodeView.swift` - Changed `@StateObject` to `@State`
 
+### Phase 3: ViewModels with Combine Dependencies (Keeping Combine for specific use cases)
+
+#### DayActivitiesViewModel
+- **Status:** ✅ Completed
+- **Complexity:** Low
+- **Date Started:** December 8, 2025
+- **Date Completed:** December 8, 2025
+- **Notes:** Removed unused Combine import and cancellables (wasn't actually using Combine)
+- **Files Changed:**
+  - `ViewModels/Activity/DayActivitiesViewModel.swift` - Added `@Observable`, removed `@Published`, removed unused Combine
+  - `Views/Pages/Profile/MyProfile/DayActivities/DayActivitiesView.swift` - Changed `@StateObject` to `@State`
+
+#### ActivityTypeViewModel
+- **Status:** ✅ Completed
+- **Complexity:** Medium
+- **Date Started:** December 8, 2025
+- **Date Completed:** December 8, 2025
+- **Notes:** Kept Combine for AppCache subscriptions (reactive updates pattern)
+- **Files Changed:**
+  - `ViewModels/Activity/ActivityTypeViewModel.swift` - Added `@Observable`, removed `@Published`, kept Combine for cache
+  - `Views/Pages/Activities/Participants/ManagePeopleView.swift` - Changed `@StateObject` to `@State`
+  - `Views/Pages/Activities/ActivityCreation/Steps/ActivityTypeSelection/ActivityTypeEditView.swift` - Changed `@StateObject` to `@State`
+  - `Views/Pages/Activities/ActivityCreation/Steps/ActivityTypeSelection/ActivityTypeManagement/ActivityTypeFriendMenuView.swift` - Changed `@StateObject` to `@State`
+  - `Views/Pages/Activities/ActivityCreation/Steps/ActivityTypeSelection/ActivityTypeView.swift` - Changed `@StateObject` to `@State`
+  - `Views/Pages/Activities/ActivityCreation/Steps/ActivityTypeSelection/ActivityTypeManagement/ActivityTypeManagementView.swift` - Changed `@StateObject` to `@State`
+
+#### SearchViewModel
+- **Status:** ✅ Completed
+- **Complexity:** Medium
+- **Date Started:** December 8, 2025
+- **Date Completed:** December 8, 2025
+- **Notes:** Kept Combine for debouncing search queries, added `debouncedSearchTextPublisher` for external subscription
+- **Files Changed:**
+  - `ViewModels/Friends/SearchViewModel.swift` - Added `@Observable`, removed `@Published`, kept Combine for debouncing, added publisher
+  - `Views/Pages/Friends/SearchView.swift` - Changed `@ObservedObject` to `@Bindable` (for binding support with @Observable)
+  - `Views/Pages/Friends/FriendSearchView.swift` - Changed `@StateObject` to `@State`
+  - `Views/Pages/Friends/FriendsTab/FriendsTabView.swift` - Changed `@StateObject` to `@State`
+  - `Views/Pages/Activities/ActivityCreation/Steps/InvitePeople/InviteView.swift` - Changed `@StateObject` to `@State`
+  - `Views/Pages/Activities/ActivityCreation/Steps/InvitePeople/InviteFriendsView.swift` - Changed `@StateObject` to `@State`
+
+#### FriendsTabViewModel
+- **Status:** ✅ Completed
+- **Complexity:** High
+- **Date Started:** December 8, 2025
+- **Date Completed:** December 8, 2025
+- **Notes:** Kept Combine for AppCache subscriptions and SearchViewModel connection, updated `connectSearchViewModel` to use publisher instead of `$debouncedSearchText`
+- **Files Changed:**
+  - `ViewModels/Friends/FriendsTabViewModel.swift` - Added `@Observable`, removed `@Published`, kept Combine for cache and search
+  - `Views/Pages/Friends/FriendsView.swift` - Changed `@ObservedObject` to plain var
+  - `Views/Pages/Friends/FriendsTab/FriendsTabView.swift` - Changed `@ObservedObject` to plain var
+  - `Views/Pages/Friends/FriendSearchView.swift` - Changed `@StateObject` to `@State`
+  - `Views/Pages/Friends/FriendsTab/Components/RecommendedFriendView.swift` - Changed `@ObservedObject` to plain var
+  - `Views/Pages/Friends/FriendsTab/Components/RecentlySpawnedView.swift` - Changed `@ObservedObject` to plain var
+  - `Views/Pages/Activities/Participants/ManagePeopleView.swift` - Changed `@StateObject` to `@State`
+  - `Views/Pages/Activities/ActivityCreation/Steps/InvitePeople/InviteView.swift` - Changed `@StateObject` to `@State`
+  - `Views/Pages/Activities/ActivityCreation/Steps/InvitePeople/InviteFriendsView.swift` - Changed `@StateObject` to `@State`
+
 ---
 
 ## Additional Fixes During Migration
@@ -244,6 +301,8 @@ During the migration, the following additional fixes were required:
 2. **EditProfileView.swift** - Updated Preview to use `@State` instead of `@StateObject` for ProfileViewModel
 3. **TutorialActivityPreConfirmationView.swift** - Removed `private` from tutorialViewModel to fix memberwise initializer issue
 4. **TabBar.swift** - Removed `private` from tutorialViewModel to fix memberwise initializer issue
+5. **FriendRowView (FriendSearchView.swift)** - Changed `private var userAuth` to computed property to fix memberwise initializer issue
+6. **SearchView.swift** - Added `@Bindable` wrapper for `@Observable` viewModel to enable bindings
 
 ---
 
@@ -274,17 +333,20 @@ For each ViewModel migration:
 
 ## Special Considerations
 
-### ViewModels Using Combine (Not Migrated Yet)
+### ViewModels Using Combine (Migrated - Kept Combine for specific use cases)
 
-The following ViewModels use Combine for purposes other than observation (throttling, debouncing, notifications):
+The following ViewModels were migrated to `@Observable` but kept Combine for specific purposes:
 
-1. **FeedViewModel** - Uses `PassthroughSubject` for throttling activity updates, uses `NotificationCenter.default.publisher` for various notifications
-2. **FriendsTabViewModel** - Uses Combine for cache subscriptions and search debouncing
-3. **SearchViewModel** - Uses Combine for debouncing search queries
-4. **ActivityTypeViewModel** - Uses Combine for cache subscriptions
-5. **DayActivitiesViewModel** - Uses Combine (may not need it)
+1. **FriendsTabViewModel** ✅ - Kept Combine for cache subscriptions and search debouncing
+2. **SearchViewModel** ✅ - Kept Combine for debouncing search queries, added publisher for external subscriptions
+3. **ActivityTypeViewModel** ✅ - Kept Combine for cache subscriptions
+4. **DayActivitiesViewModel** ✅ - Removed unused Combine (wasn't actually using it)
 
-These will need to retain their Combine imports and `cancellables` even after migration, or be refactored to use async/await alternatives.
+### ViewModels Not Migrated Yet
+
+1. **FeedViewModel** - Uses `PassthroughSubject` for throttling activity updates, uses `NotificationCenter.default.publisher` extensively for notifications. Complex Combine usage makes migration difficult.
+2. **ActivityCreationViewModel** - Semi-singleton with complex state management
+3. **UserAuthViewModel** - Singleton, inherits from NSObject for delegate conformance
 
 ### Singleton ViewModels
 

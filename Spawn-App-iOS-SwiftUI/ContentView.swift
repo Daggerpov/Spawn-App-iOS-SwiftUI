@@ -10,7 +10,7 @@ import SwiftUI
 struct ContentView: View {
 	var user: BaseUserDTO
 	@State private var selectedTabsEnum: Tabs = .home
-	@StateObject private var friendsViewModel: FriendsTabViewModel
+	@State private var friendsViewModel: FriendsTabViewModel
 	@StateObject private var feedViewModel: FeedViewModel
 	private var tutorialViewModel = TutorialViewModel.shared
 	@ObservedObject private var inAppNotificationManager = InAppNotificationManager.shared
@@ -42,14 +42,10 @@ struct ContentView: View {
 	init(user: BaseUserDTO, deepLinkManager: DeepLinkManager = DeepLinkManager.shared) {
 		self.user = user
 		self.deepLinkManager = deepLinkManager
-		let friendsVM = FriendsTabViewModel(userId: user.id)
-		self._friendsViewModel = StateObject(wrappedValue: friendsVM)
+		self._friendsViewModel = State(initialValue: FriendsTabViewModel(userId: user.id))
 
 		// Create shared FeedViewModel for both ActivityFeedView and MapView
-		let feedVM = FeedViewModel(
-			userId: user.id
-		)
-		self._feedViewModel = StateObject(wrappedValue: feedVM)
+		self._feedViewModel = StateObject(wrappedValue: FeedViewModel(userId: user.id))
 	}
 
 	var body: some View {

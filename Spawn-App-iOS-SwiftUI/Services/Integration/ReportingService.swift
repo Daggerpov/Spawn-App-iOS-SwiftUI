@@ -1,7 +1,7 @@
 import Foundation
 
 @MainActor
-class ReportingService {
+final class ReportingService {
 	private let dataService: DataService
 
 	init(dataService: DataService? = nil) {

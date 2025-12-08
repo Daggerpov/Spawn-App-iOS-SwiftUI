@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct RecentlySpawnedView: View {
-	@ObservedObject var viewModel: FriendsTabViewModel
+	var viewModel: FriendsTabViewModel
 	var recentUser: RecentlySpawnedUserDTO
 	@State private var opacity: CGFloat = 1.0
 	@Binding var selectedFriend: FullFriendUserDTO?

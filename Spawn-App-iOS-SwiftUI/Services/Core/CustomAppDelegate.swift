@@ -3,7 +3,7 @@ import FirebaseCore
 import SwiftUI
 @preconcurrency import UserNotifications
 
-class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, @preconcurrency MessagingDelegate {
+final class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, @preconcurrency MessagingDelegate {
 	// This gives us access to the methods from our main app code inside the app delegate
 	var app: (any App)?
 

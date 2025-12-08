@@ -9,28 +9,30 @@
 import Foundation
 import SwiftUI
 
+@Observable
 @MainActor
-class FriendsTabViewModel: ObservableObject {
-	@Published var incomingFriendRequests: [FetchFriendRequestDTO] = []
-	@Published var outgoingFriendRequests: [FetchSentFriendRequestDTO] = []
-	@Published var recommendedFriends: [RecommendedFriendUserDTO] = []
-	@Published var friends: [FullFriendUserDTO] = []
-	@Published var filteredFriends: [FullFriendUserDTO] = []
-	@Published var filteredRecommendedFriends: [RecommendedFriendUserDTO] = []
-	@Published var filteredIncomingFriendRequests: [FetchFriendRequestDTO] = []
-	@Published var filteredOutgoingFriendRequests: [FetchSentFriendRequestDTO] = []
-	@Published var isSearching: Bool = false
-	@Published var searchQuery: String = ""
-	@Published var isLoading: Bool = false
+final class FriendsTabViewModel {
+	var incomingFriendRequests: [FetchFriendRequestDTO] = []
+	var outgoingFriendRequests: [FetchSentFriendRequestDTO] = []
+	var recommendedFriends: [RecommendedFriendUserDTO] = []
+	var friends: [FullFriendUserDTO] = []
+	var filteredFriends: [FullFriendUserDTO] = []
+	var filteredRecommendedFriends: [RecommendedFriendUserDTO] = []
+	var filteredIncomingFriendRequests: [FetchFriendRequestDTO] = []
+	var filteredOutgoingFriendRequests: [FetchSentFriendRequestDTO] = []
+	var isSearching: Bool = false
+	var searchQuery: String = ""
+	var isLoading: Bool = false
 
-	@Published var recentlySpawnedWith: [RecentlySpawnedUserDTO] = []
-	@Published var searchResults: [BaseUserDTO] = []
+	var recentlySpawnedWith: [RecentlySpawnedUserDTO] = []
+	var searchResults: [BaseUserDTO] = []
 
-	@Published var friendRequestCreationMessage: String = ""
-	@Published var createdFriendRequest: FetchFriendRequestDTO?
+	var friendRequestCreationMessage: String = ""
+	var createdFriendRequest: FetchFriendRequestDTO?
 
 	var userId: UUID
 	private var dataService: DataService
+	// Keep cancellables for Combine cache subscriptions
 	private var cancellables = Set<AnyCancellable>()
 	private var appCache: AppCache  // Keep for cache subscriptions (reactive updates)
 	// nonisolated(unsafe) for notificationObservers since it's accessed in deinit
@@ -104,7 +106,7 @@ class FriendsTabViewModel: ObservableObject {
 
 	// Call this method to connect the search view model to this view model
 	func connectSearchViewModel(_ searchViewModel: SearchViewModel) {
-		searchViewModel.$debouncedSearchText
+		searchViewModel.debouncedSearchTextPublisher
 			.sink { [weak self] query in
 				self?.searchQuery = query
 				if query.isEmpty {

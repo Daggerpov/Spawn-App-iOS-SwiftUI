@@ -1,4 +1,3 @@
-import Observation
 import SwiftUI
 
 @Observable

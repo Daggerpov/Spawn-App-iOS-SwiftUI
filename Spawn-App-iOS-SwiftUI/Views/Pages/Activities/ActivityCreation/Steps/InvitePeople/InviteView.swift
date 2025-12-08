@@ -10,17 +10,17 @@ import SwiftUI
 struct InviteView: View {
 	let user: BaseUserDTO
 	@Environment(\.dismiss) private var dismiss
-	@ObservedObject var activityCreationViewModel = ActivityCreationViewModel.shared
-	@StateObject private var searchViewModel = SearchViewModel()
+	var activityCreationViewModel = ActivityCreationViewModel.shared
+	@State private var searchViewModel = SearchViewModel()
 
 	// Add view models for friends
-	@StateObject private var friendsViewModel: FriendsTabViewModel
+	@State private var friendsViewModel: FriendsTabViewModel
 
 	init(user: BaseUserDTO) {
 		self.user = user
 
-		// Initialize the view models with _: syntax for StateObject
-		self._friendsViewModel = StateObject(
+		// Initialize the view models with _: syntax for State
+		self._friendsViewModel = State(
 			wrappedValue: FriendsTabViewModel(userId: user.id)
 		)
 	}
@@ -296,6 +296,5 @@ extension FullFriendUserDTO {
 
 @available(iOS 17.0, *)
 #Preview {
-	@Previewable @ObservedObject var appCache = AppCache.shared
-	InviteView(user: .danielAgapov).environmentObject(appCache)
+	InviteView(user: .danielAgapov).environmentObject(AppCache.shared)
 }

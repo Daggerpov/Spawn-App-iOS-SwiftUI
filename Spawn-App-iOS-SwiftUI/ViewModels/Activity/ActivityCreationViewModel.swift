@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-class ActivityCreationViewModel: ObservableObject {
+final class ActivityCreationViewModel: ObservableObject {
 	// semi-singleton, that can only be reset upon calling `reInitialize()`
 	static var shared: ActivityCreationViewModel = ActivityCreationViewModel()
 

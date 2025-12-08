@@ -10,7 +10,7 @@ enum DeepLinkType {
 
 // MARK: - Deep Link Manager
 @MainActor
-class DeepLinkManager: ObservableObject {
+final class DeepLinkManager: ObservableObject {
 	static let shared = DeepLinkManager()
 
 	@Published var pendingDeepLink: DeepLinkType?

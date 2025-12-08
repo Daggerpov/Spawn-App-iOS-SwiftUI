@@ -9,7 +9,7 @@ import SwiftUI
 
 struct FriendsView: View {
 	let user: BaseUserDTO
-	@ObservedObject var viewModel: FriendsTabViewModel
+	var viewModel: FriendsTabViewModel
 
 	// Deep link parameters
 	@Binding var deepLinkedProfileId: UUID?
@@ -235,8 +235,6 @@ extension FriendsView {
 
 @available(iOS 17.0, *)
 #Preview {
-	@Previewable @ObservedObject var appCache = AppCache.shared
-
 	// Create a mock view model with hardcoded data
 	let mockViewModel = FriendsTabViewModel(userId: BaseUserDTO.danielAgapov.id)
 
@@ -355,5 +353,5 @@ extension FriendsView {
 	]
 
 	return FriendsView(user: .danielAgapov, viewModel: mockViewModel)
-		.environmentObject(appCache)
+		.environmentObject(AppCache.shared)
 }

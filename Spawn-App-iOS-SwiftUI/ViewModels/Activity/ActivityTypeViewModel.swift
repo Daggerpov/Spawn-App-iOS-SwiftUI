@@ -5,17 +5,19 @@
 //  Created by Claude on 2025-01-28.
 //
 
-import Combine
+@preconcurrency import Combine
 import Foundation
 
+@Observable
 @MainActor
-class ActivityTypeViewModel: ObservableObject {
-	@Published var activityTypes: [ActivityTypeDTO] = []
-	@Published var isLoading: Bool = false
-	@Published var errorMessage: String?
+final class ActivityTypeViewModel {
+	var activityTypes: [ActivityTypeDTO] = []
+	var isLoading: Bool = false
+	var errorMessage: String?
 
 	private let userId: UUID
 	private var dataService: DataService
+	// Keep cancellables for Combine cache subscriptions
 	private var cancellables = Set<AnyCancellable>()
 
 	// MARK: - Helper Methods

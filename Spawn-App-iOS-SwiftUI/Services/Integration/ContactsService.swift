@@ -21,7 +21,7 @@ struct ContactsOnSpawn: Sendable {
 }
 
 @MainActor
-class ContactsService: ObservableObject {
+final class ContactsService: ObservableObject {
 	static let shared = ContactsService()
 
 	@Published var authorizationStatus: CNAuthorizationStatus = .notDetermined

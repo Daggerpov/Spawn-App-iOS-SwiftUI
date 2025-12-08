@@ -12,7 +12,7 @@ import SwiftUI
 /// Central coordinator for all cache services
 /// Orchestrates cache validation, refresh operations, and cross-service coordination
 @MainActor
-class CacheCoordinator: ObservableObject {
+final class CacheCoordinator: ObservableObject {
 	static let shared = CacheCoordinator()
 
 	// MARK: - Cache Services
