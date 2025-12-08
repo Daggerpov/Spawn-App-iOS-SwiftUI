@@ -452,6 +452,46 @@ private struct SimpleCacheConfig<Value>: CacheConfigProtocol {
 	}
 }
 
+/// Cache configuration for calendar activities for a specific month
+@MainActor
+private struct CalendarMonthCacheConfig: CacheConfigProtocol {
+	let userId: UUID
+	let month: Int
+	let year: Int
+
+	func createOperations<T>(appCache: AppCache) -> CacheOperations<T>? {
+		guard T.self == [CalendarActivityDTO].self else { return nil }
+		return CacheOperations(
+			provider: {
+				appCache.getCalendarActivities(for: userId, month: month, year: year) as? T
+			},
+			updater: { data in
+				guard let activities = data as? [CalendarActivityDTO] else { return }
+				appCache.updateCalendarActivitiesForMonth(activities, userId: userId, month: month, year: year)
+			}
+		)
+	}
+}
+
+/// Cache configuration for all calendar activities for a user
+@MainActor
+private struct CalendarAllCacheConfig: CacheConfigProtocol {
+	let userId: UUID
+
+	func createOperations<T>(appCache: AppCache) -> CacheOperations<T>? {
+		guard T.self == [CalendarActivityDTO].self else { return nil }
+		return CacheOperations(
+			provider: {
+				appCache.getAllCalendarActivities(for: userId) as? T
+			},
+			updater: { data in
+				guard let activities = data as? [CalendarActivityDTO] else { return }
+				appCache.updateAllCalendarActivities(activities, userId: userId)
+			}
+		)
+	}
+}
+
 // MARK: - DataType Cache Configuration Extension
 
 @MainActor
@@ -540,11 +580,52 @@ extension DataType {
 				userId: userId
 			)
 
-		// Calendar - Not cacheable yet (no cache infrastructure exists)
-		// Falls through to default
-		case .calendar, .calendarAll:
-			// TODO: add calendar caching
-			return nil
+		// Calendar
+		case .calendar(let userId, let month, let year, _):
+			return CalendarMonthCacheConfig(
+				userId: userId,
+				month: month,
+				year: year
+			)
+
+		case .calendarAll(let userId, _):
+			return CalendarAllCacheConfig(userId: userId)
+
+		// Upcoming Activities
+		case .upcomingActivities(let userId):
+			return UserDictionaryCacheConfig<[FullFeedActivityDTO]>(
+				dictionary: { $0.upcomingActivities },
+				updater: { appCache in appCache.updateUpcomingActivitiesForUser },
+				userId: userId
+			)
+
+		// Notification Preferences
+		case .notificationPreferences(let userId):
+			return ProfileDictionaryCacheConfig<NotificationPreferencesDTO>(
+				dictionary: { $0.notificationPreferences },
+				updater: { appCache in appCache.updateNotificationPreferences },
+				userId: userId
+			)
+
+		// Blocked Users
+		case .blockedUsers(let blockerId, let returnOnlyIds):
+			// Only cache when returning full DTOs, not when returning only IDs
+			if returnOnlyIds {
+				return nil
+			}
+			return ProfileDictionaryCacheConfig<[BlockedUserDTO]>(
+				dictionary: { $0.blockedUsers },
+				updater: { appCache in appCache.updateBlockedUsers },
+				userId: blockerId
+			)
+
+		// Recently Spawned With
+		case .recentlySpawnedWith(let userId):
+			return UserDictionaryCacheConfig<[RecentlySpawnedUserDTO]>(
+				dictionary: { $0.recentlySpawnedWith },
+				updater: { appCache in appCache.updateRecentlySpawnedWithForUser },
+				userId: userId
+			)
 
 		// Non-cacheable data types
 		default:

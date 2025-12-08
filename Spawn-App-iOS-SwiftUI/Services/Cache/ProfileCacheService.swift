@@ -20,6 +20,8 @@ final class ProfileCacheService: BaseCacheService, CacheService, ObservableObjec
 	@Published var profileInterests: [UUID: [String]] = [:]
 	@Published var profileSocialMedia: [UUID: UserSocialMediaDTO] = [:]
 	@Published var profileActivities: [UUID: [ProfileActivityDTO]] = [:]
+	@Published var notificationPreferences: [UUID: NotificationPreferencesDTO] = [:]
+	@Published var blockedUsers: [UUID: [BlockedUserDTO]] = [:]
 
 	// MARK: - Constants
 	private enum CacheKeys {
@@ -28,6 +30,8 @@ final class ProfileCacheService: BaseCacheService, CacheService, ObservableObjec
 		static let profileInterests = "profileInterests"
 		static let profileSocialMedia = "profileSocialMedia"
 		static let profileEvents = "profileEvents"
+		static let notificationPreferences = "notificationPreferences"
+		static let blockedUsers = "blockedUsers"
 		static let lastChecked = "profileCache_lastChecked"
 	}
 
@@ -200,6 +204,75 @@ final class ProfileCacheService: BaseCacheService, CacheService, ObservableObjec
 		}
 	}
 
+	// MARK: - Notification Preferences Methods
+
+	/// Get notification preferences for a user
+	func getNotificationPreferences(for userId: UUID) -> NotificationPreferencesDTO? {
+		return notificationPreferences[userId]
+	}
+
+	/// Update notification preferences for a user
+	func updateNotificationPreferences(_ userId: UUID, _ preferences: NotificationPreferencesDTO) {
+		notificationPreferences[userId] = preferences
+
+		// Update timestamp for current user
+		if let currentUserId = UserAuthViewModel.shared.spawnUser?.id {
+			setLastCheckedForUser(currentUserId, cacheType: CacheKeys.notificationPreferences, date: Date())
+		}
+
+		saveToDisk()
+	}
+
+	/// Refresh notification preferences from the backend
+	func refreshNotificationPreferences(_ userId: UUID) async {
+		await genericSingleRefresh(endpoint: "notifications/preferences/\(userId)") {
+			[weak self] (preferences: NotificationPreferencesDTO) in
+			guard let self = self else { return }
+			self.updateNotificationPreferences(userId, preferences)
+		}
+	}
+
+	/// Clear notification preferences for a user
+	func clearNotificationPreferencesForUser(_ userId: UUID) {
+		notificationPreferences.removeValue(forKey: userId)
+		saveToDisk()
+	}
+
+	// MARK: - Blocked Users Methods
+
+	/// Get blocked users for a user
+	func getBlockedUsers(for userId: UUID) -> [BlockedUserDTO]? {
+		return blockedUsers[userId]
+	}
+
+	/// Update blocked users for a user
+	func updateBlockedUsers(_ userId: UUID, _ users: [BlockedUserDTO]) {
+		blockedUsers[userId] = users
+
+		// Update timestamp for current user
+		if let currentUserId = UserAuthViewModel.shared.spawnUser?.id {
+			setLastCheckedForUser(currentUserId, cacheType: CacheKeys.blockedUsers, date: Date())
+		}
+
+		saveToDisk()
+	}
+
+	/// Refresh blocked users from the backend
+	func refreshBlockedUsers(_ userId: UUID) async {
+		let parameters = ["returnOnlyIds": "false"]
+		await genericRefresh(endpoint: "blocked-users/\(userId)", parameters: parameters) {
+			[weak self] (users: [BlockedUserDTO]) in
+			guard let self = self else { return }
+			self.updateBlockedUsers(userId, users)
+		}
+	}
+
+	/// Clear blocked users for a user
+	func clearBlockedUsersForUser(_ userId: UUID) {
+		blockedUsers.removeValue(forKey: userId)
+		saveToDisk()
+	}
+
 	// MARK: - CacheService Protocol
 
 	func clearAllCaches() {
@@ -208,6 +281,8 @@ final class ProfileCacheService: BaseCacheService, CacheService, ObservableObjec
 		profileInterests = [:]
 		profileSocialMedia = [:]
 		profileActivities = [:]
+		notificationPreferences = [:]
+		blockedUsers = [:]
 		lastChecked = [:]
 
 		// Clear UserDefaults data on background task
@@ -217,6 +292,8 @@ final class ProfileCacheService: BaseCacheService, CacheService, ObservableObjec
 			UserDefaults.standard.removeObject(forKey: CacheKeys.profileInterests)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.profileSocialMedia)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.profileEvents)
+			UserDefaults.standard.removeObject(forKey: CacheKeys.notificationPreferences)
+			UserDefaults.standard.removeObject(forKey: CacheKeys.blockedUsers)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.lastChecked)
 		}
 	}
@@ -227,6 +304,8 @@ final class ProfileCacheService: BaseCacheService, CacheService, ObservableObjec
 		profileInterests.removeValue(forKey: userId)
 		profileSocialMedia.removeValue(forKey: userId)
 		profileActivities.removeValue(forKey: userId)
+		notificationPreferences.removeValue(forKey: userId)
+		blockedUsers.removeValue(forKey: userId)
 
 		// Clear profile picture cache for this user
 		Task {
@@ -258,6 +337,8 @@ final class ProfileCacheService: BaseCacheService, CacheService, ObservableObjec
 		let capturedInterests = self.profileInterests
 		let capturedSocialMedia = self.profileSocialMedia
 		let capturedActivities = self.profileActivities
+		let capturedNotificationPreferences = self.notificationPreferences
+		let capturedBlockedUsers = self.blockedUsers
 		let capturedTimestamps = self.lastChecked
 
 		debouncedSaveToDisk { [weak self] in
@@ -269,6 +350,8 @@ final class ProfileCacheService: BaseCacheService, CacheService, ObservableObjec
 			self.saveToDefaults(capturedInterests, key: CacheKeys.profileInterests)
 			self.saveToDefaults(capturedSocialMedia, key: CacheKeys.profileSocialMedia)
 			self.saveToDefaults(capturedActivities, key: CacheKeys.profileEvents)
+			self.saveToDefaults(capturedNotificationPreferences, key: CacheKeys.notificationPreferences)
+			self.saveToDefaults(capturedBlockedUsers, key: CacheKeys.blockedUsers)
 			self.saveToDefaults(capturedTimestamps, key: CacheKeys.lastChecked)
 		}
 	}
@@ -296,6 +379,14 @@ final class ProfileCacheService: BaseCacheService, CacheService, ObservableObjec
 			self?.loadFromDefaults(key: CacheKeys.profileEvents)
 		}.value
 
+		let notificationPrefs: [UUID: NotificationPreferencesDTO]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.notificationPreferences)
+		}.value
+
+		let blocked: [UUID: [BlockedUserDTO]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.blockedUsers)
+		}.value
+
 		let timestamps: [UUID: [String: Date]]? = await Task.detached { [weak self] in
 			self?.loadFromDefaults(key: CacheKeys.lastChecked)
 		}.value
@@ -306,6 +397,8 @@ final class ProfileCacheService: BaseCacheService, CacheService, ObservableObjec
 		if let interests { self.profileInterests = interests }
 		if let socialMedia { self.profileSocialMedia = socialMedia }
 		if let activities { self.profileActivities = activities }
+		if let notificationPrefs { self.notificationPreferences = notificationPrefs }
+		if let blocked { self.blockedUsers = blocked }
 		if let timestamps { self.lastChecked = timestamps }
 	}
 }

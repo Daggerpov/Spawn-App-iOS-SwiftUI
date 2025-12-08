@@ -111,6 +111,29 @@ final class AppCache: ObservableObject {
 		profileCacheService.profileActivities
 	}
 
+	var notificationPreferences: [UUID: NotificationPreferencesDTO] {
+		profileCacheService.notificationPreferences
+	}
+
+	var blockedUsers: [UUID: [BlockedUserDTO]] {
+		profileCacheService.blockedUsers
+	}
+
+	// Upcoming activities - exposed from ActivityCacheService
+	var upcomingActivities: [UUID: [FullFeedActivityDTO]] {
+		activityCacheService.upcomingActivities
+	}
+
+	// Calendar activities - exposed from ActivityCacheService
+	var calendarActivities: [String: [CalendarActivityDTO]] {
+		activityCacheService.calendarActivities
+	}
+
+	// Recently spawned with - exposed from FriendshipCacheService
+	var recentlySpawnedWith: [UUID: [RecentlySpawnedUserDTO]] {
+		friendshipCacheService.recentlySpawnedWith
+	}
+
 	// MARK: - Public Methods
 
 	/// Initialize the cache and load from disk in the background
@@ -347,6 +370,90 @@ final class AppCache: ObservableObject {
 
 	func refreshProfileActivities(_ userId: UUID) async {
 		await profileCacheService.refreshProfileActivities(userId)
+	}
+
+	// MARK: - Notification Preferences Methods
+
+	func getNotificationPreferences(for userId: UUID) -> NotificationPreferencesDTO? {
+		return profileCacheService.getNotificationPreferences(for: userId)
+	}
+
+	func updateNotificationPreferences(_ userId: UUID, _ preferences: NotificationPreferencesDTO) {
+		profileCacheService.updateNotificationPreferences(userId, preferences)
+	}
+
+	func refreshNotificationPreferences(_ userId: UUID) async {
+		await profileCacheService.refreshNotificationPreferences(userId)
+	}
+
+	// MARK: - Blocked Users Methods
+
+	func getBlockedUsers(for userId: UUID) -> [BlockedUserDTO]? {
+		return profileCacheService.getBlockedUsers(for: userId)
+	}
+
+	func updateBlockedUsers(_ userId: UUID, _ users: [BlockedUserDTO]) {
+		profileCacheService.updateBlockedUsers(userId, users)
+	}
+
+	func refreshBlockedUsers(_ userId: UUID) async {
+		await profileCacheService.refreshBlockedUsers(userId)
+	}
+
+	// MARK: - Upcoming Activities Methods
+
+	func getUpcomingActivities(for userId: UUID) -> [FullFeedActivityDTO] {
+		return activityCacheService.getUpcomingActivities(for: userId)
+	}
+
+	func updateUpcomingActivitiesForUser(_ activities: [FullFeedActivityDTO], userId: UUID) {
+		activityCacheService.updateUpcomingActivitiesForUser(activities, userId: userId)
+	}
+
+	func refreshUpcomingActivities() async {
+		await activityCacheService.refreshUpcomingActivities()
+	}
+
+	// MARK: - Calendar Activities Methods
+
+	func getCalendarActivities(for userId: UUID, month: Int, year: Int) -> [CalendarActivityDTO]? {
+		return activityCacheService.getCalendarActivities(for: userId, month: month, year: year)
+	}
+
+	func getAllCalendarActivities(for userId: UUID) -> [CalendarActivityDTO]? {
+		return activityCacheService.getAllCalendarActivities(for: userId)
+	}
+
+	func updateCalendarActivitiesForMonth(_ activities: [CalendarActivityDTO], userId: UUID, month: Int, year: Int) {
+		activityCacheService.updateCalendarActivitiesForMonth(activities, userId: userId, month: month, year: year)
+	}
+
+	func updateAllCalendarActivities(_ activities: [CalendarActivityDTO], userId: UUID) {
+		activityCacheService.updateAllCalendarActivities(activities, userId: userId)
+	}
+
+	func refreshCalendarActivities(userId: UUID, month: Int, year: Int, requestingUserId: UUID?) async {
+		await activityCacheService.refreshCalendarActivities(
+			userId: userId, month: month, year: year, requestingUserId: requestingUserId
+		)
+	}
+
+	func refreshAllCalendarActivities(userId: UUID, requestingUserId: UUID?) async {
+		await activityCacheService.refreshAllCalendarActivities(userId: userId, requestingUserId: requestingUserId)
+	}
+
+	// MARK: - Recently Spawned With Methods
+
+	func getRecentlySpawnedWith(for userId: UUID) -> [RecentlySpawnedUserDTO] {
+		return friendshipCacheService.getRecentlySpawnedWith(for: userId)
+	}
+
+	func updateRecentlySpawnedWithForUser(_ users: [RecentlySpawnedUserDTO], userId: UUID) {
+		friendshipCacheService.updateRecentlySpawnedWithForUser(users, userId: userId)
+	}
+
+	func refreshRecentlySpawnedWith() async {
+		await friendshipCacheService.refreshRecentlySpawnedWith()
 	}
 
 	// MARK: - Profile Picture Methods
