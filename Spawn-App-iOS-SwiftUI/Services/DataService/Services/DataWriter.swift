@@ -171,15 +171,32 @@ final class DataWriter: IDataWriter {
 		case .delete:
 			try await apiService.deleteData(from: url, parameters: parameters, object: body)
 
-		case .post, .put, .patch:
-			// These can also return no response body (204 No Content)
-			// Use the regular write methods and ignore response
+		case .post:
+			// POST requests use sendData
 			if let body = body {
 				let _: EmptyResponse? = try await apiService.sendData(
 					body, to: url, parameters: parameters)
 			} else {
 				let _: EmptyResponse? = try await apiService.sendData(
 					EmptyRequestBody(), to: url, parameters: parameters)
+			}
+
+		case .put:
+			// PUT requests use updateData (returns EmptyResponse for 204 No Content)
+			if let body = body {
+				let _: EmptyResponse = try await apiService.updateData(
+					body, to: url, parameters: parameters)
+			} else {
+				let _: EmptyResponse = try await apiService.updateData(
+					EmptyRequestBody(), to: url, parameters: parameters)
+			}
+
+		case .patch:
+			// PATCH requests use patchData
+			if let body = body {
+				let _: EmptyResponse = try await apiService.patchData(from: url, with: body)
+			} else {
+				let _: EmptyResponse = try await apiService.patchData(from: url, with: EmptyRequestBody())
 			}
 
 		case .get:
