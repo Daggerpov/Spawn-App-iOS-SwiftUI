@@ -102,6 +102,48 @@ struct ContentView: View {
 				// Minimal loading state while ViewModels initialize
 				Color.clear
 			}
+
+			// In-app notification overlay
+			VStack {
+				if inAppNotificationManager.isShowingNotification,
+					let notification = inAppNotificationManager.currentNotification
+				{
+					InAppNotificationView(
+						title: notification.title,
+						message: notification.message,
+						notificationType: notification.type,
+						onDismiss: {
+							inAppNotificationManager.dismissNotification()
+						}
+					)
+					.padding(.horizontal, 16)
+					.padding(.top, 8)
+					.transition(.move(edge: .top).combined(with: .opacity))
+					.zIndex(1000)
+				}
+
+				Spacer()
+			}
+
+			// Global activity popup overlay - covers entire screen including tab bar
+			if showingGlobalActivityPopup, let activity = globalPopupActivity, let color = globalPopupColor {
+				ActivityPopupDrawer(
+					activity: activity,
+					activityColor: color,
+					isPresented: $showingGlobalActivityPopup,
+					selectedTab: Binding<TabType?>(
+						get: { selectedTabsEnum.toTabType },
+						set: { if let newTab = $0 { selectedTabsEnum = Tabs(from: newTab) } }
+					),
+					fromMapView: globalPopupFromMapView
+				)
+				.id(
+					"\(activity.id.uuidString)-\(activity.title ?? "untitled")-\(activity.icon ?? "")-\(activity.participantUsers?.count ?? 0)"
+				)  // Force recreation when activity changes
+				.allowsHitTesting(true)
+				.ignoresSafeArea(.all, edges: .all)  // Cover absolutely everything
+				.zIndex(999)  // Below notifications but above everything else
+			}
 		}
 		.task {
 			// CRITICAL FIX: Initialize ViewModels lazily in .task to prevent repeated init() calls.
@@ -234,48 +276,6 @@ struct ContentView: View {
 				print("🔄 ContentView: Updating global popup activity for \(updatedActivity.title ?? "Unknown")")
 				globalPopupActivity = updatedActivity
 			}
-		}
-
-		// In-app notification overlay
-		VStack {
-			if inAppNotificationManager.isShowingNotification,
-				let notification = inAppNotificationManager.currentNotification
-			{
-				InAppNotificationView(
-					title: notification.title,
-					message: notification.message,
-					notificationType: notification.type,
-					onDismiss: {
-						inAppNotificationManager.dismissNotification()
-					}
-				)
-				.padding(.horizontal, 16)
-				.padding(.top, 8)
-				.transition(.move(edge: .top).combined(with: .opacity))
-				.zIndex(1000)
-			}
-
-			Spacer()
-		}
-
-		// Global activity popup overlay - covers entire screen including tab bar
-		if showingGlobalActivityPopup, let activity = globalPopupActivity, let color = globalPopupColor {
-			ActivityPopupDrawer(
-				activity: activity,
-				activityColor: color,
-				isPresented: $showingGlobalActivityPopup,
-				selectedTab: Binding<TabType?>(
-					get: { selectedTabsEnum.toTabType },
-					set: { if let newTab = $0 { selectedTabsEnum = Tabs(from: newTab) } }
-				),
-				fromMapView: globalPopupFromMapView
-			)
-			.id(
-				"\(activity.id.uuidString)-\(activity.title ?? "untitled")-\(activity.icon ?? "")-\(activity.participantUsers?.count ?? 0)"
-			)  // Force recreation when activity changes
-			.allowsHitTesting(true)
-			.ignoresSafeArea(.all, edges: .all)  // Cover absolutely everything
-			.zIndex(999)  // Below notifications but above everything else
 		}
 	}
 
