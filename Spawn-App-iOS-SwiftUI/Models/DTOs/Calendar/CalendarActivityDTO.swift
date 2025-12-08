@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-struct CalendarActivityDTO: Codable, Identifiable, Sendable {
+struct CalendarActivityDTO: Codable, Identifiable, Sendable, Equatable {
 	let id: UUID
 	let date: String  // ISO format: YYYY-MM-DD (matches backend)
 	let title: String?
