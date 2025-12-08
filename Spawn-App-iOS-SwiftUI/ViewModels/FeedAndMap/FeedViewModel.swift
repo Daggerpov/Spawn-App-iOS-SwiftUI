@@ -12,7 +12,6 @@ import Foundation
 @MainActor
 final class FeedViewModel {
 	var activities: [FullFeedActivityDTO] = []
-	var activityTypes: [ActivityTypeDTO] = []
 
 	// Use the ActivityTypeViewModel for managing activity types
 	var activityTypeViewModel: ActivityTypeViewModel
@@ -38,15 +37,9 @@ final class FeedViewModel {
 	// MARK: - Computed Properties
 
 	/// Returns activity types sorted with pinned ones first, then alphabetically
+	/// Delegates to ActivityTypeViewModel which maintains the canonical activity types
 	var sortedActivityTypes: [ActivityTypeDTO] {
-		return activityTypes.sorted { first, second in
-			// Pinned types come first
-			if first.isPinned != second.isPinned {
-				return first.isPinned
-			}
-			// If both are pinned or both are not pinned, sort alphabetically by title
-			return first.title.localizedCaseInsensitiveCompare(second.title) == .orderedAscending
-		}
+		return activityTypeViewModel.sortedActivityTypes
 	}
 
 	init(userId: UUID) {
@@ -65,9 +58,6 @@ final class FeedViewModel {
 			.sink { [weak self] newActivities in
 				self?.activities = newActivities
 			}
-
-		// Initialize activity types from the view model
-		self.activityTypes = activityTypeViewModel.activityTypes
 
 		// Register for activity creation notifications
 		NotificationCenter.default.publisher(for: .activityCreated)
@@ -92,16 +82,6 @@ final class FeedViewModel {
 			.sink { [weak self] notification in
 				Task {
 					await self?.fetchActivitiesForUser()
-				}
-			}
-			.store(in: &cancellables)
-
-		// Register for activity type changes for immediate UI refresh
-		NotificationCenter.default.publisher(for: .activityTypesChanged)
-			.sink { [weak self] _ in
-				// Force immediate UI refresh by updating activity types from the view model
-				if let self = self {
-					self.activityTypes = self.activityTypeViewModel.activityTypes
 				}
 			}
 			.store(in: &cancellables)
