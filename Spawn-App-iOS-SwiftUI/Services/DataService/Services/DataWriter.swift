@@ -87,12 +87,15 @@ final class DataWriter: IDataWriter {
 	) async -> DataResult<EmptyResponse> {
 
 		print("🔄 [DataWriter] Performing \(operation.method.rawValue) to \(operation.endpoint)")
+		print("🔄 [DataWriter] Parameters: \(String(describing: operation.parameters))")
 
 		// Build URL from endpoint
 		guard let url = URL(string: APIService.baseURL + operation.endpoint) else {
 			print("❌ [DataWriter] Invalid URL for endpoint: \(operation.endpoint)")
 			return .failure(DataServiceError.invalidURL)
 		}
+
+		print("🔄 [DataWriter] Base URL: \(url.absoluteString)")
 
 		do {
 			// Perform the write operation
@@ -112,6 +115,10 @@ final class DataWriter: IDataWriter {
 
 		} catch {
 			print("❌ [DataWriter] \(operation.method.rawValue) failed for \(operation.endpoint): \(error)")
+			print("❌ [DataWriter] Error description: \(error.localizedDescription)")
+			if let apiError = error as? APIError {
+				print("❌ [DataWriter] APIError details: \(apiError)")
+			}
 			return .failure(DataServiceError.apiFailed(error))
 		}
 	}

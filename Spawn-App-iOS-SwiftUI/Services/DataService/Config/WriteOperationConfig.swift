@@ -161,13 +161,13 @@ enum WriteOperationType {
 			.leaveActivity,
 			.removeFromActivity,
 			.deleteUser,
-			.unregisterDeviceToken:
+			.unregisterDeviceToken,
+			.unblockUser:
 			return .delete
 
 		case .joinActivity,
 			.inviteToActivity,
-			.blockUser,
-			.unblockUser:
+			.blockUser:
 			return .post
 
 		case .partialUpdateActivity,
@@ -323,10 +323,22 @@ enum WriteOperationType {
 		// Reporting & Blocking
 		case .reportUser, .reportChatMessage:
 			return []  // No cache invalidation needed for reports
-		case .blockUser(let blockerId, _, _):
-			return ["friends-\(blockerId)"]
-		case .unblockUser(let blockerId, _):
-			return ["friends-\(blockerId)"]
+		case .blockUser(let blockerId, let blockedId, _):
+			return [
+				"friends-\(blockerId)",
+				"blockedUsers_\(blockerId)_true",
+				"blockedUsers_\(blockerId)_false",
+				"isUserBlocked_\(blockerId)_\(blockedId)",
+				"recommendedFriends-\(blockerId)",
+			]
+		case .unblockUser(let blockerId, let blockedId):
+			return [
+				"friends-\(blockerId)",
+				"blockedUsers_\(blockerId)_true",
+				"blockedUsers_\(blockerId)_false",
+				"isUserBlocked_\(blockerId)_\(blockedId)",
+				"recommendedFriends-\(blockerId)",
+			]
 
 		// User Management
 		case .deleteUser:

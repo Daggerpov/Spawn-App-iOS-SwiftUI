@@ -495,6 +495,9 @@ final class APIService: IAPIService, @unchecked Sendable {
 				throw APIError.URLError
 			}
 			finalUrl = urlWithParams
+			print("🔓 [APIService] DELETE URL with parameters: \(finalUrl.absoluteString)")
+		} else {
+			print("🔓 [APIService] DELETE URL (no parameters): \(finalUrl.absoluteString)")
 		}
 
 		var request = URLRequest(url: finalUrl)
@@ -505,6 +508,9 @@ final class APIService: IAPIService, @unchecked Sendable {
 			let encoder = APIService.makeEncoder()
 			request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 			request.httpBody = try encoder.encode(object)
+			print("🔓 [APIService] DELETE with body")
+		} else {
+			print("🔓 [APIService] DELETE without body")
 		}
 
 		let response: URLResponse
@@ -516,6 +522,8 @@ final class APIService: IAPIService, @unchecked Sendable {
 				// For cancelled DELETE requests, just return without logging
 				return
 			}
+			print("🔓 [APIService] DELETE request failed with error: \(error)")
+			print("🔓 [APIService] Error details: \(error.localizedDescription)")
 			// Re-throw non-cancellation errors
 			throw error
 		}
@@ -526,6 +534,8 @@ final class APIService: IAPIService, @unchecked Sendable {
 			throw APIError.failedHTTPRequest(
 				description: "The HTTP request has failed.")
 		}
+
+		print("🔓 [APIService] DELETE response status code: \(httpResponse.statusCode)")
 
 		// Check for a successful status code (204 is commonly used for successful deletions)
 		guard httpResponse.statusCode == 204 || httpResponse.statusCode == 200

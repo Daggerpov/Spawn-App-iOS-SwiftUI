@@ -33,16 +33,22 @@ final class BlockedUsersViewModel {
 	}
 
 	func unblockUser(blockerId: UUID, blockedId: UUID) async {
+		print("🔄 [BlockedUsersViewModel] unblockUser called - blockerId: \(blockerId), blockedId: \(blockedId)")
+
 		do {
 			try await reportingService.unblockUser(blockerId: blockerId, blockedId: blockedId)
+			print("✅ [BlockedUsersViewModel] reportingService.unblockUser succeeded")
 
 			// Remove the unblocked user from the list
 			blockedUsers.removeAll { $0.blockedId == blockedId }
+			print("✅ [BlockedUsersViewModel] Removed user from local list, remaining: \(blockedUsers.count)")
 
 			errorMessage = nil
 		} catch let error as APIError {
+			print("❌ [BlockedUsersViewModel] APIError: \(error)")
 			errorMessage = ErrorFormattingService.shared.formatAPIError(error)
 		} catch {
+			print("❌ [BlockedUsersViewModel] Error: \(error)")
 			errorMessage = ErrorFormattingService.shared.formatError(error)
 		}
 	}
