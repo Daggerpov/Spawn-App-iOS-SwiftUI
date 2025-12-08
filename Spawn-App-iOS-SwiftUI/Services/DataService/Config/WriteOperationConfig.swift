@@ -488,6 +488,65 @@ enum WriteOperationType {
 			return tokenData as? T
 		}
 	}
+
+	/// Get the request body as a type-erased AnyEncodable
+	/// This preserves the actual body type without requiring generic type inference
+	func getAnyBody() -> AnyEncodable? {
+		switch self {
+		case .addProfileInterest(_, let interest):
+			return AnyEncodable(interest)
+		case .updateSocialMedia(_, let socialMedia):
+			return AnyEncodable(socialMedia)
+		case .sendFriendRequest(let request):
+			return AnyEncodable(request)
+		case .acceptFriendRequest, .declineFriendRequest:
+			return AnyEncodable(EmptyRequestBody())
+		case .removeProfileInterest, .removeFriend, .deleteActivity, .leaveActivity, .removeFromActivity:
+			return AnyEncodable(EmptyRequestBody())
+		case .batchUpdateActivityTypes(_, let update):
+			return AnyEncodable(update)
+		case .createActivity(let activity):
+			return AnyEncodable(activity)
+		case .updateActivity(_, let update):
+			return AnyEncodable(update)
+		case .joinActivity(_, _):
+			return AnyEncodable(EmptyRequestBody())
+		case .inviteToActivity(_, _):
+			return AnyEncodable(EmptyRequestBody())
+		case .reportUser(let report):
+			return AnyEncodable(report)
+		case .reportChatMessage(let report):
+			return AnyEncodable(report)
+		case .blockUser(let blockerId, let blockedId, let reason):
+			let blockDTO = BlockedUserCreationDTO(blockerId: blockerId, blockedId: blockedId, reason: reason)
+			return AnyEncodable(blockDTO)
+		case .unblockUser:
+			return AnyEncodable(EmptyRequestBody())
+		case .deleteUser:
+			return AnyEncodable(EmptyRequestBody())
+		case .sendChatMessage(let message):
+			return AnyEncodable(message)
+		case .submitFeedback(let feedback):
+			return AnyEncodable(feedback)
+		case .partialUpdateActivity(_, let update):
+			return AnyEncodable(update)
+		case .toggleActivityParticipation:
+			return AnyEncodable(EmptyRequestBody())
+		case .reportActivity(let report):
+			return AnyEncodable(report)
+		case .crossReferenceContacts(let request):
+			return AnyEncodable(request)
+		case .registerDeviceToken(let token):
+			return AnyEncodable(token)
+		case .unregisterDeviceToken(let token):
+			return AnyEncodable(token)
+		case .updateNotificationPreferences(let preferences):
+			return AnyEncodable(preferences)
+		case .patchDeviceToken(_, let token):
+			let tokenData = ["deviceToken": token]
+			return AnyEncodable(tokenData)
+		}
+	}
 }
 
 // MARK: - Write Operation Factory Extension
@@ -516,6 +575,18 @@ extension WriteOperationType {
 			cacheInvalidationKeys: self.cacheInvalidationKeys
 		)
 	}
+
+	/// Convert this write operation type to a type-erased WriteOperation
+	/// This preserves the actual body type without requiring generic type inference at call site
+	func toTypeErasedWriteOperation() -> WriteOperation<AnyEncodable> {
+		return WriteOperation(
+			method: self.method,
+			endpoint: self.endpoint,
+			body: self.getAnyBody(),
+			parameters: self.parameters,
+			cacheInvalidationKeys: self.cacheInvalidationKeys
+		)
+	}
 }
 
 // MARK: - DataService Extension for Convenience
@@ -527,7 +598,8 @@ extension IDataService {
 		_ operationType: WriteOperationType,
 		invalidateCache: Bool = true
 	) async -> DataResult<Response> {
-		let operation: WriteOperation<EmptyRequestBody> = operationType.toWriteOperation()
+		// Use type-erased operation to preserve the actual body type
+		let operation = operationType.toTypeErasedWriteOperation()
 		return await write(operation, invalidateCache: invalidateCache)
 	}
 
@@ -546,7 +618,8 @@ extension IDataService {
 		_ operationType: WriteOperationType,
 		invalidateCache: Bool = true
 	) async -> DataResult<EmptyResponse> {
-		let operation: WriteOperation<EmptyRequestBody> = operationType.toWriteOperation()
+		// Use type-erased operation to preserve the actual body type
+		let operation = operationType.toTypeErasedWriteOperation()
 		return await writeWithoutResponse(operation, invalidateCache: invalidateCache)
 	}
 }

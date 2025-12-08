@@ -10,6 +10,24 @@
 
 import Foundation
 
+// MARK: - Type-Erased Encodable Wrapper
+
+/// A type-erased wrapper for any Encodable value
+/// This allows operations to carry bodies of different types through a uniform interface
+struct AnyEncodable: Encodable, Sendable {
+	private let _encode: @Sendable (Encoder) throws -> Void
+
+	init<T: Encodable & Sendable>(_ value: T) {
+		self._encode = { encoder in
+			try value.encode(to: encoder)
+		}
+	}
+
+	func encode(to encoder: Encoder) throws {
+		try _encode(encoder)
+	}
+}
+
 // MARK: - Write Operation
 
 /// Configuration for a write operation
