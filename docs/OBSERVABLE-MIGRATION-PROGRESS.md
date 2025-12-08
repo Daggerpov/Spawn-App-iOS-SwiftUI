@@ -12,10 +12,10 @@ This document tracks the progress of migrating from `ObservableObject` + `@Publi
 
 | Category | Total | Migrated | Remaining |
 |----------|-------|----------|-----------|
-| High Priority | 5 | 2 | 3 |
+| High Priority | 5 | 4 | 1 |
 | Medium Priority | 4 | 4 | 0 |
 | Lower Priority | 12 | 12 | 0 |
-| **Total** | **21** | **18** | **3** |
+| **Total** | **21** | **20** | **1** |
 
 ---
 
@@ -25,10 +25,10 @@ This document tracks the progress of migrating from `ObservableObject` + `@Publi
 
 | ViewModel | Status | Notes |
 |-----------|--------|-------|
-| `FeedViewModel` | ⏳ Pending | Uses Combine for throttling and notifications |
+| `FeedViewModel` | ✅ Completed | Migrated Dec 8, 2025 (kept Combine for throttling and notifications) |
 | `MapViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
 | `ProfileViewModel` | ✅ Completed | Migrated Dec 8, 2025 (largest migration so far) |
-| `ActivityCreationViewModel` | ⏳ Pending | Semi-singleton pattern, complex state |
+| `ActivityCreationViewModel` | ✅ Completed | Migrated Dec 8, 2025 (semi-singleton pattern preserved) |
 | `UserAuthViewModel` | ⏳ Pending | Singleton, NSObject subclass, complex auth logic |
 
 ### Medium Priority (Social Features)
@@ -291,6 +291,35 @@ Starting with simpler ViewModels to establish patterns before tackling complex o
   - `Views/Pages/Activities/ActivityCreation/Steps/InvitePeople/InviteView.swift` - Changed `@StateObject` to `@State`
   - `Views/Pages/Activities/ActivityCreation/Steps/InvitePeople/InviteFriendsView.swift` - Changed `@StateObject` to `@State`
 
+### Phase 4: High Priority ViewModels (Core Features)
+
+#### FeedViewModel
+- **Status:** ✅ Completed
+- **Complexity:** High
+- **Date Started:** December 8, 2025
+- **Date Completed:** December 8, 2025
+- **Notes:** Kept Combine for throttling activities and NotificationCenter subscriptions. Fixed initialization order issue with `dataService` by using local variable before assignment to stored property.
+- **Files Changed:**
+  - `ViewModels/FeedAndMap/FeedViewModel.swift` - Added `@Observable`, kept Combine for throttling and notifications
+  - `Views/Pages/FeedAndMap/FeedView.swift` - Already using `@State` for viewModel
+  - `Views/Pages/FeedAndMap/ActivityFeedView.swift` - Uses plain var (passed from parent)
+  - `Views/Pages/FeedAndMap/ActivityListView.swift` - Uses plain var (passed from parent)
+  - `Views/Pages/FeedAndMap/FullscreenActivityListView.swift` - Uses plain var (passed from parent)
+  - `Views/Pages/FeedAndMap/Map/MapView.swift` - Uses plain var (passed from parent)
+
+#### ActivityCreationViewModel
+- **Status:** ✅ Completed
+- **Complexity:** Medium
+- **Date Started:** December 8, 2025
+- **Date Completed:** December 8, 2025
+- **Notes:** Semi-singleton pattern preserved with `static var shared`. Views use the shared instance directly.
+- **Files Changed:**
+  - `ViewModels/Activity/ActivityCreationViewModel.swift` - Added `@Observable`, singleton pattern preserved
+  - `Views/Pages/Activities/ActivityCreation/ActivityCreationView.swift` - Added `@Bindable` for binding support with @Observable viewModel
+  - `Views/Pages/Activities/ActivityCreation/Steps/DateTimeSelection/ActivityDateTimeView.swift` - Removed `private` from viewModel for memberwise initializer
+  - `Views/Shared/TabBar/WithTabBarBinding.swift` - Removed `private` from activityCreationViewModel for memberwise initializer
+  - Other views use `ActivityCreationViewModel.shared` directly as plain var
+
 ---
 
 ## Additional Fixes During Migration
@@ -303,6 +332,10 @@ During the migration, the following additional fixes were required:
 4. **TabBar.swift** - Removed `private` from tutorialViewModel to fix memberwise initializer issue
 5. **FriendRowView (FriendSearchView.swift)** - Changed `private var userAuth` to computed property to fix memberwise initializer issue
 6. **SearchView.swift** - Added `@Bindable` wrapper for `@Observable` viewModel to enable bindings
+7. **ActivityCreationView.swift** - Added `@Bindable` to viewModel to support bindings with @Observable
+8. **ActivityDateTimeView.swift** - Removed `private` from viewModel to fix memberwise initializer issue
+9. **WithTabBarBinding.swift** - Removed `private` from activityCreationViewModel to fix memberwise initializer issue
+10. **FeedViewModel.swift** - Fixed initialization order issue by using local variable for dataService before assigning to stored property
 
 ---
 
@@ -337,21 +370,20 @@ For each ViewModel migration:
 
 The following ViewModels were migrated to `@Observable` but kept Combine for specific purposes:
 
-1. **FriendsTabViewModel** ✅ - Kept Combine for cache subscriptions and search debouncing
-2. **SearchViewModel** ✅ - Kept Combine for debouncing search queries, added publisher for external subscriptions
-3. **ActivityTypeViewModel** ✅ - Kept Combine for cache subscriptions
-4. **DayActivitiesViewModel** ✅ - Removed unused Combine (wasn't actually using it)
+1. **FeedViewModel** ✅ - Kept Combine for throttling activity updates (`PassthroughSubject`) and NotificationCenter subscriptions
+2. **FriendsTabViewModel** ✅ - Kept Combine for cache subscriptions and search debouncing
+3. **SearchViewModel** ✅ - Kept Combine for debouncing search queries, added publisher for external subscriptions
+4. **ActivityTypeViewModel** ✅ - Kept Combine for cache subscriptions
+5. **DayActivitiesViewModel** ✅ - Removed unused Combine (wasn't actually using it)
 
 ### ViewModels Not Migrated Yet
 
-1. **FeedViewModel** - Uses `PassthroughSubject` for throttling activity updates, uses `NotificationCenter.default.publisher` extensively for notifications. Complex Combine usage makes migration difficult.
-2. **ActivityCreationViewModel** - Semi-singleton with complex state management
-3. **UserAuthViewModel** - Singleton, inherits from NSObject for delegate conformance
+1. **UserAuthViewModel** - Singleton, inherits from NSObject for `ASAuthorizationControllerDelegate` conformance. This is the only remaining ViewModel not migrated.
 
 ### Singleton ViewModels
 
-1. **UserAuthViewModel** - Uses `static let shared` pattern, also inherits from NSObject
-2. **ActivityCreationViewModel** - Uses semi-singleton with `static var shared`
+1. **UserAuthViewModel** - Uses `static let shared` pattern, also inherits from NSObject (not yet migrated)
+2. **ActivityCreationViewModel** - ✅ Migrated with semi-singleton `static var shared` pattern preserved
 3. **TutorialViewModel** - ✅ Migrated with singleton pattern preserved
 
 ### NSObject Subclasses

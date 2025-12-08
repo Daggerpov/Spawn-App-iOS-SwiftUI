@@ -4,7 +4,7 @@ import SwiftUI
 struct WithTabBarBinding<Content>: View where Content: View {
 	@Binding var selection: Tabs
 	@ViewBuilder var content: (Tabs) -> Content
-	private var activityCreationViewModel = ActivityCreationViewModel.shared
+	var activityCreationViewModel = ActivityCreationViewModel.shared
 
 	// Calculate the TabBar space needed
 	private var tabBarSpacing: CGFloat {

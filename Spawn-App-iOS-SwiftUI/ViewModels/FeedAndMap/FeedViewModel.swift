@@ -47,10 +47,11 @@ final class FeedViewModel {
 
 	init(userId: UUID) {
 		self.userId = userId
-		self.dataService = DataService.shared
+		let dataServiceInstance = DataService.shared
+		self.dataService = dataServiceInstance
 
 		// Initialize the activity type view model
-		self.activityTypeViewModel = ActivityTypeViewModel(userId: userId, dataService: dataService)
+		self.activityTypeViewModel = ActivityTypeViewModel(userId: userId, dataService: dataServiceInstance)
 
 		// Throttle activities updates to prevent overwhelming MapView
 		activitiesUpdateThrottle =
