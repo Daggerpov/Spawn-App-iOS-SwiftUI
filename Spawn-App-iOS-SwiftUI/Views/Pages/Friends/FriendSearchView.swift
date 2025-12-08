@@ -28,9 +28,7 @@ struct FriendSearchView: View {
 		let id =
 			userId ?? (UserDefaults.standard.string(forKey: "currentUserId").flatMap { UUID(uuidString: $0) } ?? UUID())
 		self._viewModel = StateObject(
-			wrappedValue: FriendsTabViewModel(
-				userId: id,
-				apiService: MockAPIService.isMocking ? MockAPIService(userId: id) : APIService())
+			wrappedValue: FriendsTabViewModel(userId: id)
 		)
 		self.displayMode = displayMode
 	}

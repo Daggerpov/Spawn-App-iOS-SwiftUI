@@ -306,135 +306,102 @@ class AddToActivityTypeViewModel: ObservableObject {
 	@Published var isLoading = false
 	@Published var errorMessage: String?
 
-	private let apiService: IAPIService
+	private let dataService: DataService
 	private let userId: UUID
 
-	init(userId: UUID? = nil) {
+	init(userId: UUID? = nil, dataService: DataService? = nil) {
 		self.userId = userId ?? UserAuthViewModel.shared.spawnUser?.id ?? UUID()
-		self.apiService =
-			MockAPIService.isMocking
-			? MockAPIService(userId: self.userId) : APIService()
+		self.dataService = dataService ?? DataService.shared
 	}
 
 	func loadActivityTypes() async {
 		isLoading = true
 		errorMessage = nil
 
-		do {
-			// Fetch activity types from the API
-			let endpoint = "users/\(userId)/activity-types"
-			guard let url = URL(string: APIService.baseURL + endpoint) else {
-				await MainActor.run {
-					self.errorMessage = "Invalid URL"
-					self.isLoading = false
-				}
-				return
-			}
+		// Use DataService to fetch activity types
+		let result: DataResult<[ActivityTypeDTO]> = await dataService.read(
+			.activityTypes(userId: userId),
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
 
-			let fetchedTypes: [ActivityTypeDTO] = try await apiService.fetchData(
-				from: url,
-				parameters: nil
-			)
+		switch result {
+		case .success(let fetchedTypes, _):
+			self.activityTypes = fetchedTypes
+			self.isLoading = false
 
-			await MainActor.run {
-				self.activityTypes = fetchedTypes
-				self.isLoading = false
-			}
-		} catch {
-			await MainActor.run {
-				self.errorMessage = "Failed to load activity types: \(error.localizedDescription)"
-				self.isLoading = false
-			}
+		case .failure(let error):
+			self.errorMessage = "Failed to load activity types: \(ErrorFormattingService.shared.formatError(error))"
+			self.isLoading = false
 		}
 	}
 
 	func addUserToActivityTypes(_ userToAdd: Nameable, selectedActivityTypeIds: Set<UUID>) async -> Bool {
-		await MainActor.run {
-			isLoading = true
-			errorMessage = nil
-		}
+		isLoading = true
+		errorMessage = nil
 
 		defer {
-			Task {
-				await MainActor.run {
-					isLoading = false
+			isLoading = false
+		}
+
+		// Create updated activity types with the user added
+		var updatedTypes: [ActivityTypeDTO] = []
+
+		for activityType in activityTypes {
+			if selectedActivityTypeIds.contains(activityType.id) {
+				// Convert Nameable to BaseUserDTO
+				let userDTO: BaseUserDTO
+				if let baseUser = userToAdd as? BaseUserDTO {
+					userDTO = baseUser
+				} else {
+					// Create a BaseUserDTO from the Nameable properties
+					// For users that aren't BaseUserDTO, we'll use default values for missing properties
+					userDTO = BaseUserDTO(
+						id: userToAdd.id,
+						username: userToAdd.username,
+						profilePicture: userToAdd.profilePicture,
+						name: userToAdd.name,
+						bio: nil,  // Default value since it's not part of Nameable
+						email: ""  // Default value since it's not part of Nameable
+					)
+				}
+
+				// Add user to associated friends if not already present
+				if !activityType.associatedFriends.contains(where: { $0.id == userDTO.id }) {
+					let updatedActivityType = ActivityTypeDTO(
+						id: activityType.id,
+						title: activityType.title,
+						icon: activityType.icon,
+						associatedFriends: activityType.associatedFriends + [userDTO],
+						orderNum: activityType.orderNum,
+						isPinned: activityType.isPinned
+					)
+					updatedTypes.append(updatedActivityType)
 				}
 			}
 		}
 
-		do {
-			// Create updated activity types with the user added
-			var updatedTypes: [ActivityTypeDTO] = []
+		if !updatedTypes.isEmpty {
+			let batchUpdateDTO = BatchActivityTypeUpdateDTO(
+				updatedActivityTypes: updatedTypes,
+				deletedActivityTypeIds: []
+			)
 
-			for activityType in activityTypes {
-				if selectedActivityTypeIds.contains(activityType.id) {
-					// Convert Nameable to BaseUserDTO
-					let userDTO: BaseUserDTO
-					if let baseUser = userToAdd as? BaseUserDTO {
-						userDTO = baseUser
-					} else {
-						// Create a BaseUserDTO from the Nameable properties
-						// For users that aren't BaseUserDTO, we'll use default values for missing properties
-						userDTO = BaseUserDTO(
-							id: userToAdd.id,
-							username: userToAdd.username,
-							profilePicture: userToAdd.profilePicture,
-							name: userToAdd.name,
-							bio: nil,  // Default value since it's not part of Nameable
-							email: ""  // Default value since it's not part of Nameable
-						)
-					}
+			// Use DataService with WriteOperationType
+			let operationType = WriteOperationType.batchUpdateActivityTypes(userId: userId, update: batchUpdateDTO)
+			let result: DataResult<[ActivityTypeDTO]> = await dataService.write(operationType, body: batchUpdateDTO)
 
-					// Add user to associated friends if not already present
-					if !activityType.associatedFriends.contains(where: { $0.id == userDTO.id }) {
-						let updatedActivityType = ActivityTypeDTO(
-							id: activityType.id,
-							title: activityType.title,
-							icon: activityType.icon,
-							associatedFriends: activityType.associatedFriends + [userDTO],
-							orderNum: activityType.orderNum,
-							isPinned: activityType.isPinned
-						)
-						updatedTypes.append(updatedActivityType)
-					}
-				}
-			}
-
-			if !updatedTypes.isEmpty {
-				// Use batch update to save the changes
-				let endpoint = "users/\(userId)/activity-types"
-				guard let url = URL(string: APIService.baseURL + endpoint) else {
-					await MainActor.run {
-						self.errorMessage = "Invalid URL"
-					}
-					return false
-				}
-
-				let batchUpdateDTO = BatchActivityTypeUpdateDTO(
-					updatedActivityTypes: updatedTypes,
-					deletedActivityTypeIds: []
-				)
-
-				let updatedActivityTypesReturned: [ActivityTypeDTO] = try await apiService.updateData(
-					batchUpdateDTO,
-					to: url,
-					parameters: nil
-				)
-
-				await MainActor.run {
-					self.activityTypes = updatedActivityTypesReturned
-				}
-
+			switch result {
+			case .success(let updatedActivityTypesReturned, _):
+				self.activityTypes = updatedActivityTypesReturned
 				return true
-			}
 
-			return true
-		} catch {
-			await MainActor.run {
-				self.errorMessage = "Failed to save activity types: \(error.localizedDescription)"
+			case .failure(let error):
+				self.errorMessage = "Failed to save activity types: \(ErrorFormattingService.shared.formatError(error))"
+				return false
 			}
-			return false
 		}
+
+		return true
 	}
 }
 

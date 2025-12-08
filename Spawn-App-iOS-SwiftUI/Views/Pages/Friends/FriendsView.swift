@@ -28,10 +28,7 @@ struct FriendsView: View {
 			self.viewModel = existingViewModel
 		} else {
 			// Fallback for when no view model is provided (like in previews)
-			self.viewModel = FriendsTabViewModel(
-				userId: user.id,
-				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: user.id) : APIService())
+			self.viewModel = FriendsTabViewModel(userId: user.id)
 		}
 	}
 
@@ -241,8 +238,7 @@ extension FriendsView {
 	@Previewable @ObservedObject var appCache = AppCache.shared
 
 	// Create a mock view model with hardcoded data
-	let mockViewModel = FriendsTabViewModel(
-		userId: BaseUserDTO.danielAgapov.id, apiService: MockAPIService(userId: BaseUserDTO.danielAgapov.id))
+	let mockViewModel = FriendsTabViewModel(userId: BaseUserDTO.danielAgapov.id)
 
 	// Add hardcoded friends data
 	mockViewModel.friends = [
