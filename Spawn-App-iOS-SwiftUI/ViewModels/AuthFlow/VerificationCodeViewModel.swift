@@ -16,8 +16,11 @@ final class VerificationCodeViewModel {
 	var secondsRemaining: Int = 30
 	var isResendEnabled: Bool = false
 
-	// Timer property - uses weak self pattern in callbacks to avoid actor isolation issues in deinit
-	private var timer: Timer?
+	/// Timer for countdown - uses weak self pattern in callbacks
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit.
+	/// Thread safety is ensured by only accessing from MainActor context (via Timer's main runloop)
+	/// and in deinit (which runs after all other accesses complete).
+	@ObservationIgnored private nonisolated(unsafe) var timer: Timer?
 	private var userAuthViewModel: UserAuthViewModel
 
 	var isFormValid: Bool {
@@ -30,6 +33,12 @@ final class VerificationCodeViewModel {
 
 	init(userAuthViewModel: UserAuthViewModel) {
 		self.userAuthViewModel = userAuthViewModel
+	}
+
+	deinit {
+		// Safe to access nonisolated(unsafe) timer here - deinit runs after all references are released
+		timer?.invalidate()
+		timer = nil
 	}
 
 	// MARK: - Timer Management

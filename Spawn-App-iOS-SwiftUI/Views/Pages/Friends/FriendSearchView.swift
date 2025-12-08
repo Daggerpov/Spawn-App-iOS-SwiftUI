@@ -19,18 +19,17 @@ enum FriendListDisplayMode {
 struct FriendSearchView: View {
 	@Environment(\.dismiss) private var dismiss
 	@State private var searchViewModel = SearchViewModel()
-	@State private var viewModel: FriendsTabViewModel
+	// Accept viewModel from parent to prevent unnecessary recreations
+	var viewModel: FriendsTabViewModel
+	private let userId: UUID
 
 	// Mode determines what content to display
 	var displayMode: FriendListDisplayMode
 
-	init(userId: UUID? = nil, displayMode: FriendListDisplayMode = .search) {
-		let id =
-			userId ?? (UserDefaults.standard.string(forKey: "currentUserId").flatMap { UUID(uuidString: $0) } ?? UUID())
-		self._viewModel = State(
-			wrappedValue: FriendsTabViewModel(userId: id)
-		)
+	init(userId: UUID, displayMode: FriendListDisplayMode = .search, viewModel: FriendsTabViewModel) {
+		self.userId = userId
 		self.displayMode = displayMode
+		self.viewModel = viewModel
 	}
 
 	// Title based on display mode
@@ -517,6 +516,8 @@ struct FriendRowView: View {
 	}
 }
 
+@available(iOS 17.0, *)
 #Preview {
-	FriendSearchView(userId: UUID(), displayMode: .allFriends)
+	@Previewable @State var previewViewModel = FriendsTabViewModel(userId: UUID())
+	FriendSearchView(userId: UUID(), displayMode: .allFriends, viewModel: previewViewModel)
 }

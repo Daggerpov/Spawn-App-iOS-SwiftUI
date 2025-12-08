@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct FriendsTabView: View {
+	// CRITICAL: With @Observable, we must NOT recreate the viewModel in init
+	// The viewModel must be passed from the parent that owns it via @State
 	var viewModel: FriendsTabViewModel
 	private var userAuth = UserAuthViewModel.shared
 	let user: BaseUserDTO
@@ -36,15 +38,9 @@ struct FriendsTabView: View {
 	// Store background refresh task so we can cancel it on disappear
 	@State private var backgroundRefreshTask: Task<Void, Never>?
 
-	init(user: BaseUserDTO, viewModel: FriendsTabViewModel? = nil) {
+	init(user: BaseUserDTO, viewModel: FriendsTabViewModel) {
 		self.user = user
-
-		if let existingViewModel = viewModel {
-			self.viewModel = existingViewModel
-		} else {
-			// Fallback for when no view model is provided (like in previews)
-			self.viewModel = FriendsTabViewModel(userId: user.id)
-		}
+		self.viewModel = viewModel
 	}
 
 	var body: some View {
@@ -52,7 +48,9 @@ struct FriendsTabView: View {
 			ScrollView {
 				VStack(spacing: 24) {
 					// Search bar button that navigates to search view
-					NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .search)) {
+					NavigationLink(
+						destination: FriendSearchView(userId: user.id, displayMode: .search, viewModel: viewModel)
+					) {
 						SearchBarButtonView(
 							placeholder: "Search for friends..."
 						)
@@ -206,7 +204,7 @@ struct FriendsTabView: View {
 	}
 
 	var showAllFriendsButton: some View {
-		NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .allFriends)) {
+		NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .allFriends, viewModel: viewModel)) {
 			Text("Show All")
 				.font(.onestRegular(size: 14))
 				.foregroundColor(universalSecondaryColor)
@@ -214,7 +212,9 @@ struct FriendsTabView: View {
 	}
 
 	var showAllRecentlySpawnedButton: some View {
-		NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .recentlySpawnedWith)) {
+		NavigationLink(
+			destination: FriendSearchView(userId: user.id, displayMode: .recentlySpawnedWith, viewModel: viewModel)
+		) {
 			Text("Show All")
 				.font(.onestRegular(size: 14))
 				.foregroundColor(universalSecondaryColor)
@@ -222,7 +222,9 @@ struct FriendsTabView: View {
 	}
 
 	var showAllRecommendedButton: some View {
-		NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .recommendedFriends)) {
+		NavigationLink(
+			destination: FriendSearchView(userId: user.id, displayMode: .recommendedFriends, viewModel: viewModel)
+		) {
 			Text("Show All")
 				.font(.onestRegular(size: 14))
 				.foregroundColor(universalSecondaryColor)
@@ -361,5 +363,6 @@ struct FriendsTabView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-	FriendsTabView(user: .danielAgapov)
+	@Previewable @State var previewViewModel = FriendsTabViewModel(userId: BaseUserDTO.danielAgapov.id)
+	FriendsTabView(user: .danielAgapov, viewModel: previewViewModel)
 }

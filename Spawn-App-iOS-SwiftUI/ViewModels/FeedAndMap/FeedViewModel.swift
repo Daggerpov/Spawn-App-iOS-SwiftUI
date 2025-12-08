@@ -25,11 +25,15 @@ final class FeedViewModel {
 	private var activitiesUpdateThrottle: AnyCancellable?
 	private let activitiesSubject = PassthroughSubject<[FullFeedActivityDTO], Never>()
 
-	// Periodic refresh timer - nonisolated for deinit access
-	private nonisolated var refreshTimer: Timer?
+	/// Periodic refresh timer
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit.
+	/// Thread safety is ensured by only accessing from MainActor context (via Timer's main runloop)
+	/// and in deinit (which runs after all other accesses complete).
+	@ObservationIgnored private nonisolated(unsafe) var refreshTimer: Timer?
 
-	// Periodic local cleanup timer for expired activities - nonisolated for deinit access
-	private nonisolated var cleanupTimer: Timer?
+	/// Periodic local cleanup timer for expired activities
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit.
+	@ObservationIgnored private nonisolated(unsafe) var cleanupTimer: Timer?
 
 	// MARK: - Computed Properties
 
@@ -50,6 +54,7 @@ final class FeedViewModel {
 		let dataServiceInstance = DataService.shared
 		self.dataService = dataServiceInstance
 
+		print("🔧 FeedViewModel.init() called for userId: \(userId)")
 		// Initialize the activity type view model
 		self.activityTypeViewModel = ActivityTypeViewModel(userId: userId, dataService: dataServiceInstance)
 
@@ -118,7 +123,6 @@ final class FeedViewModel {
 	}
 
 	deinit {
-		// Timer cleanup is safe from deinit since timers are nonisolated(unsafe)
 		refreshTimer?.invalidate()
 		refreshTimer = nil
 		cleanupTimer?.invalidate()

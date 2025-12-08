@@ -34,14 +34,18 @@ final class FriendsTabViewModel {
 	// Keep cancellables for Combine cache subscriptions
 	private var cancellables = Set<AnyCancellable>()
 	private var appCache: AppCache  // Keep for cache subscriptions (reactive updates)
-	// nonisolated for notificationObservers since it's accessed in deinit
-	private nonisolated var notificationObservers: [NSObjectProtocol] = []
+	/// Notification observers that need to be removed in deinit
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit.
+	/// Thread safety is ensured by only mutating from MainActor context during init
+	/// and in deinit (which runs after all other accesses complete).
+	@ObservationIgnored private nonisolated(unsafe) var notificationObservers: [NSObjectProtocol] = []
 
 	init(userId: UUID) {
 		self.userId = userId
 		self.dataService = DataService.shared
 		self.appCache = AppCache.shared
 
+		print("🔧 FriendsTabViewModel.init() called for userId: \(userId)")
 		// FriendsTabViewModel init
 		// Subscribe to AppCache for reactive updates (acceptable pattern per DataService guide)
 
@@ -95,7 +99,7 @@ final class FriendsTabViewModel {
 	}
 
 	deinit {
-		print("🧹 [VM] FriendsTabViewModel deinit - cleaning up observers")
+		// Safe to access nonisolated(unsafe) notificationObservers here - deinit runs after all references are released
 		// Remove all notification observers to prevent memory leaks and blocking
 		for observer in notificationObservers {
 			NotificationCenter.default.removeObserver(observer)

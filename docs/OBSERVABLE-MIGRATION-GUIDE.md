@@ -159,6 +159,69 @@ final class MyViewModel {
 }
 ```
 
+### ⚠️ CRITICAL: Lazy ViewModel Initialization Pattern
+
+**Problem**: Unlike `@StateObject` which uses `@autoclosure` to defer ViewModel creation, `@State` with `@Observable` creates a new ViewModel instance every time the view struct is recreated—even though `@State` only uses the first instance. This means the ViewModel's `init()` runs repeatedly with all its side effects (Combine subscriptions, NotificationCenter observers, timers, etc.).
+
+**Solution**: Make ViewModels optional and initialize them lazily in `.task`:
+
+```swift
+// ❌ BAD: ViewModel init() called on every view recreation
+struct MyView: View {
+    @State private var viewModel = MyViewModel()  // Creates new instance each time!
+    
+    var body: some View { /* ... */ }
+}
+
+// ❌ ALSO BAD: Same problem when initialized in view's init
+struct MyView: View {
+    @State private var viewModel: MyViewModel
+    
+    init() {
+        // This creates a new ViewModel every time the view struct is recreated
+        self._viewModel = State(initialValue: MyViewModel())
+    }
+}
+
+// ✅ GOOD: Lazy initialization prevents repeated init() calls
+struct MyView: View {
+    @State private var viewModel: MyViewModel?
+    
+    var body: some View {
+        Group {
+            if let vm = viewModel {
+                // Your actual view content using vm
+                ContentView(viewModel: vm)
+            } else {
+                Color.clear  // Minimal loading state
+            }
+        }
+        .task {
+            // Initialize only if nil - runs once when view appears
+            if viewModel == nil {
+                viewModel = MyViewModel()
+            }
+            // Continue with data loading...
+        }
+    }
+}
+```
+
+**Why This Matters**: ViewModels often set up expensive resources in their `init()`:
+- Combine subscriptions
+- NotificationCenter observers
+- Timers
+- Network connections
+
+Without lazy initialization, these resources are created (and potentially leaked) every time SwiftUI recreates the view struct, which happens frequently during navigation, state changes, or animations.
+
+**When This Is Critical**: Always use lazy initialization when:
+1. The ViewModel sets up Combine subscriptions
+2. The ViewModel sets up NotificationCenter observers
+3. The ViewModel starts timers
+4. The ViewModel has any other side effects in `init()`
+5. The view is used in a context where its parent view frequently recreates
+
 ---
 
 ## Migration Checklist
@@ -174,17 +237,19 @@ final class MyViewModel {
 
 ### Per-View Migration Steps
 
-- [ ] Replace `@StateObject private var viewModel = ...` with `@State private var viewModel = ...`
+- [ ] Replace `@StateObject private var viewModel = ...` with `@State private var viewModel: MyViewModel?` (optional)
+- [ ] Move ViewModel initialization to `.task { if viewModel == nil { viewModel = MyViewModel() } }`
+- [ ] Add conditional rendering in body to handle nil state
 - [ ] Replace `@ObservedObject var viewModel: ...` with `var viewModel: ...` (plain property)
 - [ ] For environment injection, replace `@EnvironmentObject` with `@Environment`
 
 ### View Property Wrapper Changes
 
-| Old (ObservableObject) | New (@Observable) |
-|------------------------|-------------------|
-| `@StateObject` | `@State` |
-| `@ObservedObject` | Plain `var` or `let` |
-| `@EnvironmentObject` | `@Environment` |
+| Old (ObservableObject) | New (@Observable) | Notes |
+|------------------------|-------------------|-------|
+| `@StateObject` | `@State` (optional + lazy init) | Use optional + `.task` initialization pattern |
+| `@ObservedObject` | Plain `var` or `let` | When passed from parent |
+| `@EnvironmentObject` | `@Environment` | Same pattern |
 
 ---
 
@@ -246,6 +311,10 @@ final class ChatViewModel {
     var isLoading: Bool = false
     var errorMessage: String?
     
+    init() {
+        print("🔧 ChatViewModel.init() called")  // Debug log to verify single init
+    }
+    
     func loadMessages() async {
         isLoading = true
         defer { isLoading = false }
@@ -258,18 +327,32 @@ final class ChatViewModel {
     }
 }
 
-// View
+// View - CRITICAL: Use optional + lazy initialization pattern
 struct ChatView: View {
-    @State private var viewModel = ChatViewModel()
+    // Optional ViewModel to prevent repeated init() calls on view recreation
+    @State private var viewModel: ChatViewModel?
     
     var body: some View {
-        List(viewModel.messages) { message in
-            MessageRow(message: message)
-        }
-        .overlay {
-            if viewModel.isLoading {
-                ProgressView()
+        Group {
+            if let vm = viewModel {
+                List(vm.messages) { message in
+                    MessageRow(message: message)
+                }
+                .overlay {
+                    if vm.isLoading {
+                        ProgressView()
+                    }
+                }
+            } else {
+                Color.clear  // Minimal loading state
             }
+        }
+        .task {
+            // Initialize ViewModel only once when view appears
+            if viewModel == nil {
+                viewModel = ChatViewModel()
+            }
+            await viewModel?.loadMessages()
         }
     }
 }

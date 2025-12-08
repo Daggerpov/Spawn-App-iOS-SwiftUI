@@ -9,6 +9,8 @@ import SwiftUI
 
 struct FriendsView: View {
 	let user: BaseUserDTO
+	// CRITICAL: With @Observable, we must NOT recreate the viewModel in init
+	// The viewModel must be passed from the parent that owns it via @State
 	var viewModel: FriendsTabViewModel
 
 	// Deep link parameters
@@ -17,19 +19,15 @@ struct FriendsView: View {
 	@State private var isFetchingDeepLinkedProfile = false
 
 	init(
-		user: BaseUserDTO, viewModel: FriendsTabViewModel? = nil, deepLinkedProfileId: Binding<UUID?> = .constant(nil),
+		user: BaseUserDTO,
+		viewModel: FriendsTabViewModel,
+		deepLinkedProfileId: Binding<UUID?> = .constant(nil),
 		shouldShowDeepLinkedProfile: Binding<Bool> = .constant(false)
 	) {
 		self.user = user
+		self.viewModel = viewModel
 		self._deepLinkedProfileId = deepLinkedProfileId
 		self._shouldShowDeepLinkedProfile = shouldShowDeepLinkedProfile
-
-		if let existingViewModel = viewModel {
-			self.viewModel = existingViewModel
-		} else {
-			// Fallback for when no view model is provided (like in previews)
-			self.viewModel = FriendsTabViewModel(userId: user.id)
-		}
 	}
 
 	var body: some View {

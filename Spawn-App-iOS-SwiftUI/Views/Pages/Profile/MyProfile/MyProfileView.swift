@@ -34,16 +34,15 @@ struct MyProfileView: View {
 	@State private var backgroundDataLoadTask: Task<Void, Never>?
 
 	@ObservedObject var userAuth = UserAuthViewModel.shared
-	@State var profileViewModel: ProfileViewModel
+	// Accept profileViewModel from parent to prevent recreation loops
+	var profileViewModel: ProfileViewModel
 
 	// Add environment object for navigation
 	@Environment(\.presentationMode) var presentationMode
 
-	init(user: BaseUserDTO) {
+	init(user: BaseUserDTO, profileViewModel: ProfileViewModel) {
 		self.user = user
-		self._profileViewModel = State(
-			wrappedValue: ProfileViewModel(userId: user.id)
-		)
+		self.profileViewModel = profileViewModel
 		self.username = user.username ?? ""
 		self.name = user.name ?? ""
 	}
@@ -512,5 +511,6 @@ struct MyProfileSheetsModifier: ViewModifier {
 
 @available(iOS 17, *)
 #Preview {
-	MyProfileView(user: BaseUserDTO.danielAgapov)
+	@Previewable @State var previewProfileViewModel = ProfileViewModel(userId: BaseUserDTO.danielAgapov.id)
+	MyProfileView(user: BaseUserDTO.danielAgapov, profileViewModel: previewProfileViewModel)
 }

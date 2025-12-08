@@ -17,7 +17,9 @@ final class InAppNotificationManager: ObservableObject {
 	///   - type: The notification type
 	///   - duration: How long to show the notification (default: 4 seconds)
 	/// Track the current auto-dismiss task
-	private var dismissTask: Task<Void, Never>?
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit if needed.
+	/// This is a singleton so deinit won't be called in practice, but marking it for consistency.
+	private nonisolated(unsafe) var dismissTask: Task<Void, Never>?
 
 	func showNotification(
 		title: String,

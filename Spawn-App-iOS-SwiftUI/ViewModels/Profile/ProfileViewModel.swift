@@ -44,6 +44,7 @@ final class ProfileViewModel {
 		dataService: DataService? = nil
 	) {
 		self.dataService = dataService ?? DataService.shared
+		print("🔧 ProfileViewModel.init() called for userId: \(userId?.uuidString ?? "nil")")
 	}
 
 	func fetchUserStats(userId: UUID) async {

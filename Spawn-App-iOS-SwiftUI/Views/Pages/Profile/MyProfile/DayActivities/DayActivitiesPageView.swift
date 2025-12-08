@@ -7,7 +7,9 @@ struct DayActivitiesPageView: View {
 	let onActivitySelected: (CalendarActivityDTO) -> Void
 
 	@Environment(\.dismiss) private var dismiss
-	@State private var profileViewModel = ProfileViewModel()
+	// CRITICAL FIX: Use optional ViewModel to prevent repeated init() calls
+	// when SwiftUI recreates this view struct. Initialize lazily in .task.
+	@State private var profileViewModel: ProfileViewModel?
 	@ObservedObject private var userAuth = UserAuthViewModel.shared
 	@ObservedObject private var locationManager = LocationManager.shared
 	@State private var showActivityDetails: Bool = false
@@ -28,12 +30,12 @@ struct DayActivitiesPageView: View {
 		.overlay(
 			// Use the same ActivityPopupDrawer as the feed view for consistency
 			Group {
-				if showActivityDetails, profileViewModel.selectedActivity != nil {
+				if showActivityDetails, profileViewModel?.selectedActivity != nil {
 					EmptyView()  // Replaced with global popup system
 				}
 			}
 			.onChange(of: showActivityDetails) { _, isShowing in
-				if isShowing, let activity = profileViewModel.selectedActivity {
+				if isShowing, let activity = profileViewModel?.selectedActivity {
 					let activityColor = getActivityColor(for: activity.id)
 
 					// Post notification to show global popup
@@ -44,11 +46,15 @@ struct DayActivitiesPageView: View {
 					)
 					// Reset local state since global popup will handle it
 					showActivityDetails = false
-					profileViewModel.selectedActivity = nil
+					profileViewModel?.selectedActivity = nil
 				}
 			}
 		)
-		.onAppear {
+		.task {
+			// CRITICAL: Initialize ViewModel lazily to prevent repeated init() calls
+			if profileViewModel == nil {
+				profileViewModel = ProfileViewModel()
+			}
 			fetchAllActivityDetails()
 		}
 	}
@@ -136,7 +142,7 @@ struct DayActivitiesPageView: View {
 	// MARK: - Helper Methods
 
 	private func fetchAllActivityDetails() {
-		guard !activities.isEmpty else { return }
+		guard !activities.isEmpty, let viewModel = profileViewModel else { return }
 
 		isLoadingActivities = true
 
@@ -149,7 +155,7 @@ struct DayActivitiesPageView: View {
 					guard let activityId = activity.activityId else { continue }
 
 					group.addTask {
-						let fullActivity = await profileViewModel.fetchActivityDetails(activityId: activityId)
+						let fullActivity = await viewModel.fetchActivityDetails(activityId: activityId)
 						return (activityId, fullActivity)
 					}
 				}
@@ -169,9 +175,10 @@ struct DayActivitiesPageView: View {
 	}
 
 	private func handleActivitySelection(_ activity: CalendarActivityDTO) {
+		guard let viewModel = profileViewModel else { return }
 		Task {
 			if let activityId = activity.activityId,
-				await profileViewModel.fetchActivityDetails(activityId: activityId) != nil
+				await viewModel.fetchActivityDetails(activityId: activityId) != nil
 			{
 				await MainActor.run {
 					showActivityDetails = true
