@@ -99,6 +99,23 @@ enum ReportType: String, Codable, CaseIterable, Sendable {
 
 enum ResolutionStatus: String, Codable, CaseIterable, Sendable {
 	case pending = "PENDING"
-	case resolved = "RESOLVED"
-	case dismissed = "DISMISSED"
+	case `false` = "FALSE"
+	case ban = "BAN"
+	case suspension = "SUSPENSION"
+	case warn = "WARN"
+
+	var displayName: String {
+		switch self {
+		case .pending:
+			return "Pending"
+		case .false:
+			return "False Report"
+		case .ban:
+			return "Banned"
+		case .suspension:
+			return "Suspended"
+		case .warn:
+			return "Warning Issued"
+		}
+	}
 }

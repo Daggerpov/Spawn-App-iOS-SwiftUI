@@ -38,7 +38,7 @@ struct ReportRow: View {
 						.font(.caption)
 						.foregroundColor(.secondary)
 
-					Text(report.resolution.rawValue.capitalized)
+					Text(report.resolution.displayName)
 						.font(.caption)
 						.fontWeight(.semibold)
 						.foregroundColor(colorForResolution(report.resolution))
@@ -84,11 +84,15 @@ struct ReportRow: View {
 	private func colorForResolution(_ resolution: ResolutionStatus) -> Color {
 		switch resolution {
 		case .pending:
-			return .orange
-		case .resolved:
-			return .green
-		case .dismissed:
+			return .blue
+		case .false:
 			return .gray
+		case .warn:
+			return .yellow
+		case .suspension:
+			return .orange
+		case .ban:
+			return .red
 		}
 	}
 }
