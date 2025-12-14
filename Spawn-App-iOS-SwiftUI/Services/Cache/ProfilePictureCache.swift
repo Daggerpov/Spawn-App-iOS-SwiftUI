@@ -190,7 +190,6 @@ actor ProfilePictureCache {
 		let (data, response) = try await URLSession.shared.data(from: url)
 
 		if let httpResponse = response as? HTTPURLResponse {
-			print("   HTTP Status: \(httpResponse.statusCode)")
 
 			if httpResponse.statusCode != 200 {
 				print("❌ [DOWNLOAD] HTTP error \(httpResponse.statusCode) for user \(userId)")

@@ -220,9 +220,9 @@ enum WriteOperationType {
 
 		// Reporting & Blocking
 		case .reportUser:
-			return "reports/create"
+			return "reports"
 		case .reportChatMessage:
-			return "reports/create"
+			return "reports"
 		case .blockUser:
 			return "blocked-users/block"
 		case .unblockUser:

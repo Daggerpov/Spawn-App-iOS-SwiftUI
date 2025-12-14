@@ -159,9 +159,9 @@ enum DataType {
 		case .blockedUsers(let blockerId, _):
 			return "blocked-users/\(blockerId)"
 		case .reportsByUser(let reporterId):
-			return "reports/fetch/reporter/\(reporterId)"
+			return "reports/reporter/\(reporterId)"
 		case .reportsAboutUser(let userId):
-			return "reports/fetch/content-owner/\(userId)"
+			return "reports/content-owner/\(userId)"
 
 		// Notifications
 		case .notificationPreferences(let userId):
