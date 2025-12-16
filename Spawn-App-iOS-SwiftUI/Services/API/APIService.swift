@@ -920,7 +920,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 	}
 
 	func updateProfilePicture(_ imageData: Data, userId: UUID) async throws -> BaseUserDTO {
-		guard let url = URL(string: APIService.baseURL + "users/update-pfp/\(userId)") else {
+		guard let url = URL(string: APIService.baseURL + "users/\(userId)/profile-picture") else {
 			print("❌ ERROR: Failed to create URL for profile picture update")
 			throw APIError.URLError
 		}

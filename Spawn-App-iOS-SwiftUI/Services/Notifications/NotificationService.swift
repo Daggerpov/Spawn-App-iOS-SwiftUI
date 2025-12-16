@@ -139,7 +139,7 @@ final class NotificationService: NSObject, ObservableObject {
 	private func sendTokenToBackend(_ token: String) {
 		// Only proceed if user is logged in and has an ID
 		if let userId = UserAuthViewModel.shared.spawnUser?.id,
-			let url = URL(string: "\(APIService.baseURL)notifications/device-tokens/register")
+			let url = URL(string: "\(APIService.baseURL)notifications/device-tokens")
 		{
 
 			// Create device token DTO
@@ -618,7 +618,7 @@ final class NotificationService: NSObject, ObservableObject {
 
 		print("[PUSH DEBUG] Preparing to unregister device token: \(token)")
 
-		if let url = URL(string: "\(APIService.baseURL)notifications/device-tokens/unregister") {
+		if let url = URL(string: "\(APIService.baseURL)notifications/device-tokens") {
 			do {
 				// Create device token DTO
 				let deviceTokenDTO = DeviceTokenDTO(
