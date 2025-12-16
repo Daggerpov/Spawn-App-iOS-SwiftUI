@@ -1156,7 +1156,7 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 			}
 
 			// Fallback to the old method if needed (only for mock implementation)
-			if let url = URL(string: APIService.baseURL + "users/update-pfp/\(userId)") {
+			if let url = URL(string: APIService.baseURL + "users/\(userId)/profile-picture") {
 				// Create a URLRequest with PATCH method
 				var request = URLRequest(url: url)
 				request.httpMethod = "PATCH"
@@ -1220,7 +1220,7 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 			)
 		}
 
-		if let url = URL(string: APIService.baseURL + "users/update/\(userId)") {
+		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
 			do {
 				let updateDTO = UserUpdateDTO(
 					username: username,

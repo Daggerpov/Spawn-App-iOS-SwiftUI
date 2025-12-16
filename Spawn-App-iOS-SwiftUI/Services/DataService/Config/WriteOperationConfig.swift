@@ -220,13 +220,13 @@ enum WriteOperationType {
 
 		// Reporting & Blocking
 		case .reportUser:
-			return "reports/create"
+			return "reports"
 		case .reportChatMessage:
-			return "reports/create"
+			return "reports"
 		case .blockUser:
-			return "blocked-users/block"
-		case .unblockUser:
-			return "blocked-users/unblock"
+			return "blocked-users"
+		case .unblockUser(let blockerId, let blockedId):
+			return "blocked-users/\(blockerId)/\(blockedId)"
 
 		// User Management
 		case .deleteUser(let userId):
@@ -234,7 +234,7 @@ enum WriteOperationType {
 
 		// Chats
 		case .sendChatMessage:
-			return "chatMessages"
+			return "chat-messages"
 
 		// Feedback
 		case .submitFeedback:
@@ -244,7 +244,7 @@ enum WriteOperationType {
 		case .partialUpdateActivity(let activityId, _):
 			return "activities/\(activityId)/partial"
 		case .toggleActivityParticipation(let activityId, let userId):
-			return "activities/\(activityId)/toggleStatus/\(userId)"
+			return "activities/\(activityId)/toggle-status/\(userId)"
 		case .reportActivity:
 			return "reports/activities"
 
@@ -254,9 +254,9 @@ enum WriteOperationType {
 
 		// Notifications
 		case .registerDeviceToken:
-			return "notifications/device-tokens/register"
+			return "notifications/device-tokens"
 		case .unregisterDeviceToken:
-			return "notifications/device-tokens/unregister"
+			return "notifications/device-tokens"
 		case .updateNotificationPreferences(let preferences):
 			return "notifications/preferences/\(preferences.userId)"
 		case .patchDeviceToken(let userId, _):
@@ -271,11 +271,6 @@ enum WriteOperationType {
 			return ["friendRequestAction": "accept"]
 		case .declineFriendRequest:
 			return ["friendRequestAction": "reject"]
-		case .unblockUser(let blockerId, let blockedId):
-			return [
-				"blockerId": blockerId.uuidString,
-				"blockedId": blockedId.uuidString,
-			]
 		default:
 			return nil
 		}

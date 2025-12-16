@@ -31,7 +31,7 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 		if let userIdForUrl = userId {
 			// Support for activities endpoint
 			if url.absoluteString == APIService.baseURL
-				+ "activities/feedActivities/\(userIdForUrl)"
+				+ "activities/feed-activities/\(userIdForUrl)"
 			{
 				return [
 					FullFeedActivityDTO.mockDinnerActivity,
@@ -61,7 +61,7 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 
 		// ProfileViewModel - fetchActivityDetails
 		if url.absoluteString.contains(APIService.baseURL + "activities/")
-			&& !url.absoluteString.contains("activities/feedActivities/")
+			&& !url.absoluteString.contains("activities/feed-activities/")
 		{
 			// Extract activity ID from the URL
 			let urlComponents = url.absoluteString.components(separatedBy: "/")
@@ -584,13 +584,13 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 
 		// ActivityCardViewModel.swift - toggleParticipation():
 		if url.absoluteString.contains("activities/")
-			&& url.absoluteString.contains("/toggleStatus")
+			&& url.absoluteString.contains("/toggle-status")
 		{
 			return FullFeedActivityDTO.mockDinnerActivity as! U
 		}
 
 		// Activity details update (title, icon, etc.)
-		if url.absoluteString.contains("activities/") && !url.absoluteString.contains("/toggleStatus") {
+		if url.absoluteString.contains("activities/") && !url.absoluteString.contains("/toggle-status") {
 			// Extract activity ID from URL
 			let urlComponents = url.absoluteString.components(separatedBy: "/")
 			if let activityIdString = urlComponents.last,

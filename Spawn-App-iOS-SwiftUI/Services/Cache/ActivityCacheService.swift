@@ -128,7 +128,7 @@ final class ActivityCacheService: BaseCacheService, CacheService, ObservableObje
 			return
 		}
 
-		await genericRefresh(endpoint: "activities/feedActivities/\(userId)") {
+		await genericRefresh(endpoint: "activities/feed-activities/\(userId)") {
 			[weak self] (fetchedActivities: [FullFeedActivityDTO]) in
 			guard let self = self else { return }
 			self.updateActivitiesForUser(fetchedActivities, userId: userId)
