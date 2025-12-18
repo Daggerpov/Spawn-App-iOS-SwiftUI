@@ -12,7 +12,7 @@ import SwiftUI
 // MARK: - Activity Annotation
 
 /// Custom annotation type that carries the activity data needed for rendering
-class ActivityAnnotation: NSObject, MKAnnotation {
+final class ActivityAnnotation: NSObject, MKAnnotation {
 	let activityId: UUID
 	dynamic var coordinate: CLLocationCoordinate2D
 	var title: String?
@@ -96,14 +96,9 @@ enum MapAnnotationHelpers {
 			return activityIcon
 		}
 
-		// Fall back to the activity type's icon if activityTypeId exists
-		if let activityTypeId = activity.activityTypeId,
-			let userId = UserAuthViewModel.shared.spawnUser?.id,
-			let activityType = AppCache.shared.activityTypes[userId]?.first(where: { $0.id == activityTypeId }),
-			!activityType.icon.isEmpty
-		{
-			return activityType.icon
-		}
+		// Note: Fallback to activity type icon requires MainActor access
+		// For map annotations, we just use the activity's icon or default
+		// The activity should already have its icon populated from the cache
 
 		// Final fallback to default star emoji
 		return "⭐️"

@@ -4,7 +4,8 @@ import SwiftUI
 import UserNotifications
 
 @available(iOS 16.0, *)
-class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
+@MainActor
+final class NotificationService: NSObject, ObservableObject {
 	static let shared = NotificationService()
 
 	@Published var isNotificationsEnabled = false
@@ -54,13 +55,11 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
 	// Register for push notifications
 	func registerForPushNotifications() {
 		// Request permission first
-		Task {
+		Task { @MainActor in
 			let granted = await requestPermission()
 			if granted {
 				// Register for remote notifications on main thread
-				DispatchQueue.main.async {
-					UIApplication.shared.registerForRemoteNotifications()
-				}
+				UIApplication.shared.registerForRemoteNotifications()
 			}
 		}
 	}
@@ -90,10 +89,9 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
 
 	// Check if notifications are enabled
 	func checkNotificationStatus() {
-		UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
-			DispatchQueue.main.async {
-				self?.isNotificationsEnabled = settings.authorizationStatus == .authorized
-			}
+		Task { @MainActor in
+			let settings = await UNUserNotificationCenter.current().notificationSettings()
+			isNotificationsEnabled = settings.authorizationStatus == .authorized
 		}
 	}
 
@@ -103,8 +101,8 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
 			let granted = try await UNUserNotificationCenter.current().requestAuthorization(
 				options: [.alert, .badge, .sound]
 			)
-			DispatchQueue.main.async { [weak self] in
-				self?.isNotificationsEnabled = granted
+			await MainActor.run {
+				isNotificationsEnabled = granted
 			}
 			return granted
 		} catch {
@@ -141,7 +139,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
 	private func sendTokenToBackend(_ token: String) {
 		// Only proceed if user is logged in and has an ID
 		if let userId = UserAuthViewModel.shared.spawnUser?.id,
-			let url = URL(string: "\(APIService.baseURL)notifications/device-tokens/register")
+			let url = URL(string: "\(APIService.baseURL)notifications/device-tokens")
 		{
 
 			// Create device token DTO
@@ -401,137 +399,6 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
 		// Navigate to chat (implementation will depend on your navigation setup)
 	}
 
-	// Test notifications (for development)
-	func sendTestNotification(type: String) {
-		guard let notificationType = NotificationType(rawValue: type) else {
-			print("Invalid notification type: \(type)")
-			return
-		}
-
-		var title = ""
-		var body = ""
-		var userInfo: [String: String] = [:]
-
-		switch notificationType {
-		case .friendRequest:
-			title = "New Friend Request"
-			body = "Someone wants to be your friend on Spawn!"
-			let senderId = UUID()
-			userInfo = NotificationDataBuilder.friendRequest(
-				senderId: senderId,
-				requestId: UUID()
-			)
-
-			// Add more detailed logging
-			if let user = UserAuthViewModel.shared.spawnUser {
-				print(
-					"Test Friend Request - User ID: \(senderId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))"
-				)
-			}
-
-		case .activityInvite:
-			title = "New Activity Invitation"
-			body = "You've been invited to an activity!"
-			userInfo = NotificationDataBuilder.activityInvite(
-				activityId: UUID(),
-				activityName: "Fun Hangout"
-			)
-
-		case .activityUpdate:
-			title = "Activity Updated"
-			body = "An activity you're attending has been updated"
-			userInfo = NotificationDataBuilder.activityUpdate(
-				activityId: UUID(),
-				updateType: "time"
-			)
-
-		case .chat:
-			title = "New Message"
-			body = "You have a new message in an activity chat"
-			let senderId = UUID()
-			userInfo = NotificationDataBuilder.chatMessage(
-				activityId: UUID(),
-				senderId: senderId
-			)
-
-			// Add more detailed logging
-			if let user = UserAuthViewModel.shared.spawnUser {
-				print(
-					"Test Chat Message - User ID: \(senderId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))"
-				)
-			}
-
-		case .welcome:
-			title = "Welcome to Spawn!"
-			body = "Thanks for joining. We'll keep you updated on activities and friends."
-			userInfo = NotificationDataBuilder.welcome()
-
-		case .error:
-			title = "Error"
-			body = "Something went wrong. Please try again."
-			userInfo = ["type": NotificationType.error.rawValue]
-
-		case .success:
-			title = "Success"
-			body = "Action completed successfully"
-			userInfo = ["type": NotificationType.success.rawValue]
-		}
-
-		scheduleLocalNotification(title: title, body: body, userInfo: userInfo)
-	}
-
-	// Test in-app notifications (for development)
-	func testInAppNotification(type: NotificationType) {
-		print("Testing in-app notification of type: \(type.rawValue)")
-
-		Task { @MainActor in
-			switch type {
-			case .friendRequest:
-				InAppNotificationManager.shared.showNotification(
-					title: "Friend Request",
-					message: "Alex Chen wants to be your friend",
-					type: .friendRequest
-				)
-			case .activityInvite:
-				InAppNotificationManager.shared.showNotification(
-					title: "Activity Invite",
-					message: "You're invited to Coffee & Chat",
-					type: .activityInvite
-				)
-			case .activityUpdate:
-				InAppNotificationManager.shared.showNotification(
-					title: "Activity Update",
-					message: "Basketball Game has been updated",
-					type: .activityUpdate
-				)
-			case .chat:
-				InAppNotificationManager.shared.showNotification(
-					title: "New Message",
-					message: "Sarah sent a message in Study Group",
-					type: .chat
-				)
-			case .welcome:
-				InAppNotificationManager.shared.showNotification(
-					title: "Welcome to Spawn!",
-					message: "Start connecting with friends and activities",
-					type: .welcome
-				)
-			case .error:
-				InAppNotificationManager.shared.showNotification(
-					title: "Error",
-					message: "Something went wrong. Please try again.",
-					type: .error
-				)
-			case .success:
-				InAppNotificationManager.shared.showNotification(
-					title: "Success",
-					message: "Action completed successfully",
-					type: .success
-				)
-			}
-		}
-	}
-
 	// Save preferences to UserDefaults as a fallback (user-specific)
 	private func loadPreferencesFromUserDefaults() {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id.uuidString else {
@@ -683,30 +550,42 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
 			return
 		}
 
+		// Get the current user ID for DataService calls
+		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+			print("Cannot handle notification - no logged in user")
+			return
+		}
+
 		Task {
 			switch type {
 			case "friend-accepted":
 				// When a friend request is accepted, refresh friends and friend requests
 				print("🔄 [CACHE] Friend request accepted - refreshing friends and friend requests")
-				await appCache.refreshFriends()
-				await appCache.refreshFriendRequests()
-				await appCache.refreshSentFriendRequests()
+				let _: DataResult<[FullFriendUserDTO]> = await DataService.shared.read(
+					.friends(userId: userId), cachePolicy: .apiOnly)
+				let _: DataResult<[FetchFriendRequestDTO]> = await DataService.shared.read(
+					.friendRequests(userId: userId), cachePolicy: .apiOnly)
+				let _: DataResult<[FetchSentFriendRequestDTO]> = await DataService.shared.read(
+					.sentFriendRequests(userId: userId), cachePolicy: .apiOnly)
 
 			case "activity-updated":
 				// When an activity is updated, refresh activities
 				print("🔄 [CACHE] Activity updated - refreshing activities")
-				await appCache.refreshActivities()
+				let _: DataResult<[FullFeedActivityDTO]> = await DataService.shared.read(
+					.activities(userId: userId), cachePolicy: .apiOnly)
 
 			case "friend-request":
 				// When a new friend request is received/sent, refresh both incoming and sent friend requests
 				print("🔄 [CACHE] Friend request received/sent - refreshing friend requests")
-				await appCache.refreshFriendRequests()
-				await appCache.refreshSentFriendRequests()
+				let _: DataResult<[FetchFriendRequestDTO]> = await DataService.shared.read(
+					.friendRequests(userId: userId), cachePolicy: .apiOnly)
+				let _: DataResult<[FetchSentFriendRequestDTO]> = await DataService.shared.read(
+					.sentFriendRequests(userId: userId), cachePolicy: .apiOnly)
 
 			case "profile-updated":
 				// When a friend's profile is updated, refresh other profiles
-				if let userId = userInfo["userId"] as? String,
-					let uuid = UUID(uuidString: userId)
+				if let profileUserId = userInfo["userId"] as? String,
+					let uuid = UUID(uuidString: profileUserId)
 				{
 					// Check if this is a profile we already have cached
 					if appCache.otherProfiles[uuid] != nil {
@@ -739,7 +618,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
 
 		print("[PUSH DEBUG] Preparing to unregister device token: \(token)")
 
-		if let url = URL(string: "\(APIService.baseURL)notifications/device-tokens/unregister") {
+		if let url = URL(string: "\(APIService.baseURL)notifications/device-tokens") {
 			do {
 				// Create device token DTO
 				let deviceTokenDTO = DeviceTokenDTO(

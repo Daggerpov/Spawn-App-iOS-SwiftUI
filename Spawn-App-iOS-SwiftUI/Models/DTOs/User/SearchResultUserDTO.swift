@@ -8,7 +8,7 @@
 import Foundation
 
 /// Matches the backend SearchResultUserDTO class
-struct SearchResultUserDTO: Identifiable, Codable, Hashable {
+struct SearchResultUserDTO: Identifiable, Codable, Hashable, Sendable {
 	var id: UUID { user.id }
 
 	var user: BaseUserDTO

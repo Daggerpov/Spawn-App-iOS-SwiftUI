@@ -9,10 +9,10 @@ import SwiftUI
 
 struct ActivityStatusView: View {
 	let statusBadgeFontColor: Color = .black.opacity(0.8)
-	@StateObject private var viewModel: ActivityStatusViewModel
+	@State private var viewModel: ActivityStatusViewModel
 
 	init(activity: FullFeedActivityDTO) {
-		self._viewModel = StateObject(wrappedValue: ActivityStatusViewModel(activity: activity))
+		self._viewModel = State(wrappedValue: ActivityStatusViewModel(activity: activity))
 	}
 
 	var body: some View {

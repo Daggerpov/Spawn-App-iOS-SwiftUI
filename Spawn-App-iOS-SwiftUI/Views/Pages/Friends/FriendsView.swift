@@ -9,7 +9,9 @@ import SwiftUI
 
 struct FriendsView: View {
 	let user: BaseUserDTO
-	@ObservedObject var viewModel: FriendsTabViewModel
+	// CRITICAL: With @Observable, we must NOT recreate the viewModel in init
+	// The viewModel must be passed from the parent that owns it via @State
+	var viewModel: FriendsTabViewModel
 
 	// Deep link parameters
 	@Binding var deepLinkedProfileId: UUID?
@@ -17,22 +19,15 @@ struct FriendsView: View {
 	@State private var isFetchingDeepLinkedProfile = false
 
 	init(
-		user: BaseUserDTO, viewModel: FriendsTabViewModel? = nil, deepLinkedProfileId: Binding<UUID?> = .constant(nil),
+		user: BaseUserDTO,
+		viewModel: FriendsTabViewModel,
+		deepLinkedProfileId: Binding<UUID?> = .constant(nil),
 		shouldShowDeepLinkedProfile: Binding<Bool> = .constant(false)
 	) {
 		self.user = user
+		self.viewModel = viewModel
 		self._deepLinkedProfileId = deepLinkedProfileId
 		self._shouldShowDeepLinkedProfile = shouldShowDeepLinkedProfile
-
-		if let existingViewModel = viewModel {
-			self.viewModel = existingViewModel
-		} else {
-			// Fallback for when no view model is provided (like in previews)
-			self.viewModel = FriendsTabViewModel(
-				userId: user.id,
-				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: user.id) : APIService())
-		}
 	}
 
 	var body: some View {
@@ -238,11 +233,8 @@ extension FriendsView {
 
 @available(iOS 17.0, *)
 #Preview {
-	@Previewable @ObservedObject var appCache = AppCache.shared
-
 	// Create a mock view model with hardcoded data
-	let mockViewModel = FriendsTabViewModel(
-		userId: BaseUserDTO.danielAgapov.id, apiService: MockAPIService(userId: BaseUserDTO.danielAgapov.id))
+	let mockViewModel = FriendsTabViewModel(userId: BaseUserDTO.danielAgapov.id)
 
 	// Add hardcoded friends data
 	mockViewModel.friends = [
@@ -359,5 +351,5 @@ extension FriendsView {
 	]
 
 	return FriendsView(user: .danielAgapov, viewModel: mockViewModel)
-		.environmentObject(appCache)
+		.environmentObject(AppCache.shared)
 }

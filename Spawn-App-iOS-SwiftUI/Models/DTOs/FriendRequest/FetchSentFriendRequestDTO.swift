@@ -8,7 +8,7 @@
 import Foundation
 
 /// as defined in the back-end `FetchSentFriendRequestDTO.java`
-struct FetchSentFriendRequestDTO: Identifiable, Codable, Hashable {
+struct FetchSentFriendRequestDTO: Identifiable, Codable, Hashable, Sendable {
 	static func == (lhs: FetchSentFriendRequestDTO, rhs: FetchSentFriendRequestDTO) -> Bool {
 		return lhs.id == rhs.id
 	}

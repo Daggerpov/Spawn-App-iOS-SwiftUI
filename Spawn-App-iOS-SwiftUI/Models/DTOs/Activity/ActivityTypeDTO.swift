@@ -6,7 +6,7 @@
 //
 import Foundation
 
-class ActivityTypeDTO: Identifiable, Codable, Equatable {
+struct ActivityTypeDTO: Identifiable, Codable, Equatable, Sendable {
 	var id: UUID
 	var title: String
 	var associatedFriends: [BaseUserDTO]
@@ -27,15 +27,10 @@ class ActivityTypeDTO: Identifiable, Codable, Equatable {
 		self.ownerUserId = ownerUserId
 		self.isPinned = isPinned
 	}
-
-	// MARK: - Equatable
-	static func == (lhs: ActivityTypeDTO, rhs: ActivityTypeDTO) -> Bool {
-		return lhs.id == rhs.id
-	}
 }
 
 // DTO for batch updating activity types
-struct BatchActivityTypeUpdateDTO: Codable {
+struct BatchActivityTypeUpdateDTO: Codable, Sendable {
 	let updatedActivityTypes: [ActivityTypeDTO]
 	let deletedActivityTypeIds: [UUID]
 
@@ -46,19 +41,23 @@ struct BatchActivityTypeUpdateDTO: Codable {
 }
 
 extension ActivityTypeDTO {
-	static var mockChillActivityType: ActivityTypeDTO = ActivityTypeDTO(
-		id: UUID(), title: "Chill", icon: "🛋️", associatedFriends: [BaseUserDTO.danielLee, BaseUserDTO.danielAgapov],
+	static let mockChillActivityType: ActivityTypeDTO = ActivityTypeDTO(
+		id: UUID(uuidString: "A1B2C3D4-E5F6-7890-ABCD-EF1234567890") ?? UUID(),
+		title: "Chill", icon: "🛋️", associatedFriends: [BaseUserDTO.danielLee, BaseUserDTO.danielAgapov],
 		orderNum: 0, isPinned: false
 	)
-	static var mockFoodActivityType: ActivityTypeDTO = ActivityTypeDTO(
-		id: UUID(), title: "Food", icon: "🍽️",
+	static let mockFoodActivityType: ActivityTypeDTO = ActivityTypeDTO(
+		id: UUID(uuidString: "B2C3D4E5-F678-9012-BCDE-F12345678901") ?? UUID(),
+		title: "Food", icon: "🍽️",
 		associatedFriends: [BaseUserDTO.danielLee, BaseUserDTO.haley, BaseUserDTO.haley], orderNum: 1, isPinned: true)
-	static var mockActiveActivityType: ActivityTypeDTO = ActivityTypeDTO(
-		id: UUID(), title: "Active", icon: "🏃",
+	static let mockActiveActivityType: ActivityTypeDTO = ActivityTypeDTO(
+		id: UUID(uuidString: "C3D4E5F6-7890-1234-CDEF-123456789012") ?? UUID(),
+		title: "Active", icon: "🏃",
 		associatedFriends: [BaseUserDTO.haley, BaseUserDTO.danielLee, BaseUserDTO.haley, BaseUserDTO.danielLee],
 		orderNum: 2, isPinned: false)
-	static var mockStudyActivityType: ActivityTypeDTO = ActivityTypeDTO(
-		id: UUID(), title: "Study", icon: "✏️", associatedFriends: BaseUserDTO.mockUsers, orderNum: 3, isPinned: false)
+	static let mockStudyActivityType: ActivityTypeDTO = ActivityTypeDTO(
+		id: UUID(uuidString: "D4E5F678-9012-3456-DEF1-234567890123") ?? UUID(),
+		title: "Study", icon: "✏️", associatedFriends: BaseUserDTO.mockUsers, orderNum: 3, isPinned: false)
 
 	/// Creates a new ActivityTypeDTO instance with default values for creating a new activity type
 	static func createNew() -> ActivityTypeDTO {

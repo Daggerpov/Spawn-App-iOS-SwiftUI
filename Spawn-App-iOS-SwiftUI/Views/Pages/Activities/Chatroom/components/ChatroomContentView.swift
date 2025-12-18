@@ -8,7 +8,7 @@ struct ChatroomContentView: View {
 	@ObservedObject var activity: FullFeedActivityDTO
 	var backgroundColor: Color
 	var isExpanded: Bool
-	@StateObject var viewModel: ChatViewModel
+	@State var viewModel: ChatViewModel
 	let onBack: () -> Void
 
 	init(activity: FullFeedActivityDTO, backgroundColor: Color, isExpanded: Bool, onBack: @escaping () -> Void) {
@@ -17,7 +17,7 @@ struct ChatroomContentView: View {
 		self.isExpanded = isExpanded
 		self.onBack = onBack
 		let userId = user.id
-		self._viewModel = StateObject(wrappedValue: ChatViewModel(senderUserId: userId, activity: activity))
+		self._viewModel = State(wrappedValue: ChatViewModel(senderUserId: userId, activity: activity))
 	}
 
 	// Helper function to send messages for ChatroomContentView
@@ -136,7 +136,8 @@ struct ChatroomContentView: View {
 				.onChange(of: isExpanded) {
 					// When expansion state changes, maintain scroll position to bottom
 					if let lastMessage = sortedMessages.last {
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+						Task { @MainActor in
+							try? await Task.sleep(for: .seconds(0.1))
 							proxy.scrollTo(lastMessage.id, anchor: .bottom)
 						}
 					}
@@ -144,7 +145,8 @@ struct ChatroomContentView: View {
 				.onAppear {
 					// Scroll to newest message when view appears
 					if let lastMessage = sortedMessages.last {
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+						Task { @MainActor in
+							try? await Task.sleep(for: .seconds(0.1))
 							proxy.scrollTo(lastMessage.id, anchor: .bottom)
 						}
 					}

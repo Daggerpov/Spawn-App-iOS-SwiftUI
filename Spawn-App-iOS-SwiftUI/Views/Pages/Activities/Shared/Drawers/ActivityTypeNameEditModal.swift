@@ -115,10 +115,11 @@ struct ActivityTypeNameEditModal: View {
 		.animation(.easeInOut(duration: 0.3), value: isPresented)
 		.onAppear {
 			editedName = activityTypeName
+		}
+		.task {
 			// Focus the text field when modal appears
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-				isTextFieldFocused = true
-			}
+			try? await Task.sleep(for: .seconds(0.1))
+			isTextFieldFocused = true
 		}
 	}
 

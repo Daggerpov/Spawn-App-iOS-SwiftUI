@@ -14,15 +14,16 @@ import Foundation
 // MARK: - Data Writer Protocol
 
 /// Protocol defining the DataWriter interface for write operations
+@MainActor
 protocol IDataWriter {
 	/// Perform a write operation with a response body
-	func write<RequestBody: Encodable, Response: Decodable>(
+	func write<RequestBody: Encodable & Sendable, Response: Decodable>(
 		_ operation: WriteOperation<RequestBody>,
 		invalidateCache: Bool
 	) async -> DataResult<Response>
 
 	/// Perform a write operation without a response body
-	func writeWithoutResponse<RequestBody: Encodable>(
+	func writeWithoutResponse<RequestBody: Encodable & Sendable>(
 		_ operation: WriteOperation<RequestBody>,
 		invalidateCache: Bool
 	) async -> DataResult<EmptyResponse>
@@ -30,7 +31,9 @@ protocol IDataWriter {
 
 // MARK: - Data Writer Implementation
 
-class DataWriter: IDataWriter {
+/// Main actor-isolated DataWriter for thread-safe write operations
+@MainActor
+final class DataWriter: IDataWriter {
 	static let shared = DataWriter()
 
 	private let apiService: IAPIService
@@ -42,7 +45,7 @@ class DataWriter: IDataWriter {
 	}
 
 	/// Perform a write operation with a response body
-	func write<RequestBody: Encodable, Response: Decodable>(
+	func write<RequestBody: Encodable & Sendable, Response: Decodable>(
 		_ operation: WriteOperation<RequestBody>,
 		invalidateCache: Bool = true
 	) async -> DataResult<Response> {
@@ -78,18 +81,21 @@ class DataWriter: IDataWriter {
 	}
 
 	/// Perform a write operation without a response body
-	func writeWithoutResponse<RequestBody: Encodable>(
+	func writeWithoutResponse<RequestBody: Encodable & Sendable>(
 		_ operation: WriteOperation<RequestBody>,
 		invalidateCache: Bool = true
 	) async -> DataResult<EmptyResponse> {
 
 		print("🔄 [DataWriter] Performing \(operation.method.rawValue) to \(operation.endpoint)")
+		print("🔄 [DataWriter] Parameters: \(String(describing: operation.parameters))")
 
 		// Build URL from endpoint
 		guard let url = URL(string: APIService.baseURL + operation.endpoint) else {
 			print("❌ [DataWriter] Invalid URL for endpoint: \(operation.endpoint)")
 			return .failure(DataServiceError.invalidURL)
 		}
+
+		print("🔄 [DataWriter] Base URL: \(url.absoluteString)")
 
 		do {
 			// Perform the write operation
@@ -109,6 +115,10 @@ class DataWriter: IDataWriter {
 
 		} catch {
 			print("❌ [DataWriter] \(operation.method.rawValue) failed for \(operation.endpoint): \(error)")
+			print("❌ [DataWriter] Error description: \(error.localizedDescription)")
+			if let apiError = error as? APIError {
+				print("❌ [DataWriter] APIError details: \(apiError)")
+			}
 			return .failure(DataServiceError.apiFailed(error))
 		}
 	}
@@ -116,7 +126,7 @@ class DataWriter: IDataWriter {
 	// MARK: - Private Helper Methods
 
 	/// Perform a write operation with response
-	private func performWrite<RequestBody: Encodable, Response: Decodable>(
+	private func performWrite<RequestBody: Encodable & Sendable, Response: Decodable>(
 		method: HTTPMethod,
 		url: URL,
 		body: RequestBody?,
@@ -157,7 +167,7 @@ class DataWriter: IDataWriter {
 	}
 
 	/// Perform a write operation without response
-	private func performWriteWithoutResponse<RequestBody: Encodable>(
+	private func performWriteWithoutResponse<RequestBody: Encodable & Sendable>(
 		method: HTTPMethod,
 		url: URL,
 		body: RequestBody?,
@@ -168,15 +178,32 @@ class DataWriter: IDataWriter {
 		case .delete:
 			try await apiService.deleteData(from: url, parameters: parameters, object: body)
 
-		case .post, .put, .patch:
-			// These can also return no response body (204 No Content)
-			// Use the regular write methods and ignore response
+		case .post:
+			// POST requests use sendData
 			if let body = body {
 				let _: EmptyResponse? = try await apiService.sendData(
 					body, to: url, parameters: parameters)
 			} else {
 				let _: EmptyResponse? = try await apiService.sendData(
 					EmptyRequestBody(), to: url, parameters: parameters)
+			}
+
+		case .put:
+			// PUT requests use updateData (returns EmptyResponse for 204 No Content)
+			if let body = body {
+				let _: EmptyResponse = try await apiService.updateData(
+					body, to: url, parameters: parameters)
+			} else {
+				let _: EmptyResponse = try await apiService.updateData(
+					EmptyRequestBody(), to: url, parameters: parameters)
+			}
+
+		case .patch:
+			// PATCH requests use patchData
+			if let body = body {
+				let _: EmptyResponse = try await apiService.patchData(from: url, with: body)
+			} else {
+				let _: EmptyResponse = try await apiService.patchData(from: url, with: EmptyRequestBody())
 			}
 
 		case .get:

@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MonthCalendarView: View {
 	let month: Date
-	@StateObject var profileViewModel: ProfileViewModel
+	var profileViewModel: ProfileViewModel
 	@ObservedObject var userAuth: UserAuthViewModel
 	let onActivitySelected: ((CalendarActivityDTO) -> Void)?
 	let onDayActivitiesSelected: ([CalendarActivityDTO]) -> Void
@@ -76,13 +76,6 @@ struct MonthCalendarView: View {
 		let filteredActivities = profileViewModel.allCalendarActivities.filter { activity in
 			// Use local calendar for consistent date comparison since we now convert to local timezone
 			calendar.isDate(activity.dateAsDate, inSameDayAs: date)
-		}
-
-		// Add debug logging for this view as well
-		if !filteredActivities.isEmpty {
-			print(
-				"📅 ActivityCalendarView: Day \(Calendar.current.component(.day, from: date)) has \(filteredActivities.count) activities"
-			)
 		}
 
 		return filteredActivities

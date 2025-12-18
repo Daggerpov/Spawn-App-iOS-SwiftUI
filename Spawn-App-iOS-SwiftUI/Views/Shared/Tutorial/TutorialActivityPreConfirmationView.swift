@@ -14,7 +14,7 @@ struct TutorialActivityPreConfirmationView: View {
 
 	@Environment(\.colorScheme) var colorScheme
 	@State private var isVisible = false
-	@ObservedObject private var tutorialViewModel = TutorialViewModel.shared
+	var tutorialViewModel = TutorialViewModel.shared
 
 	private var adaptiveBackgroundColor: Color {
 		colorScheme == .dark ? Color(red: 0.13, green: 0.13, blue: 0.13) : Color.white
@@ -59,7 +59,8 @@ struct TutorialActivityPreConfirmationView: View {
 					withAnimation(.easeInOut(duration: 0.3)) {
 						isVisible = false
 					}
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+					Task { @MainActor in
+						try? await Task.sleep(for: .seconds(0.3))
 						onContinue()
 					}
 				}

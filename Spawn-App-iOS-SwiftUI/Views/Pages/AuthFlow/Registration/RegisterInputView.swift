@@ -100,10 +100,9 @@ struct RegisterInputView: View {
 						impactGenerator.impactOccurred()
 
 						// Execute action with slight delay for animation
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-							Task {
-								await viewModel.sendEmailVerification(email: emailInput)
-							}
+						Task { @MainActor in
+							try? await Task.sleep(for: .seconds(0.1))
+							await viewModel.sendEmailVerification(email: emailInput)
 						}
 					}) {
 						OnboardingButtonCoreView("Continue") {

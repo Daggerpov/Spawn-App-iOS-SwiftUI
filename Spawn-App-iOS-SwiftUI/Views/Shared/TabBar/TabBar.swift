@@ -4,7 +4,11 @@ struct TabBar: View {
 	@Binding var selection: Tabs
 	@State private var symbolTrigger: Bool = false
 	@Namespace private var tabItemNameSpace
-	@ObservedObject private var tutorialViewModel = TutorialViewModel.shared
+	var tutorialViewModel = TutorialViewModel.shared
+
+	init(selection: Binding<Tabs>) {
+		self._selection = selection
+	}
 
 	func changeTabTo(_ tab: Tabs) {
 		// Check if navigation is restricted during tutorial
@@ -24,7 +28,8 @@ struct TabBar: View {
 
 		symbolTrigger = true
 
-		DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+		Task { @MainActor in
+			try? await Task.sleep(for: .seconds(0.1))
 			symbolTrigger = false
 		}
 	}

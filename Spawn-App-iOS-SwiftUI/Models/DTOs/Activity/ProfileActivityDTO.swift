@@ -7,7 +7,7 @@
 
 import Foundation
 
-class ProfileActivityDTO: FullFeedActivityDTO {
+final class ProfileActivityDTO: FullFeedActivityDTO, @unchecked Sendable {
 	var isPastActivity: Bool
 
 	// Custom initializer to handle the additional property

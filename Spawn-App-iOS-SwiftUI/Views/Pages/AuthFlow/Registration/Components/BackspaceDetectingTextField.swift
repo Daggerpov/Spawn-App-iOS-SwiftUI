@@ -31,7 +31,7 @@ struct BackspaceDetectingTextField: UIViewRepresentable {
 		Coordinator(self)
 	}
 
-	class Coordinator: NSObject, UITextFieldDelegate {
+	final class Coordinator: NSObject, UITextFieldDelegate {
 		let parent: BackspaceDetectingTextField
 
 		init(_ parent: BackspaceDetectingTextField) {

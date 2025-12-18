@@ -37,14 +37,14 @@ struct UserProfileView: View {
 	@State private var denyButtonScale: CGFloat = 1.0
 
 	@ObservedObject var userAuth = UserAuthViewModel.shared
-	@StateObject var profileViewModel = ProfileViewModel()
+	@State var profileViewModel: ProfileViewModel
 
 	// Add environment object for navigation
 	@Environment(\.presentationMode) var presentationMode
 
 	init(user: Nameable) {
 		self.user = user
-		self._profileViewModel = StateObject(
+		self._profileViewModel = State(
 			wrappedValue: ProfileViewModel(userId: user.id)
 		)
 	}
@@ -76,8 +76,8 @@ struct UserProfileView: View {
 						)
 					}
 
-					// If they're friends, fetch their activities (critical for profile content)
-					if profileViewModel.friendshipStatus == .friends {
+					// Fetch activities if they're friends OR if viewing own profile
+					if profileViewModel.friendshipStatus == .friends || profileViewModel.friendshipStatus == .themself {
 						await profileViewModel.fetchProfileActivities(
 							profileUserId: user.id
 						)
@@ -89,20 +89,24 @@ struct UserProfileView: View {
 					return
 				}
 
+				// Capture user properties before Task.detached (they're not Sendable)
+				let userId = user.id
+				let profilePictureUrl = user.profilePicture
+
 				// Load enhancement data in background (non-blocking progressive enhancements)
-				backgroundDataLoadTask = Task.detached(priority: .background) {
+				backgroundDataLoadTask = Task.detached(priority: .background) { [profileViewModel] in
 					// Profile picture refresh (can use cached version initially)
-					if let profilePictureUrl = await user.profilePicture {
+					if let profilePictureUrl = profilePictureUrl {
 						let profilePictureCache = ProfilePictureCache.shared
 						_ = await profilePictureCache.getCachedImageWithRefresh(
-							for: await user.id,
+							for: userId,
 							from: profilePictureUrl,
 							maxAge: 6 * 60 * 60  // 6 hours
 						)
 					}
 
 					// Load non-critical enhancement data
-					await profileViewModel.loadEnhancementData(userId: await user.id)
+					await profileViewModel.loadEnhancementData(userId: userId)
 				}
 			}
 			.onDisappear {
@@ -628,7 +632,7 @@ struct UserProfileView: View {
 			UIPasteboard.general.string = url.absoluteString
 
 			// Show notification toast
-			DispatchQueue.main.async {
+			Task { @MainActor in
 				InAppNotificationManager.shared.showNotification(
 					title: "Link copied to clipboard",
 					message: "Profile link has been copied to your clipboard",

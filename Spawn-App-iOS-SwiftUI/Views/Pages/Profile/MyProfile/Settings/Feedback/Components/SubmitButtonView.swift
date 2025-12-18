@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Submit Button Component
 struct SubmitButtonView: View {
-	@ObservedObject var viewModel: FeedbackViewModel
+	var viewModel: FeedbackViewModel
 	var message: String
 	var onSubmit: () -> Void
 

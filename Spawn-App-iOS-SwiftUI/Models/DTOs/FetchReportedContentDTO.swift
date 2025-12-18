@@ -1,6 +1,6 @@
 import Foundation
 
-struct FetchReportedContentDTO: Codable, Identifiable {
+struct FetchReportedContentDTO: Codable, Identifiable, Sendable {
 	let id: UUID
 	let reporterUserId: UUID?
 	let reporterUsername: String?

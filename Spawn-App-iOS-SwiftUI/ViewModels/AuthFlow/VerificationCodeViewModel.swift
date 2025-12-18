@@ -5,17 +5,22 @@
 //  Created by Daniel Agapov on 2025-01-28.
 //
 
-import Combine
 import Foundation
 
-class VerificationCodeViewModel: ObservableObject {
-	@Published var code: [String] = Array(repeating: "", count: 6)
-	@Published var previousCode: [String] = Array(repeating: "", count: 6)
-	@Published var focusedIndex: Int? = 0
-	@Published var secondsRemaining: Int = 30
-	@Published var isResendEnabled: Bool = false
+@Observable
+@MainActor
+final class VerificationCodeViewModel {
+	var code: [String] = Array(repeating: "", count: 6)
+	var previousCode: [String] = Array(repeating: "", count: 6)
+	var focusedIndex: Int? = 0
+	var secondsRemaining: Int = 30
+	var isResendEnabled: Bool = false
 
-	private var timer: Timer?
+	/// Timer for countdown - uses weak self pattern in callbacks
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit.
+	/// Thread safety is ensured by only accessing from MainActor context (via Timer's main runloop)
+	/// and in deinit (which runs after all other accesses complete).
+	@ObservationIgnored private nonisolated(unsafe) var timer: Timer?
 	private var userAuthViewModel: UserAuthViewModel
 
 	var isFormValid: Bool {
@@ -31,7 +36,9 @@ class VerificationCodeViewModel: ObservableObject {
 	}
 
 	deinit {
-		stopTimer()
+		// Safe to access nonisolated(unsafe) timer here - deinit runs after all references are released
+		timer?.invalidate()
+		timer = nil
 	}
 
 	// MARK: - Timer Management
@@ -44,13 +51,16 @@ class VerificationCodeViewModel: ObservableObject {
 		timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
 			guard let self = self else { return }
 
-			if self.secondsRemaining > 0 {
-				self.secondsRemaining -= 1
-			}
+			// Dispatch to main actor since Timer callback is @Sendable
+			Task { @MainActor in
+				if self.secondsRemaining > 0 {
+					self.secondsRemaining -= 1
+				}
 
-			if self.secondsRemaining == 0 {
-				self.isResendEnabled = true
-				self.stopTimer()
+				if self.secondsRemaining == 0 {
+					self.isResendEnabled = true
+					self.stopTimer()
+				}
 			}
 		}
 	}

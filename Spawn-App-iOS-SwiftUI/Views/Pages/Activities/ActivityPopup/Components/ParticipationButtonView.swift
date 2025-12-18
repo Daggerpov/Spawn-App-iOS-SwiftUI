@@ -8,7 +8,7 @@ import SwiftUI
 
 struct ParticipationButtonView: View {
 	@ObservedObject private var activity: FullFeedActivityDTO
-	@ObservedObject private var cardViewModel: ActivityCardViewModel
+	private var cardViewModel: ActivityCardViewModel
 
 	// Optional binding to control tab selection for current user navigation
 	@Binding var selectedTab: TabType?
@@ -71,7 +71,8 @@ struct ParticipationButtonView: View {
 				withAnimation(.easeInOut(duration: 0.1)) {
 					scale = 0.95
 				}
-				DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+				Task { @MainActor in
+					try? await Task.sleep(for: .seconds(0.1))
 					withAnimation(.easeInOut(duration: 0.1)) {
 						scale = 1.0
 					}

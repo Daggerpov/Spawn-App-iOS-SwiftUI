@@ -7,27 +7,27 @@
 
 import Foundation
 
-class ActivityDescriptionViewModel: ObservableObject {
-	@Published var users: [BaseUserDTO]?
+@Observable
+@MainActor
+final class ActivityDescriptionViewModel {
+	var users: [BaseUserDTO]?
 	var activity: FullFeedActivityDTO
 	var senderUserId: UUID
 	var dataService: DataService
 	var creationMessage: String?
-	@Published var isParticipating: Bool = false
-	@Published var errorMessage: String?
-	@Published var isLoading: Bool = false
+	var isParticipating: Bool = false
+	var errorMessage: String?
+	var isLoading: Bool = false
 
 	// MARK: - Helper Methods
 
 	/// Sets loading state and optional error message
-	@MainActor
 	private func setLoadingState(_ loading: Bool, error: String? = nil) {
 		isLoading = loading
 		errorMessage = error
 	}
 
 	/// Updates activity and posts notification after successful API call
-	@MainActor
 	private func updateActivityAfterAPISuccess(_ updatedActivity: FullFeedActivityDTO) {
 		self.activity = updatedActivity
 		self.isParticipating = updatedActivity.participationStatus == .participating
@@ -56,18 +56,13 @@ class ActivityDescriptionViewModel: ObservableObject {
 	// MARK: - Optimistic Updates for Activity Editing
 
 	/// Optimistically updates the activity title
-	@MainActor
 	func updateActivityTitle(_ newTitle: String) {
 		activity.title = newTitle
-
-		// Notify UI
-		objectWillChange.send()
 	}
 
 	/// Optimistically updates the activity icon immediately in the UI
 	func optimisticallyUpdateActivityIcon(_ newIcon: String) {
 		activity.icon = newIcon
-		objectWillChange.send()
 	}
 
 	/// Optimistically updates both title and icon
@@ -78,18 +73,13 @@ class ActivityDescriptionViewModel: ObservableObject {
 		if let icon = icon {
 			activity.icon = icon
 		}
-		objectWillChange.send()
 	}
 
 	/// Saves activity changes to the backend using partial update endpoint
 	func saveActivityChanges() async {
-		await setLoadingState(true)
+		setLoadingState(true)
 
-		defer {
-			Task { @MainActor in
-				setLoadingState(false)
-			}
-		}
+		defer { setLoadingState(false) }
 
 		print("📡 Saving activity changes using DataService")
 
@@ -106,26 +96,21 @@ class ActivityDescriptionViewModel: ObservableObject {
 
 		switch result {
 		case .success(let updatedActivity, _):
-			await MainActor.run {
-				self.activity = updatedActivity
+			self.activity = updatedActivity
 
-				// Post notification for successful update immediately on main actor
-				NotificationCenter.default.post(
-					name: .activityUpdated,
-					object: updatedActivity
-				)
-			}
+			// Post notification for successful update immediately on main actor
+			NotificationCenter.default.post(
+				name: .activityUpdated,
+				object: updatedActivity
+			)
 
 		case .failure(let error):
 			print("❌ Error saving activity changes: \(error)")
-			await MainActor.run {
-				errorMessage = ErrorFormattingService.shared.formatError(error)
-			}
+			errorMessage = ErrorFormattingService.shared.formatError(error)
 		}
 	}
 
 	/// Clears any error messages
-	@MainActor
 	func clearError() {
 		errorMessage = nil
 	}
@@ -144,27 +129,25 @@ class ActivityDescriptionViewModel: ObservableObject {
 		switch result {
 		case .success(let updatedActivity, _):
 			// Update local state after a successful API call
-			await updateActivityAfterAPISuccess(updatedActivity)
+			updateActivityAfterAPISuccess(updatedActivity)
 
 		case .failure(let error):
-			await MainActor.run {
-				// Check if it's an activity full error (status 400)
-				if let dataError = error as? DataServiceError,
-					case .apiFailed(let apiError) = dataError,
-					let apiErrorTyped = apiError as? APIError,
-					case .invalidStatusCode(let statusCode) = apiErrorTyped,
-					statusCode == 400
-				{
-					// Activity is full
-					NotificationCenter.default.post(
-						name: NSNotification.Name("ShowActivityFullAlert"),
-						object: nil,
-						userInfo: ["message": "Sorry, this activity is full"]
-					)
-				} else {
-					print("Error toggling participation: \(error)")
-					self.errorMessage = "Failed to update participation status"
-				}
+			// Check if it's an activity full error (status 400)
+			if let dataError = error as? DataServiceError,
+				case .apiFailed(let apiError) = dataError,
+				let apiErrorTyped = apiError as? APIError,
+				case .invalidStatusCode(let statusCode) = apiErrorTyped,
+				statusCode == 400
+			{
+				// Activity is full
+				NotificationCenter.default.post(
+					name: NSNotification.Name("ShowActivityFullAlert"),
+					object: nil,
+					userInfo: ["message": "Sorry, this activity is full"]
+				)
+			} else {
+				print("Error toggling participation: \(error)")
+				self.errorMessage = "Failed to update participation status"
 			}
 		}
 	}
@@ -173,9 +156,7 @@ class ActivityDescriptionViewModel: ObservableObject {
 		// Validate the message is not empty
 		guard !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
 			print("Cannot send empty message")
-			await MainActor.run {
-				creationMessage = "Cannot send an empty message"
-			}
+			creationMessage = "Cannot send an empty message"
 			return
 		}
 
@@ -197,15 +178,11 @@ class ActivityDescriptionViewModel: ObservableObject {
 			await fetchUpdatedActivityData()
 
 			// Clear any error message
-			await MainActor.run {
-				creationMessage = nil
-			}
+			creationMessage = nil
 
 		case .failure(let error):
 			print("Error sending message: \(error)")
-			await MainActor.run {
-				creationMessage = ErrorFormattingService.shared.formatError(error)
-			}
+			creationMessage = ErrorFormattingService.shared.formatError(error)
 		}
 	}
 
@@ -224,9 +201,7 @@ class ActivityDescriptionViewModel: ObservableObject {
 		case .success(let activities, _):
 			// Find the updated activity in the list
 			if let updatedActivity = activities.first(where: { $0.id == activity.id }) {
-				await MainActor.run {
-					self.activity = updatedActivity
-				}
+				self.activity = updatedActivity
 			}
 
 		case .failure(let error):
@@ -254,9 +229,7 @@ class ActivityDescriptionViewModel: ObservableObject {
 			print("Activity reported successfully")
 
 		case .failure(let error):
-			await MainActor.run {
-				errorMessage = ErrorFormattingService.shared.formatError(error)
-			}
+			errorMessage = ErrorFormattingService.shared.formatError(error)
 		}
 	}
 

@@ -6,9 +6,15 @@
 //
 import Foundation
 
-class ActivityStatusViewModel: ObservableObject {
-	@Published var status: ActivityStatus = .laterToday
-	private var timer: Timer?
+@Observable
+@MainActor
+final class ActivityStatusViewModel {
+	var status: ActivityStatus = .laterToday
+	/// Timer for periodic status updates
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit.
+	/// Thread safety is ensured by only accessing from MainActor context (via Timer's main runloop)
+	/// and in deinit (which runs after all other accesses complete).
+	@ObservationIgnored private nonisolated(unsafe) var timer: Timer?
 	private let activityStartTime: Date
 	private let activityDuration: TimeInterval  // in seconds
 	private var refresh: Double = -1
@@ -30,14 +36,18 @@ class ActivityStatusViewModel: ObservableObject {
 	}
 
 	deinit {
+		// Safe to access nonisolated(unsafe) timer here - deinit runs after all references are released
 		timer?.invalidate()
+		timer = nil
 	}
 
 	private func startTimer() {
 		// Update every minute
 		guard refresh > 0 else { return }
 		timer = Timer.scheduledTimer(withTimeInterval: refresh, repeats: true) { [weak self] _ in
-			self?.updateStatus()
+			Task { @MainActor [weak self] in
+				self?.updateStatus()
+			}
 		}
 	}
 

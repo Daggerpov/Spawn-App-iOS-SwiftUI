@@ -18,21 +18,18 @@ enum FriendListDisplayMode {
 
 struct FriendSearchView: View {
 	@Environment(\.dismiss) private var dismiss
-	@StateObject private var searchViewModel = SearchViewModel()
-	@StateObject private var viewModel: FriendsTabViewModel
+	@State private var searchViewModel = SearchViewModel()
+	// Accept viewModel from parent to prevent unnecessary recreations
+	var viewModel: FriendsTabViewModel
+	private let userId: UUID
 
 	// Mode determines what content to display
 	var displayMode: FriendListDisplayMode
 
-	init(userId: UUID? = nil, displayMode: FriendListDisplayMode = .search) {
-		let id =
-			userId ?? (UserDefaults.standard.string(forKey: "currentUserId").flatMap { UUID(uuidString: $0) } ?? UUID())
-		self._viewModel = StateObject(
-			wrappedValue: FriendsTabViewModel(
-				userId: id,
-				apiService: MockAPIService.isMocking ? MockAPIService(userId: id) : APIService())
-		)
+	init(userId: UUID, displayMode: FriendListDisplayMode = .search, viewModel: FriendsTabViewModel) {
+		self.userId = userId
 		self.displayMode = displayMode
+		self.viewModel = viewModel
 	}
 
 	// Title based on display mode
@@ -263,11 +260,15 @@ struct FriendRowView: View {
 	@State private var showBlockDialog: Bool = false
 	@State private var showAddToActivityType: Bool = false
 	@State private var blockReason: String = ""
-	@ObservedObject var userAuth = UserAuthViewModel.shared
 
 	// Computed property for the user object
 	private var userForProfile: Nameable {
 		return user ?? friend ?? recommendedFriend ?? user!
+	}
+
+	// Access singleton directly
+	private var userAuth: UserAuthViewModel {
+		UserAuthViewModel.shared
 	}
 
 	var body: some View {
@@ -449,7 +450,7 @@ struct FriendRowView: View {
 			UIPasteboard.general.string = url.absoluteString
 
 			// Show notification toast
-			DispatchQueue.main.async {
+			Task { @MainActor in
 				InAppNotificationManager.shared.showNotification(
 					title: "Link copied to clipboard",
 					message: "Profile link has been copied to your clipboard",
@@ -461,32 +462,36 @@ struct FriendRowView: View {
 	}
 
 	private func shareProfile(for user: Nameable) {
+		// Capture user name on main thread before the completion handler
+		let userName = FormatterService.shared.formatName(user: user)
+
 		ServiceConstants.generateProfileShareCodeURL(for: user.id) { profileURL in
 			let url = profileURL ?? ServiceConstants.generateProfileShareURL(for: user.id)
-			let shareText =
-				"Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn! \(url.absoluteString)"
+			let shareText = "Check out \(userName)'s profile on Spawn! \(url.absoluteString)"
 
-			let activityViewController = UIActivityViewController(
-				activityItems: [shareText],
-				applicationActivities: nil
-			)
+			// All UIKit operations must be on main actor
+			Task { @MainActor in
+				let activityViewController = UIActivityViewController(
+					activityItems: [shareText],
+					applicationActivities: nil
+				)
 
-			// Present the activity view controller
-			if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-				let window = windowScene.windows.first
-			{
+				// Present the activity view controller
+				if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+					let window = windowScene.windows.first
+				{
+					var topController = window.rootViewController
+					while let presentedViewController = topController?.presentedViewController {
+						topController = presentedViewController
+					}
 
-				var topController = window.rootViewController
-				while let presentedViewController = topController?.presentedViewController {
-					topController = presentedViewController
+					if let popover = activityViewController.popoverPresentationController {
+						popover.sourceView = topController?.view
+						popover.sourceRect = topController?.view.bounds ?? CGRect.zero
+					}
+
+					topController?.present(activityViewController, animated: true, completion: nil)
 				}
-
-				if let popover = activityViewController.popoverPresentationController {
-					popover.sourceView = topController?.view
-					popover.sourceRect = topController?.view.bounds ?? CGRect.zero
-				}
-
-				topController?.present(activityViewController, animated: true, completion: nil)
 			}
 		}
 	}
@@ -502,7 +507,8 @@ struct FriendRowView: View {
 			)
 
 			// Refresh friends cache to remove the blocked user from friends list
-			await AppCache.shared.refreshFriends()
+			let _: DataResult<[FullFriendUserDTO]> = await DataService.shared.read(
+				.friends(userId: blockerId), cachePolicy: .apiOnly)
 
 		} catch {
 			print("Failed to block user: \(error.localizedDescription)")
@@ -510,6 +516,8 @@ struct FriendRowView: View {
 	}
 }
 
+@available(iOS 17.0, *)
 #Preview {
-	FriendSearchView(userId: UUID(), displayMode: .allFriends)
+	@Previewable @State var previewViewModel = FriendsTabViewModel(userId: UUID())
+	FriendSearchView(userId: UUID(), displayMode: .allFriends, viewModel: previewViewModel)
 }

@@ -9,7 +9,8 @@ import Foundation
 import SwiftUI
 
 /// Service responsible for managing activity color assignments with even distribution and caching
-class ActivityColorService: ObservableObject {
+@MainActor
+final class ActivityColorService: ObservableObject {
 	static let shared = ActivityColorService()
 
 	// MARK: - Color Distribution State

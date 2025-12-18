@@ -9,7 +9,7 @@ import SwiftUI
 
 struct FriendRequestsView: View {
 	@Environment(\.dismiss) private var dismiss
-	@StateObject private var viewModel: FriendRequestsViewModel
+	@State private var viewModel: FriendRequestsViewModel
 	@State private var showSuccessDrawer = false
 	@State private var acceptedFriend: BaseUserDTO?
 	@State private var navigateToAddToActivityType = false
@@ -18,10 +18,10 @@ struct FriendRequestsView: View {
 
 	init(userId: UUID, viewModel: FriendRequestsViewModel? = nil) {
 		if let existingViewModel = viewModel {
-			self._viewModel = StateObject(wrappedValue: existingViewModel)
+			self._viewModel = State(wrappedValue: existingViewModel)
 			self.isPreviewMode = true  // When a viewModel is provided, we're in preview mode
 		} else {
-			self._viewModel = StateObject(wrappedValue: FriendRequestsViewModel(userId: userId))
+			self._viewModel = State(wrappedValue: FriendRequestsViewModel(userId: userId))
 			self.isPreviewMode = false
 		}
 	}

@@ -5,12 +5,13 @@
 //  Created by Daniel Agapov on 11/11/24.
 //
 
-import Foundation
 import SwiftUI
 
-class ActivityInfoViewModel: ObservableObject {
-	@ObservedObject var activity: FullFeedActivityDTO
-	@ObservedObject var locationManager: LocationManager
+@Observable
+@MainActor
+final class ActivityInfoViewModel {
+	var activity: FullFeedActivityDTO
+	var locationManager: LocationManager
 
 	init(activity: FullFeedActivityDTO, locationManager: LocationManager) {
 		self.activity = activity
@@ -65,6 +66,5 @@ class ActivityInfoViewModel: ObservableObject {
 	// Add method to update activity reference
 	func updateActivity(_ newActivity: FullFeedActivityDTO) {
 		self.activity = newActivity
-		objectWillChange.send()
 	}
 }

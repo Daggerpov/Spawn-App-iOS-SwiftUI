@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct TutorialOverlayView: View {
-	@ObservedObject var tutorialViewModel = TutorialViewModel.shared
+	var tutorialViewModel = TutorialViewModel.shared
 	@Environment(\.colorScheme) var colorScheme
 
 	let activityTypesFrame: CGRect?
@@ -72,7 +72,8 @@ struct TutorialOverlayView: View {
 		.onAppear {
 			if tutorialViewModel.tutorialState.shouldShowTutorialOverlay {
 				// Animate in the callout with delay
-				DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+				Task { @MainActor in
+					try? await Task.sleep(for: .seconds(0.5))
 					withAnimation(.easeOut(duration: 0.4)) {
 						showCallout = true
 					}

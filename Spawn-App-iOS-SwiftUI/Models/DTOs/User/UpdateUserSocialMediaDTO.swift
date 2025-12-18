@@ -5,7 +5,7 @@
 //  Created by Daniel Agapov on 5/1/25.
 //
 
-struct UpdateUserSocialMediaDTO: Codable {
+struct UpdateUserSocialMediaDTO: Codable, Sendable {
 	var whatsappNumber: String?
 	var instagramUsername: String?
 

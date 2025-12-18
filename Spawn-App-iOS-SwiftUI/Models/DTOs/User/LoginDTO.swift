@@ -5,7 +5,7 @@
 //  Created by Shane on 7/2/25.
 //
 
-struct LoginDTO: Codable, Hashable {
+struct LoginDTO: Codable, Hashable, Sendable {
 	static func == (lhs: LoginDTO, rhs: LoginDTO) -> Bool {
 		return lhs.usernameOrEmail == rhs.usernameOrEmail
 	}

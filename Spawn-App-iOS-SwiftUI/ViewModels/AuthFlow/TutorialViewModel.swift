@@ -5,14 +5,15 @@
 //  Created by Assistant on 1/21/25.
 //
 
-import Foundation
 import SwiftUI
 
-class TutorialViewModel: ObservableObject {
+@Observable
+@MainActor
+final class TutorialViewModel {
 	static let shared = TutorialViewModel()
 
-	@Published var tutorialState: TutorialState = .notStarted
-	@Published var shouldShowCallout: Bool = false
+	var tutorialState: TutorialState = .notStarted
+	var shouldShowCallout: Bool = false
 
 	private let userDefaults = UserDefaults.standard
 	private let tutorialStateKey = "TutorialState"
@@ -101,36 +102,28 @@ class TutorialViewModel: ObservableObject {
 
 	/// Start the tutorial from the beginning
 	func startTutorial() {
-		DispatchQueue.main.async {
-			self.tutorialState = .activityTypeSelection
-			self.shouldShowCallout = true
-		}
+		tutorialState = .activityTypeSelection
+		shouldShowCallout = true
 	}
 
 	/// Progress to activity creation step
 	func progressToActivityCreation(activityType: String) {
-		DispatchQueue.main.async {
-			self.tutorialState = .activityCreation(selectedActivityType: activityType)
-			self.shouldShowCallout = false
-		}
+		tutorialState = .activityCreation(selectedActivityType: activityType)
+		shouldShowCallout = false
 	}
 
 	/// Complete the tutorial
 	func completeTutorial() {
-		DispatchQueue.main.async {
-			self.tutorialState = .completed
-			self.shouldShowCallout = false
-			self.saveTutorialState()
-		}
+		tutorialState = .completed
+		shouldShowCallout = false
+		saveTutorialState()
 	}
 
 	/// Reset tutorial state (for testing/debugging)
 	func resetTutorial() {
-		DispatchQueue.main.async {
-			self.tutorialState = .notStarted
-			self.shouldShowCallout = false
-			self.userDefaults.removeObject(forKey: self.hasCompletedTutorialKey)
-		}
+		tutorialState = .notStarted
+		shouldShowCallout = false
+		userDefaults.removeObject(forKey: hasCompletedTutorialKey)
 	}
 
 	/// Check if navigation to a tab should be allowed
@@ -174,7 +167,6 @@ class TutorialViewModel: ObservableObject {
 	// MARK: - Server Sync Methods
 
 	/// Fetch tutorial completion status from server
-	@MainActor
 	private func fetchTutorialStatusFromServer() async {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
 			return

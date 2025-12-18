@@ -13,7 +13,7 @@ struct ChatroomView: View {
 	var user: BaseUserDTO = UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov
 	@ObservedObject var activity: FullFeedActivityDTO
 	var backgroundColor: Color
-	@StateObject var viewModel: ChatViewModel
+	@State var viewModel: ChatViewModel
 	@Environment(\.dismiss) private var dismiss
 	@Environment(\.colorScheme) var colorScheme
 
@@ -21,7 +21,7 @@ struct ChatroomView: View {
 		self.activity = activity
 		self.backgroundColor = backgroundColor
 		let userId = user.id
-		self._viewModel = StateObject(wrappedValue: ChatViewModel(senderUserId: userId, activity: activity))
+		self._viewModel = State(wrappedValue: ChatViewModel(senderUserId: userId, activity: activity))
 	}
 
 	// Helper function to send messages for ChatroomView
@@ -144,7 +144,8 @@ struct ChatroomView: View {
 				.onAppear {
 					// Scroll to newest message when view appears
 					if let lastMessage = sortedMessages.last {
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+						Task { @MainActor in
+							try? await Task.sleep(for: .seconds(0.1))
 							proxy.scrollTo(lastMessage.id, anchor: .bottom)
 						}
 					}

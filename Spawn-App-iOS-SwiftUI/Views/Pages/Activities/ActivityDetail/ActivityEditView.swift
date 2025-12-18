@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ActivityEditView: View {
-	@ObservedObject var viewModel: ActivityDescriptionViewModel
+	var viewModel: ActivityDescriptionViewModel
 	@Environment(\.dismiss) private var dismiss
 	@Environment(\.colorScheme) private var colorScheme
 
@@ -149,7 +149,8 @@ struct ActivityEditView: View {
 			.onAppear {
 				setupInitialState()
 				// Auto-focus the title field when the view appears
-				DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+				Task { @MainActor in
+					try? await Task.sleep(for: .seconds(0.1))
 					isTitleFieldFocused = true
 				}
 			}
@@ -229,7 +230,8 @@ struct ActivityEditView: View {
 					hasChanges = false  // Reset changes flag
 
 					// Auto-dismiss after showing success for 1.5 seconds
-					DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+					Task { @MainActor in
+						try? await Task.sleep(for: .seconds(1.5))
 						dismiss()
 					}
 				}

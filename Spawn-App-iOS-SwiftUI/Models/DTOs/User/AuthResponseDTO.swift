@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct AuthResponseDTO: Codable {
+struct AuthResponseDTO: Codable, Sendable {
 	var user: BaseUserDTO
 	var status: UserStatus?
 	var isOAuthUser: Bool?

@@ -11,7 +11,7 @@ struct ChatroomButtonView: View {
 		UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov
 	let activityColor: Color
 	@ObservedObject var activity: FullFeedActivityDTO
-	@ObservedObject var viewModel: ChatViewModel
+	var viewModel: ChatViewModel
 	@State private var isLoading: Bool = true
 
 	init(activity: FullFeedActivityDTO, activityColor: Color) {

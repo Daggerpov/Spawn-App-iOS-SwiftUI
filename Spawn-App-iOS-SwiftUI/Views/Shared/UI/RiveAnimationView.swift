@@ -79,9 +79,10 @@ struct RiveAnimationView: View {
 		}
 
 		// Add a timeout to detect if Rive fails to load properly
-		DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+		Task { @MainActor in
+			try? await Task.sleep(for: .seconds(1.0))
 			// If after 1 second the view model still hasn't loaded properly, show fallback
-			if self.riveViewModel == nil {
+			if riveViewModel == nil {
 				self.loadingFailed = true
 			}
 		}

@@ -10,17 +10,23 @@ import Foundation
 import SwiftUI
 
 /// Cache service for activity-related data
-class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
+@MainActor
+final class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 	static let shared = ActivityCacheService()
 
 	// MARK: - Cached Data
 	@Published var activities: [UUID: [FullFeedActivityDTO]] = [:]
 	@Published var activityTypes: [UUID: [ActivityTypeDTO]] = [:]
+	@Published var upcomingActivities: [UUID: [FullFeedActivityDTO]] = [:]
+	/// Calendar activities keyed by "userId_month_year" (e.g., "uuid_1_2025") or "userId_all"
+	@Published var calendarActivities: [String: [CalendarActivityDTO]] = [:]
 
 	// MARK: - Constants
 	private enum CacheKeys {
 		static let events = "events"
 		static let activityTypes = "activityTypes"
+		static let upcomingActivities = "upcomingActivities"
+		static let calendarActivities = "calendarActivities"
 		static let lastChecked = "activityCache_lastChecked"
 	}
 
@@ -28,9 +34,9 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 	private override init() {
 		super.init()
 
-		// Load from disk in the background
-		diskQueue.async { [weak self] in
-			self?.loadFromDisk()
+		// Load from disk in the background, then update on main actor
+		Task.detached { [weak self] in
+			await self?.loadFromDiskAsync()
 		}
 	}
 
@@ -122,8 +128,9 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 			return
 		}
 
-		await genericRefresh(endpoint: "activities/feedActivities/\(userId)") {
-			(fetchedActivities: [FullFeedActivityDTO]) in
+		await genericRefresh(endpoint: "activities/feed-activities/\(userId)") {
+			[weak self] (fetchedActivities: [FullFeedActivityDTO]) in
+			guard let self = self else { return }
 			self.updateActivitiesForUser(fetchedActivities, userId: userId)
 		}
 
@@ -142,18 +149,16 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 	func addOrUpdateActivity(_ activity: FullFeedActivityDTO) {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
 
-		DispatchQueue.main.async { [weak self] in
-			guard let self = self else { return }
-			if var userActivities = self.activities[userId] {
-				if let index = userActivities.firstIndex(where: { $0.id == activity.id }) {
-					userActivities[index] = activity
-				} else {
-					userActivities.append(activity)
-				}
-				self.activities[userId] = userActivities
+		// Already on main actor, no dispatch needed
+		if var userActivities = self.activities[userId] {
+			if let index = userActivities.firstIndex(where: { $0.id == activity.id }) {
+				userActivities[index] = activity
 			} else {
-				self.activities[userId] = [activity]
+				userActivities.append(activity)
 			}
+			self.activities[userId] = userActivities
+		} else {
+			self.activities[userId] = [activity]
 		}
 
 		// Ensure color is assigned for the activity
@@ -247,7 +252,9 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 			return
 		}
 
-		await genericRefresh(endpoint: "users/\(userId)/activity-types") { (fetchedActivityTypes: [ActivityTypeDTO]) in
+		await genericRefresh(endpoint: "users/\(userId)/activity-types") {
+			[weak self] (fetchedActivityTypes: [ActivityTypeDTO]) in
+			guard let self = self else { return }
 			self.updateActivityTypesForUser(fetchedActivityTypes, userId: userId)
 		}
 	}
@@ -292,17 +299,159 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 		saveToDisk()
 	}
 
+	// MARK: - Upcoming Activities Methods
+
+	/// Get upcoming activities for a user
+	func getUpcomingActivities(for userId: UUID) -> [FullFeedActivityDTO] {
+		return upcomingActivities[userId] ?? []
+	}
+
+	/// Update upcoming activities for a user
+	func updateUpcomingActivitiesForUser(_ newUpcomingActivities: [FullFeedActivityDTO], userId: UUID) {
+		// Filter out expired activities before storing in cache
+		let filteredActivities = newUpcomingActivities.filter { activity in
+			return activity.isExpired != true
+		}
+
+		upcomingActivities[userId] = filteredActivities
+		setLastCheckedForUser(userId, cacheType: CacheKeys.upcomingActivities, date: Date())
+
+		// Pre-assign colors for even distribution
+		let activityIds = filteredActivities.map { $0.id }
+		ActivityColorService.shared.assignColorsForActivities(activityIds)
+
+		saveToDisk()
+	}
+
+	/// Refresh upcoming activities from the backend
+	func refreshUpcomingActivities() async {
+		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+			print("Cannot refresh upcoming activities: No logged in user")
+			return
+		}
+
+		await genericRefresh(endpoint: "activities/user/\(userId)/upcoming") {
+			[weak self] (fetchedActivities: [FullFeedActivityDTO]) in
+			guard let self = self else { return }
+			self.updateUpcomingActivitiesForUser(fetchedActivities, userId: userId)
+		}
+	}
+
+	/// Clear upcoming activities for a user
+	func clearUpcomingActivitiesForUser(_ userId: UUID) {
+		upcomingActivities.removeValue(forKey: userId)
+		saveToDisk()
+	}
+
+	// MARK: - Calendar Activities Methods
+
+	/// Generate cache key for calendar activities
+	private func calendarCacheKey(userId: UUID, month: Int, year: Int) -> String {
+		return "\(userId.uuidString)_\(month)_\(year)"
+	}
+
+	/// Generate cache key for all calendar activities
+	private func calendarAllCacheKey(userId: UUID) -> String {
+		return "\(userId.uuidString)_all"
+	}
+
+	/// Get calendar activities for a specific month
+	func getCalendarActivities(for userId: UUID, month: Int, year: Int) -> [CalendarActivityDTO]? {
+		let key = calendarCacheKey(userId: userId, month: month, year: year)
+		return calendarActivities[key]
+	}
+
+	/// Get all calendar activities for a user
+	func getAllCalendarActivities(for userId: UUID) -> [CalendarActivityDTO]? {
+		let key = calendarAllCacheKey(userId: userId)
+		return calendarActivities[key]
+	}
+
+	/// Update calendar activities for a specific month
+	func updateCalendarActivitiesForMonth(_ activities: [CalendarActivityDTO], userId: UUID, month: Int, year: Int) {
+		let key = calendarCacheKey(userId: userId, month: month, year: year)
+		calendarActivities[key] = activities
+		setLastCheckedForUser(userId, cacheType: "calendar_\(month)_\(year)", date: Date())
+
+		// Pre-assign colors for calendar activities
+		let activityIds = activities.compactMap { $0.activityId ?? $0.id }
+		ActivityColorService.shared.assignColorsForActivities(activityIds)
+
+		saveToDisk()
+	}
+
+	/// Update all calendar activities for a user
+	func updateAllCalendarActivities(_ activities: [CalendarActivityDTO], userId: UUID) {
+		let key = calendarAllCacheKey(userId: userId)
+		calendarActivities[key] = activities
+		setLastCheckedForUser(userId, cacheType: "calendar_all", date: Date())
+
+		// Pre-assign colors for calendar activities
+		let activityIds = activities.compactMap { $0.activityId ?? $0.id }
+		ActivityColorService.shared.assignColorsForActivities(activityIds)
+
+		saveToDisk()
+	}
+
+	/// Refresh calendar activities for a specific month from the backend
+	func refreshCalendarActivities(userId: UUID, month: Int, year: Int, requestingUserId: UUID?) async {
+		var parameters = [
+			"month": String(month),
+			"year": String(year),
+		]
+		if let requestingUserId = requestingUserId {
+			parameters["requestingUserId"] = requestingUserId.uuidString
+		}
+
+		await genericRefresh(endpoint: "users/\(userId)/calendar", parameters: parameters) {
+			[weak self] (fetchedActivities: [CalendarActivityDTO]) in
+			guard let self = self else { return }
+			self.updateCalendarActivitiesForMonth(fetchedActivities, userId: userId, month: month, year: year)
+		}
+	}
+
+	/// Refresh all calendar activities from the backend
+	func refreshAllCalendarActivities(userId: UUID, requestingUserId: UUID?) async {
+		var parameters: [String: String] = [:]
+		if let requestingUserId = requestingUserId {
+			parameters["requestingUserId"] = requestingUserId.uuidString
+		}
+
+		await genericRefresh(
+			endpoint: "users/\(userId)/calendar",
+			parameters: parameters.isEmpty ? nil : parameters
+		) {
+			[weak self] (fetchedActivities: [CalendarActivityDTO]) in
+			guard let self = self else { return }
+			self.updateAllCalendarActivities(fetchedActivities, userId: userId)
+		}
+	}
+
+	/// Clear calendar activities for a user
+	func clearCalendarActivitiesForUser(_ userId: UUID) {
+		// Remove all keys that start with this user's ID
+		let keysToRemove = calendarActivities.keys.filter { $0.hasPrefix(userId.uuidString) }
+		for key in keysToRemove {
+			calendarActivities.removeValue(forKey: key)
+		}
+		saveToDisk()
+	}
+
 	// MARK: - CacheService Protocol
 
 	func clearAllCaches() {
 		activities = [:]
 		activityTypes = [:]
+		upcomingActivities = [:]
+		calendarActivities = [:]
 		lastChecked = [:]
 
-		// Clear UserDefaults data on background queue
-		diskQueue.async {
+		// Clear UserDefaults data on background task
+		Task.detached(priority: .utility) {
 			UserDefaults.standard.removeObject(forKey: CacheKeys.events)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.activityTypes)
+			UserDefaults.standard.removeObject(forKey: CacheKeys.upcomingActivities)
+			UserDefaults.standard.removeObject(forKey: CacheKeys.calendarActivities)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.lastChecked)
 		}
 	}
@@ -310,6 +459,8 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 	func clearDataForUser(_ userId: UUID) {
 		clearActivitiesForUser(userId)
 		clearActivityTypesForUser(userId)
+		clearUpcomingActivitiesForUser(userId)
+		clearCalendarActivitiesForUser(userId)
 
 		// Clear activity color preferences
 		ActivityColorService.shared.clearColorPreferencesForUser(userId)
@@ -329,42 +480,65 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 		print("🔄 [ACTIVITY-CACHE] Force refreshing all activity data")
 		async let activitiesTask: () = refreshActivities()
 		async let activityTypesTask: () = refreshActivityTypes()
+		async let upcomingTask: () = refreshUpcomingActivities()
 
 		await activitiesTask
 		await activityTypesTask
+		await upcomingTask
+		// Note: Calendar activities are not force-refreshed here as they require specific month/year parameters
 	}
 
 	// MARK: - Persistence
 
 	override func saveToDisk() {
+		// Capture data on main actor BEFORE passing to background closure
+		let capturedActivities = self.activities
+		let capturedActivityTypes = self.activityTypes
+		let capturedUpcomingActivities = self.upcomingActivities
+		let capturedCalendarActivities = self.calendarActivities
+		let capturedTimestamps = self.lastChecked
+
 		debouncedSaveToDisk { [weak self] in
 			guard let self = self else { return }
 
-			// Capture data on main thread
-			let capturedActivities = self.activities
-			let capturedActivityTypes = self.activityTypes
-			let capturedTimestamps = self.lastChecked
-
-			// Encode and write on background queue
+			// Encode and write on background queue using captured data
 			self.saveToDefaults(capturedActivities, key: CacheKeys.events)
 			self.saveToDefaults(capturedActivityTypes, key: CacheKeys.activityTypes)
+			self.saveToDefaults(capturedUpcomingActivities, key: CacheKeys.upcomingActivities)
+			self.saveToDefaults(capturedCalendarActivities, key: CacheKeys.calendarActivities)
 			self.saveToDefaults(capturedTimestamps, key: CacheKeys.lastChecked)
 		}
 	}
 
-	private func loadFromDisk() {
-		let loadedActivities: [UUID: [FullFeedActivityDTO]]? = loadFromDefaults(key: CacheKeys.events)
-		let loadedActivityTypes: [UUID: [ActivityTypeDTO]]? = loadFromDefaults(key: CacheKeys.activityTypes)
-		let loadedTimestamps: [UUID: [String: Date]]? = loadFromDefaults(key: CacheKeys.lastChecked)
+	/// Async version of loadFromDisk that properly handles main actor isolation
+	private func loadFromDiskAsync() async {
+		// Load data on background queue to avoid blocking main thread
+		let activities: [UUID: [FullFeedActivityDTO]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.events)
+		}.value
 
-		// Update @Published properties on main thread
-		DispatchQueue.main.async { [weak self] in
-			guard let self = self else { return }
+		let activityTypes: [UUID: [ActivityTypeDTO]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.activityTypes)
+		}.value
 
-			if let activities = loadedActivities { self.activities = activities }
-			if let types = loadedActivityTypes { self.activityTypes = types }
-			if let timestamps = loadedTimestamps { self.lastChecked = timestamps }
-		}
+		let upcomingActivities: [UUID: [FullFeedActivityDTO]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.upcomingActivities)
+		}.value
+
+		let calendarActivities: [String: [CalendarActivityDTO]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.calendarActivities)
+		}.value
+
+		let timestamps: [UUID: [String: Date]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.lastChecked)
+		}.value
+
+		// Update @Published properties - already on MainActor
+		if let activities { self.activities = activities }
+		if let activityTypes { self.activityTypes = activityTypes }
+		if let upcomingActivities { self.upcomingActivities = upcomingActivities }
+		if let calendarActivities { self.calendarActivities = calendarActivities }
+		if let timestamps { self.lastChecked = timestamps }
 	}
 
 	// MARK: - Profile Picture Preloading

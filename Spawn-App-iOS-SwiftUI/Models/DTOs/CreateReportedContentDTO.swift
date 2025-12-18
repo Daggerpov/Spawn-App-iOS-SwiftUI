@@ -1,6 +1,6 @@
 import Foundation
 
-struct CreateReportedContentDTO: Codable {
+struct CreateReportedContentDTO: Codable, Sendable {
 	let reporterUserId: UUID
 	let contentId: UUID
 	let contentType: EntityType

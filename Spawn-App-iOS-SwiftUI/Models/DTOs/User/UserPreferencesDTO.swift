@@ -1,7 +1,7 @@
 import Foundation
 
 /// Data transfer object for managing user preferences and tutorial status
-struct UserPreferencesDTO: Codable {
+struct UserPreferencesDTO: Codable, Sendable {
 	/// Whether the user has completed the first-time tutorial
 	let hasCompletedTutorial: Bool
 

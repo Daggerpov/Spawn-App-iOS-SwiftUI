@@ -34,16 +34,15 @@ struct MyProfileView: View {
 	@State private var backgroundDataLoadTask: Task<Void, Never>?
 
 	@ObservedObject var userAuth = UserAuthViewModel.shared
-	@StateObject var profileViewModel = ProfileViewModel()
+	// Accept profileViewModel from parent to prevent recreation loops
+	var profileViewModel: ProfileViewModel
 
 	// Add environment object for navigation
 	@Environment(\.presentationMode) var presentationMode
 
-	init(user: BaseUserDTO) {
+	init(user: BaseUserDTO, profileViewModel: ProfileViewModel) {
 		self.user = user
-		self._profileViewModel = StateObject(
-			wrappedValue: ProfileViewModel(userId: user.id)
-		)
+		self.profileViewModel = profileViewModel
 		self.username = user.username ?? ""
 		self.name = user.name ?? ""
 	}
@@ -123,17 +122,18 @@ struct MyProfileView: View {
 				// Load enhancement data in background (non-blocking progressive enhancements)
 				backgroundDataLoadTask = Task.detached(priority: .background) {
 					// Profile picture refresh (can use cached version initially)
-					if let profilePictureUrl = await user.profilePicture {
+					if let profilePictureUrl = user.profilePicture {
 						let profilePictureCache = ProfilePictureCache.shared
 						_ = await profilePictureCache.getCachedImageWithRefresh(
-							for: await user.id,
+							for: user.id,
 							from: profilePictureUrl,
 							maxAge: 6 * 60 * 60  // 6 hours
 						)
 					}
 
 					// Load non-critical enhancement data
-					await profileViewModel.loadEnhancementData(userId: await user.id)
+					await profileViewModel
+						.loadEnhancementData(userId: user.id)
 				}
 			}
 			.onDisappear {
@@ -150,14 +150,6 @@ struct MyProfileView: View {
 				if let socialMedia = newSocialMedia {
 					whatsappLink = socialMedia.whatsappLink ?? ""
 					instagramLink = socialMedia.instagramLink ?? ""
-				}
-			}
-			.onChange(of: navigateToDayActivities) { _, newValue in
-				if newValue {
-					// Ensure navigation happens on main thread
-					DispatchQueue.main.async {
-						// Navigation logic handled by the view
-					}
 				}
 			}
 			.accentColor(universalAccentColor)
@@ -506,5 +498,6 @@ struct MyProfileSheetsModifier: ViewModifier {
 
 @available(iOS 17, *)
 #Preview {
-	MyProfileView(user: BaseUserDTO.danielAgapov)
+	@Previewable @State var previewProfileViewModel = ProfileViewModel(userId: BaseUserDTO.danielAgapov.id)
+	MyProfileView(user: BaseUserDTO.danielAgapov, profileViewModel: previewProfileViewModel)
 }

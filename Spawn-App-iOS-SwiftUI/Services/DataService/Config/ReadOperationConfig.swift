@@ -66,7 +66,7 @@ enum DataType {
 	case profileSocialMedia(userId: UUID)
 
 	/// Profile activities (both upcoming and past)
-	case profileActivities(userId: UUID)
+	case profileActivities(userId: UUID, requestingUserId: UUID)
 
 	// MARK: - Calendar
 
@@ -95,6 +95,17 @@ enum DataType {
 	/// Get notification preferences for a user
 	case notificationPreferences(userId: UUID)
 
+	// MARK: - User Search
+
+	/// Search for users by query
+	case userSearch(requestingUserId: UUID, query: String)
+
+	/// Filtered users for friend tab search (includes relationship status)
+	case filteredUsers(userId: UUID, query: String)
+
+	/// Recently spawned with users
+	case recentlySpawnedWith(userId: UUID)
+
 	// MARK: - Configuration Properties
 
 	/// API endpoint path for this data type
@@ -102,7 +113,7 @@ enum DataType {
 		switch self {
 		// Activities
 		case .activities(let userId):
-			return "activities/feedActivities/\(userId)"
+			return "activities/feed-activities/\(userId)"
 		case .activity(let activityId, _, _):
 			return "activities/\(activityId)"
 		case .activityTypes(let userId):
@@ -133,7 +144,7 @@ enum DataType {
 			return "users/\(userId)/interests"
 		case .profileSocialMedia(let userId):
 			return "users/\(userId)/social-media"
-		case .profileActivities(let userId):
+		case .profileActivities(let userId, _):
 			return "activities/profile/\(userId)"
 
 		// Calendar
@@ -148,13 +159,22 @@ enum DataType {
 		case .blockedUsers(let blockerId, _):
 			return "blocked-users/\(blockerId)"
 		case .reportsByUser(let reporterId):
-			return "reports/fetch/reporter/\(reporterId)"
+			return "reports/reporter/\(reporterId)"
 		case .reportsAboutUser(let userId):
-			return "reports/\(userId)"
+			return "reports/content-owner/\(userId)"
 
 		// Notifications
 		case .notificationPreferences(let userId):
 			return "notifications/preferences/\(userId)"
+
+		// User Search
+		case .userSearch:
+			return "users/search"
+		case .filteredUsers(let userId, let query):
+			let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
+			return "users/filtered/\(userId)?searchQuery=\(encoded)"
+		case .recentlySpawnedWith(let userId):
+			return "users/\(userId)/recent-users"
 		}
 	}
 
@@ -194,7 +214,7 @@ enum DataType {
 			return "profileInterests-\(userId)"
 		case .profileSocialMedia(let userId):
 			return "profileSocialMedia-\(userId)"
-		case .profileActivities(let userId):
+		case .profileActivities(let userId, _):
 			return "profileActivities-\(userId)"
 
 		// Calendar
@@ -216,6 +236,14 @@ enum DataType {
 		// Notifications
 		case .notificationPreferences(let userId):
 			return "notificationPreferences_\(userId)"
+
+		// User Search (not cacheable - dynamic query results)
+		case .userSearch(let requestingUserId, let query):
+			return "userSearch_\(requestingUserId)_\(query.hashValue)"
+		case .filteredUsers(let userId, let query):
+			return "filteredUsers_\(userId)_\(query.hashValue)"
+		case .recentlySpawnedWith(let userId):
+			return "recentlySpawnedWith_\(userId)"
 		}
 	}
 
@@ -235,17 +263,14 @@ enum DataType {
 			}
 			return nil
 
-		case .profileActivities:
-			// Profile activities require requesting user ID as parameter
-			guard let requestingUserId = UserAuthViewModel.shared.spawnUser?.id else {
-				return nil
-			}
+		case .profileActivities(_, let requestingUserId):
 			return ["requestingUserId": requestingUserId.uuidString]
 
 		case .calendar(_, let month, let year, let requestingUserId):
 			var params = [
 				"month": String(month),
 				"year": String(year),
+				"timezone": TimeZone.current.identifier,
 			]
 			if let requestingUserId = requestingUserId {
 				params["requestingUserId"] = requestingUserId.uuidString
@@ -253,10 +278,11 @@ enum DataType {
 			return params
 
 		case .calendarAll(_, let requestingUserId):
+			var params = ["timezone": TimeZone.current.identifier]
 			if let requestingUserId = requestingUserId {
-				return ["requestingUserId": requestingUserId.uuidString]
+				params["requestingUserId"] = requestingUserId.uuidString
 			}
-			return nil
+			return params
 
 		case .activityChats:
 			return nil
@@ -271,6 +297,19 @@ enum DataType {
 			return ["returnOnlyIds": returnOnlyIds ? "true" : "false"]
 
 		case .reportsByUser, .reportsAboutUser, .notificationPreferences:
+			return nil
+
+		case .userSearch(let requestingUserId, let query):
+			return [
+				"searchQuery": query,
+				"requestingUserId": requestingUserId.uuidString,
+			]
+
+		case .filteredUsers:
+			// Query is already embedded in the endpoint URL
+			return nil
+
+		case .recentlySpawnedWith:
 			return nil
 
 		default:
@@ -325,6 +364,12 @@ enum DataType {
 			return "Reports About User"
 		case .notificationPreferences:
 			return "Notification Preferences"
+		case .userSearch:
+			return "User Search"
+		case .filteredUsers:
+			return "Filtered Users"
+		case .recentlySpawnedWith:
+			return "Recently Spawned With"
 		}
 	}
 }
@@ -332,17 +377,22 @@ enum DataType {
 // MARK: - Cache Operations
 
 /// Helper struct to encapsulate cache operations for each data type
+/// MainActor isolated since it works with MainActor-isolated AppCache
+@MainActor
 struct CacheOperations<T> {
 	let provider: () -> T?
 	let updater: (T) -> Void
 }
 
 /// Protocol for type-erased cache configuration
+/// MainActor isolated since implementations access MainActor-isolated AppCache properties
+@MainActor
 private protocol CacheConfigProtocol {
 	func createOperations<T>(appCache: AppCache) -> CacheOperations<T>?
 }
 
 /// Generic cache configuration for user-specific dictionary caches (data first, userId second pattern)
+@MainActor
 private struct UserDictionaryCacheConfig<Value>: CacheConfigProtocol {
 	let dictionary: (AppCache) -> [UUID: Value]
 	let updater: (AppCache) -> (Value, UUID) -> Void
@@ -361,6 +411,7 @@ private struct UserDictionaryCacheConfig<Value>: CacheConfigProtocol {
 }
 
 /// Generic cache configuration for user-specific dictionary caches (userId first, data second pattern)
+@MainActor
 private struct ProfileDictionaryCacheConfig<Value>: CacheConfigProtocol {
 	let dictionary: (AppCache) -> [UUID: Value]
 	let updater: (AppCache) -> (UUID, Value) -> Void
@@ -379,6 +430,7 @@ private struct ProfileDictionaryCacheConfig<Value>: CacheConfigProtocol {
 }
 
 /// Generic cache configuration for simple (non-dictionary) caches
+@MainActor
 private struct SimpleCacheConfig<Value>: CacheConfigProtocol {
 	let getter: (AppCache) -> Value
 	let updater: (AppCache) -> (Value) -> Void
@@ -402,8 +454,49 @@ private struct SimpleCacheConfig<Value>: CacheConfigProtocol {
 	}
 }
 
+/// Cache configuration for calendar activities for a specific month
+@MainActor
+private struct CalendarMonthCacheConfig: CacheConfigProtocol {
+	let userId: UUID
+	let month: Int
+	let year: Int
+
+	func createOperations<T>(appCache: AppCache) -> CacheOperations<T>? {
+		guard T.self == [CalendarActivityDTO].self else { return nil }
+		return CacheOperations(
+			provider: {
+				appCache.getCalendarActivities(for: userId, month: month, year: year) as? T
+			},
+			updater: { data in
+				guard let activities = data as? [CalendarActivityDTO] else { return }
+				appCache.updateCalendarActivitiesForMonth(activities, userId: userId, month: month, year: year)
+			}
+		)
+	}
+}
+
+/// Cache configuration for all calendar activities for a user
+@MainActor
+private struct CalendarAllCacheConfig: CacheConfigProtocol {
+	let userId: UUID
+
+	func createOperations<T>(appCache: AppCache) -> CacheOperations<T>? {
+		guard T.self == [CalendarActivityDTO].self else { return nil }
+		return CacheOperations(
+			provider: {
+				appCache.getAllCalendarActivities(for: userId) as? T
+			},
+			updater: { data in
+				guard let activities = data as? [CalendarActivityDTO] else { return }
+				appCache.updateAllCalendarActivities(activities, userId: userId)
+			}
+		)
+	}
+}
+
 // MARK: - DataType Cache Configuration Extension
 
+@MainActor
 extension DataType {
 	/// Returns the cache configuration for this data type, or nil if not cacheable
 	fileprivate var cacheConfig: CacheConfigProtocol? {
@@ -475,10 +568,64 @@ extension DataType {
 				userId: userId
 			)
 
-		case .profileActivities(let userId):
+		case .profileActivities(let userId, _):
 			return ProfileDictionaryCacheConfig<[ProfileActivityDTO]>(
 				dictionary: { $0.profileActivities },
 				updater: { appCache in appCache.updateProfileActivities },
+				userId: userId
+			)
+
+		case .profileInfo(let userId, _):
+			return ProfileDictionaryCacheConfig<BaseUserDTO>(
+				dictionary: { $0.otherProfiles },
+				updater: { appCache in appCache.updateOtherProfile },
+				userId: userId
+			)
+
+		// Calendar
+		case .calendar(let userId, let month, let year, _):
+			return CalendarMonthCacheConfig(
+				userId: userId,
+				month: month,
+				year: year
+			)
+
+		case .calendarAll(let userId, _):
+			return CalendarAllCacheConfig(userId: userId)
+
+		// Upcoming Activities
+		case .upcomingActivities(let userId):
+			return UserDictionaryCacheConfig<[FullFeedActivityDTO]>(
+				dictionary: { $0.upcomingActivities },
+				updater: { appCache in appCache.updateUpcomingActivitiesForUser },
+				userId: userId
+			)
+
+		// Notification Preferences
+		case .notificationPreferences(let userId):
+			return ProfileDictionaryCacheConfig<NotificationPreferencesDTO>(
+				dictionary: { $0.notificationPreferences },
+				updater: { appCache in appCache.updateNotificationPreferences },
+				userId: userId
+			)
+
+		// Blocked Users
+		case .blockedUsers(let blockerId, let returnOnlyIds):
+			// Only cache when returning full DTOs, not when returning only IDs
+			if returnOnlyIds {
+				return nil
+			}
+			return ProfileDictionaryCacheConfig<[BlockedUserDTO]>(
+				dictionary: { $0.blockedUsers },
+				updater: { appCache in appCache.updateBlockedUsers },
+				userId: blockerId
+			)
+
+		// Recently Spawned With
+		case .recentlySpawnedWith(let userId):
+			return UserDictionaryCacheConfig<[RecentlySpawnedUserDTO]>(
+				dictionary: { $0.recentlySpawnedWith },
+				updater: { appCache in appCache.updateRecentlySpawnedWithForUser },
 				userId: userId
 			)
 
@@ -490,6 +637,8 @@ extension DataType {
 }
 
 /// Factory for creating cache operations for each data type
+/// MainActor isolated since it works with MainActor-isolated cache configurations
+@MainActor
 struct CacheOperationsFactory {
 	/// Generic method to create cache operations for any data type
 	/// This method uses the cache configuration defined in the DataType enum

@@ -5,15 +5,16 @@
 //  Created by Daniel Agapov on 11/9/24.
 //
 
-import Combine
+@preconcurrency import Combine
 import Foundation
 
-class FeedViewModel: ObservableObject {
-	@Published var activities: [FullFeedActivityDTO] = []
-	@Published var activityTypes: [ActivityTypeDTO] = []
+@Observable
+@MainActor
+final class FeedViewModel {
+	var activities: [FullFeedActivityDTO] = []
 
 	// Use the ActivityTypeViewModel for managing activity types
-	@Published var activityTypeViewModel: ActivityTypeViewModel
+	var activityTypeViewModel: ActivityTypeViewModel
 
 	var userId: UUID
 	private var dataService: DataService
@@ -23,32 +24,32 @@ class FeedViewModel: ObservableObject {
 	private var activitiesUpdateThrottle: AnyCancellable?
 	private let activitiesSubject = PassthroughSubject<[FullFeedActivityDTO], Never>()
 
-	// Periodic refresh timer
-	private var refreshTimer: Timer?
+	/// Periodic refresh timer
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit.
+	/// Thread safety is ensured by only accessing from MainActor context (via Timer's main runloop)
+	/// and in deinit (which runs after all other accesses complete).
+	@ObservationIgnored private nonisolated(unsafe) var refreshTimer: Timer?
 
-	// Periodic local cleanup timer for expired activities
-	private var cleanupTimer: Timer?
+	/// Periodic local cleanup timer for expired activities
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit.
+	@ObservationIgnored private nonisolated(unsafe) var cleanupTimer: Timer?
 
 	// MARK: - Computed Properties
 
 	/// Returns activity types sorted with pinned ones first, then alphabetically
+	/// Delegates to ActivityTypeViewModel which maintains the canonical activity types
 	var sortedActivityTypes: [ActivityTypeDTO] {
-		return activityTypes.sorted { first, second in
-			// Pinned types come first
-			if first.isPinned != second.isPinned {
-				return first.isPinned
-			}
-			// If both are pinned or both are not pinned, sort alphabetically by title
-			return first.title.localizedCaseInsensitiveCompare(second.title) == .orderedAscending
-		}
+		return activityTypeViewModel.sortedActivityTypes
 	}
 
 	init(userId: UUID) {
 		self.userId = userId
-		self.dataService = DataService.shared
+		let dataServiceInstance = DataService.shared
+		self.dataService = dataServiceInstance
 
+		print("🔧 FeedViewModel.init() called for userId: \(userId)")
 		// Initialize the activity type view model
-		self.activityTypeViewModel = ActivityTypeViewModel(userId: userId, dataService: dataService)
+		self.activityTypeViewModel = ActivityTypeViewModel(userId: userId, dataService: dataServiceInstance)
 
 		// Throttle activities updates to prevent overwhelming MapView
 		activitiesUpdateThrottle =
@@ -58,28 +59,62 @@ class FeedViewModel: ObservableObject {
 				self?.activities = newActivities
 			}
 
-		// Subscribe to activity type changes to update the UI
-		activityTypeViewModel.$activityTypes
-			.receive(on: DispatchQueue.main)
-			.sink { [weak self] newActivityTypes in
-				self?.activityTypes = newActivityTypes
-			}
-			.store(in: &cancellables)
-
 		// Register for activity creation notifications
 		NotificationCenter.default.publisher(for: .activityCreated)
-			.sink { [weak self] _ in
+			.sink { [weak self] notification in
+				guard let self = self else { return }
+
+				// Optimistically add the newly created activity to the list immediately
+				// This ensures instant UI feedback without waiting for API
+				// CRITICAL: Update activities directly to bypass the throttle for instant UI updates
+				if let newActivity = notification.object as? FullFeedActivityDTO {
+					Task { @MainActor in
+						// Check if activity isn't already in the list (avoid duplicates)
+						if !self.activities.contains(where: { $0.id == newActivity.id }) {
+							// Prepend the new activity to show it at the top
+							var updatedActivities = [newActivity] + self.activities
+							// Filter expired activities just in case
+							updatedActivities = self.filterExpiredActivities(updatedActivities)
+							// Update activities directly to bypass throttle for instant feedback
+							self.activities = updatedActivities
+							print(
+								"✅ FeedViewModel: Optimistically added new activity: \(newActivity.title ?? "Unknown")")
+						}
+					}
+				}
+
+				// Also refresh from API in background to ensure consistency
 				Task {
-					await self?.fetchActivitiesForUser()
+					await self.forceRefreshActivities()
 				}
 			}
 			.store(in: &cancellables)
 
 		// Register for activity update notifications
 		NotificationCenter.default.publisher(for: .activityUpdated)
-			.sink { [weak self] _ in
+			.sink { [weak self] notification in
+				guard let self = self else { return }
+
+				// Optimistically update the activity in the list immediately
+				// CRITICAL: Update activities directly to bypass the throttle for instant UI updates
+				if let updatedActivity = notification.object as? FullFeedActivityDTO {
+					Task { @MainActor in
+						// Find and replace the activity in the list
+						var currentActivities = self.activities
+						if let index = currentActivities.firstIndex(where: { $0.id == updatedActivity.id }) {
+							currentActivities[index] = updatedActivity
+							// Update activities directly to bypass throttle for instant feedback
+							self.activities = currentActivities
+							print(
+								"✅ FeedViewModel: Optimistically updated activity: \(updatedActivity.title ?? "Unknown")"
+							)
+						}
+					}
+				}
+
+				// Also refresh from API in background to ensure consistency
 				Task {
-					await self?.fetchActivitiesForUser()
+					await self.forceRefreshActivities()
 				}
 			}
 			.store(in: &cancellables)
@@ -87,21 +122,25 @@ class FeedViewModel: ObservableObject {
 		// Register for activity deletion notifications
 		NotificationCenter.default.publisher(for: .activityDeleted)
 			.sink { [weak self] notification in
-				Task {
-					await self?.fetchActivitiesForUser()
-				}
-			}
-			.store(in: &cancellables)
+				guard let self = self else { return }
 
-		// Register for activity type changes for immediate UI refresh
-		NotificationCenter.default.publisher(for: .activityTypesChanged)
-			.sink { [weak self] _ in
-				// Force immediate UI refresh by updating activity types from the view model
-				if let self = self {
+				// Optimistically remove the activity from the list immediately
+				// CRITICAL: Update activities directly to bypass the throttle for instant UI updates
+				if let activityId = notification.object as? UUID {
 					Task { @MainActor in
-						self.activityTypes = self.activityTypeViewModel.activityTypes
-						self.objectWillChange.send()
+						let currentActivities = self.activities
+						let filteredActivities = currentActivities.filter { $0.id != activityId }
+						if filteredActivities.count < currentActivities.count {
+							// Update activities directly to bypass throttle for instant feedback
+							self.activities = filteredActivities
+							print("✅ FeedViewModel: Optimistically removed deleted activity: \(activityId)")
+						}
 					}
+				}
+
+				// Also refresh from API in background to ensure consistency
+				Task {
+					await self.forceRefreshActivities()
 				}
 			}
 			.store(in: &cancellables)
@@ -123,8 +162,10 @@ class FeedViewModel: ObservableObject {
 	}
 
 	deinit {
-		stopPeriodicRefresh()
-		stopPeriodicCleanup()
+		refreshTimer?.invalidate()
+		refreshTimer = nil
+		cleanupTimer?.invalidate()
+		cleanupTimer = nil
 	}
 
 	// MARK: - Periodic Refresh
@@ -154,16 +195,18 @@ class FeedViewModel: ObservableObject {
 
 		// Run cleanup every 30 seconds to remove expired activities locally
 		cleanupTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
-			guard let self = self else { return }
+			guard self != nil else { return }
 
+			// Class is @MainActor, so we must use MainActor.run to access properties from Timer callback
 			Task { @MainActor [weak self] in
 				guard let self = self else { return }
-				let filteredActivities = self.filterExpiredActivities(self.activities)
+				let currentActivities = self.activities
+				let filteredActivities = self.filterExpiredActivities(currentActivities)
 
 				// Only update if activities were actually filtered out
-				if filteredActivities.count < self.activities.count {
+				if filteredActivities.count < currentActivities.count {
 					print(
-						"🧹 FeedViewModel: Removed \(self.activities.count - filteredActivities.count) expired activities from view"
+						"🧹 FeedViewModel: Removed \(currentActivities.count - filteredActivities.count) expired activities from view"
 					)
 					self.activitiesSubject.send(filteredActivities)
 				}
@@ -243,15 +286,11 @@ class FeedViewModel: ObservableObject {
 		switch result {
 		case .success(let activities, _):
 			let filteredActivities = self.filterExpiredActivities(activities)
-			await MainActor.run {
-				self.activitiesSubject.send(filteredActivities)
-			}
+			self.activitiesSubject.send(filteredActivities)
 
 		case .failure(let error):
 			APIError.logIfNotCancellation(error, message: "❌ FeedViewModel: Error fetching activities")
-			await MainActor.run {
-				self.activitiesSubject.send([])
-			}
+			self.activitiesSubject.send([])
 		}
 	}
 
@@ -277,15 +316,11 @@ class FeedViewModel: ObservableObject {
 		switch result {
 		case .success(let activities, _):
 			let filteredActivities = self.filterExpiredActivities(activities)
-			await MainActor.run {
-				self.activitiesSubject.send(filteredActivities)
-			}
+			self.activitiesSubject.send(filteredActivities)
 
 		case .failure(let error):
 			APIError.logIfNotCancellation(error, message: "❌ FeedViewModel: Error force refreshing activities")
-			await MainActor.run {
-				self.activitiesSubject.send([])
-			}
+			self.activitiesSubject.send([])
 		}
 	}
 

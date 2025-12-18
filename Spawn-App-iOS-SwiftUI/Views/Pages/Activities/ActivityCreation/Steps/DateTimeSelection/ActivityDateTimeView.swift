@@ -10,7 +10,7 @@ struct ActivityDateTimeView: View {
 	let onBack: (() -> Void)?
 
 	// Access to the view model to update selectedDate
-	@ObservedObject private var viewModel = ActivityCreationViewModel.shared
+	var viewModel = ActivityCreationViewModel.shared
 
 	// Environment for color scheme detection
 	@Environment(\.colorScheme) private var colorScheme
@@ -48,6 +48,7 @@ struct ActivityDateTimeView: View {
 		}
 
 		// Only show options that make sense based on current context
+		@MainActor
 		static var availableOptions: [DayOption] {
 			let calendar = Calendar.current
 			let now = Date()

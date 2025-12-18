@@ -1,6 +1,7 @@
 import Foundation
 
-class ReportingService {
+@MainActor
+final class ReportingService {
 	private let dataService: DataService
 
 	init(dataService: DataService? = nil) {
@@ -17,9 +18,11 @@ class ReportingService {
 	func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async throws {
 		print("🚫 DEBUG: Starting blockUser request")
 		print("🚫 DEBUG: blockerId: \(blockerId), blockedId: \(blockedId), reason: \(reason)")
-		print("🚫 DEBUG: UserAuthViewModel.shared.isLoggedIn: \(UserAuthViewModel.shared.isLoggedIn)")
+		let isLoggedIn = UserAuthViewModel.shared.isLoggedIn
+		let spawnUserId = UserAuthViewModel.shared.spawnUser?.id.uuidString ?? "nil"
+		print("🚫 DEBUG: UserAuthViewModel.shared.isLoggedIn: \(isLoggedIn)")
 		print(
-			"🚫 DEBUG: UserAuthViewModel.shared.spawnUser: \(UserAuthViewModel.shared.spawnUser?.id.uuidString ?? "nil")"
+			"🚫 DEBUG: UserAuthViewModel.shared.spawnUser: \(spawnUserId)"
 		)
 
 		// Check if we have access token in keychain
@@ -54,16 +57,25 @@ class ReportingService {
 	///   - blockerId: ID of the user doing the unblocking
 	///   - blockedId: ID of the user being unblocked
 	func unblockUser(blockerId: UUID, blockedId: UUID) async throws {
+		print("🔓 [ReportingService] Starting unblockUser request")
+		print("🔓 [ReportingService] blockerId: \(blockerId), blockedId: \(blockedId)")
+
+		// Create the operation to inspect its configuration
+		let operation = WriteOperationType.unblockUser(blockerId: blockerId, blockedId: blockedId)
+		print("🔓 [ReportingService] Operation endpoint: \(operation.endpoint)")
+		print("🔓 [ReportingService] Operation method: \(operation.method.rawValue)")
+		print("🔓 [ReportingService] Operation parameters: \(String(describing: operation.parameters))")
+
 		// Use DataService with WriteOperationType
-		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
-			.unblockUser(blockerId: blockerId, blockedId: blockedId)
-		)
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operation)
 
 		// Handle the result
 		switch result {
 		case .success:
-			break  // Success
+			print("🔓 [ReportingService] ✅ Unblock user request completed successfully")
 		case .failure(let error):
+			print("🔓 [ReportingService] ❌ Unblock user request failed with error: \(error)")
+			print("🔓 [ReportingService] ❌ Error details: \(error.localizedDescription)")
 			throw error
 		}
 	}

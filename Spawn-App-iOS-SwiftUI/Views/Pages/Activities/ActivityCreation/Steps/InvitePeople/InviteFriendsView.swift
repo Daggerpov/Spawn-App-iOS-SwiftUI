@@ -8,25 +8,20 @@
 import SwiftUI
 
 struct InviteFriendsView: View {
-	@ObservedObject var activityCreationViewModel: ActivityCreationViewModel =
+	var activityCreationViewModel: ActivityCreationViewModel =
 		ActivityCreationViewModel.shared
-	@StateObject private var searchViewModel = SearchViewModel()
-
-	// Add view models for friends
-	@StateObject private var friendsViewModel: FriendsTabViewModel
+	// CRITICAL FIX: Use optional ViewModels to prevent repeated init() calls
+	// when SwiftUI recreates this view struct. Initialize lazily in .task.
+	@State private var searchViewModel: SearchViewModel?
+	@State private var friendsViewModel: FriendsTabViewModel?
+	@State private var isInitialized = false
 
 	let user: BaseUserDTO
 
 	init(user: BaseUserDTO) {
 		self.user = user
-		// Initialize the view models with _: syntax for StateObject
-		self._friendsViewModel = StateObject(
-			wrappedValue: FriendsTabViewModel(
-				userId: user.id,
-				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: user.id) : APIService()
-			)
-		)
+		// CRITICAL: Do NOT initialize ViewModels here.
+		// ViewModels are initialized lazily in .task to prevent repeated init() calls.
 	}
 
 	var body: some View {
@@ -36,29 +31,43 @@ struct InviteFriendsView: View {
 				.font(.headline)
 				.foregroundColor(universalAccentColor)
 
-			// Friends section
-			ScrollView {
-				VStack(spacing: 20) {
-					// Invited section
-					invitedFriendsSection
+			// Friends section - only show when initialized
+			if isInitialized {
+				ScrollView {
+					VStack(spacing: 20) {
+						// Invited section
+						invitedFriendsSection
 
-					// Suggested friends section - now using real friends data
-					friendsListSection
+						// Suggested friends section - now using real friends data
+						friendsListSection
+					}
+					.padding(.horizontal)
 				}
-				.padding(.horizontal)
+			} else {
+				// Minimal loading state
+				Color.clear
 			}
 		}
-		.onAppear {
-			friendsViewModel.connectSearchViewModel(searchViewModel)
-		}
 		.task {
+			// CRITICAL: Initialize ViewModels lazily to prevent repeated init() calls
+			if searchViewModel == nil {
+				searchViewModel = SearchViewModel()
+			}
+			if friendsViewModel == nil {
+				friendsViewModel = FriendsTabViewModel(userId: user.id)
+			}
+
+			guard let friendsVM = friendsViewModel, let searchVM = searchViewModel else { return }
+			friendsVM.connectSearchViewModel(searchVM)
+			isInitialized = true
+
 			// Check if task was cancelled (user navigated away)
 			if Task.isCancelled {
 				return
 			}
 
 			if AppCache.shared.friends.isEmpty {
-				await friendsViewModel.fetchAllData()
+				await friendsVM.fetchAllData()
 
 				// Check again after async operation
 				if Task.isCancelled {
@@ -68,16 +77,16 @@ struct InviteFriendsView: View {
 				// After fetching friends, automatically select them all if not already selected
 				await MainActor.run {
 					if activityCreationViewModel.selectedFriends.isEmpty {
-						activityCreationViewModel.selectedFriends = friendsViewModel.friends
+						activityCreationViewModel.selectedFriends = friendsVM.friends
 					}
 				}
 			} else {
 				// Load cached friends data through view model
-				friendsViewModel.loadCachedData()
+				friendsVM.loadCachedData()
 
 				// Automatically select all friends if not already selected
 				if activityCreationViewModel.selectedFriends.isEmpty {
-					activityCreationViewModel.selectedFriends = friendsViewModel.friends
+					activityCreationViewModel.selectedFriends = friendsVM.friends
 				}
 			}
 		}
@@ -146,23 +155,29 @@ struct InviteFriendsView: View {
 				.padding(.leading, 10)
 
 			VStack(spacing: 15) {
-				if friendsViewModel.friends.isEmpty {
-					Text("You have no friends yet")
+				if let friendsVM = friendsViewModel {
+					if friendsVM.friends.isEmpty {
+						Text("You have no friends yet")
+							.foregroundColor(.gray)
+							.padding(.vertical)
+					} else {
+						ForEach(friendsVM.friends) { friend in
+							Button(action: {
+								toggleFriendSelection(friend)
+							}) {
+								FriendListRow(
+									friend: friend,
+									isSelected: activityCreationViewModel.selectedFriends
+										.contains(friend)
+								)
+							}
+							.buttonStyle(PlainButtonStyle())
+						}
+					}
+				} else {
+					Text("Loading...")
 						.foregroundColor(.gray)
 						.padding(.vertical)
-				} else {
-					ForEach(friendsViewModel.friends) { friend in
-						Button(action: {
-							toggleFriendSelection(friend)
-						}) {
-							FriendListRow(
-								friend: friend,
-								isSelected: activityCreationViewModel.selectedFriends
-									.contains(friend)
-							)
-						}
-						.buttonStyle(PlainButtonStyle())
-					}
 				}
 			}
 		}
@@ -180,7 +195,7 @@ struct InviteFriendsView: View {
 }
 
 struct IndividualFriendView: View {
-	@ObservedObject var activityCreationViewModel: ActivityCreationViewModel =
+	var activityCreationViewModel: ActivityCreationViewModel =
 		ActivityCreationViewModel.shared
 
 	var friend: FullFriendUserDTO
@@ -188,11 +203,8 @@ struct IndividualFriendView: View {
 
 	init(friend: FullFriendUserDTO) {
 		self.friend = friend
-		if activityCreationViewModel.selectedFriends.contains(friend) {
-			self._isSelected = State(initialValue: true)
-		} else {
-			self._isSelected = State(initialValue: false)
-		}
+		// Note: isSelected will be initialized based on the current state in onAppear
+		self._isSelected = State(initialValue: false)
 	}
 
 	var body: some View {
@@ -245,6 +257,10 @@ struct IndividualFriendView: View {
 				)
 				.stroke(universalAccentColor, lineWidth: 2)
 			}
+		}
+		.onAppear {
+			// Initialize selection state based on current selected friends
+			isSelected = activityCreationViewModel.selectedFriends.contains(friend)
 		}
 	}
 }

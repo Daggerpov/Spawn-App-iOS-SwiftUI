@@ -10,7 +10,8 @@ import Foundation
 import SwiftUI
 
 /// Cache service for friendship-related data
-class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
+@MainActor
+final class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 	static let shared = FriendshipCacheService()
 
 	// MARK: - Cached Data
@@ -18,6 +19,7 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 	@Published var recommendedFriends: [UUID: [RecommendedFriendUserDTO]] = [:]
 	@Published var friendRequests: [UUID: [FetchFriendRequestDTO]] = [:]
 	@Published var sentFriendRequests: [UUID: [FetchSentFriendRequestDTO]] = [:]
+	@Published var recentlySpawnedWith: [UUID: [RecentlySpawnedUserDTO]] = [:]
 
 	// MARK: - Constants
 	private enum CacheKeys {
@@ -25,6 +27,7 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 		static let recommendedFriends = "recommendedFriends"
 		static let friendRequests = "friendRequests"
 		static let sentFriendRequests = "sentFriendRequests"
+		static let recentlySpawnedWith = "recentlySpawnedWith"
 		static let lastChecked = "friendshipCache_lastChecked"
 	}
 
@@ -32,9 +35,9 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 	private override init() {
 		super.init()
 
-		// Load from disk in the background
-		diskQueue.async { [weak self] in
-			self?.loadFromDisk()
+		// Load from disk in the background, then update on main actor
+		Task.detached { [weak self] in
+			await self?.loadFromDiskAsync()
 		}
 	}
 
@@ -55,7 +58,7 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 	func updateFriendsForUser(_ newFriends: [FullFriendUserDTO], userId: UUID) {
 
 		// Debug: Check if profile pictures are present
-		let friendsWithPfp = newFriends.filter { $0.profilePicture != nil }.count
+		_ = newFriends.filter { $0.profilePicture != nil }.count
 
 		friends[userId] = newFriends
 		setLastCheckedForUser(userId, cacheType: CacheKeys.friends, date: Date())
@@ -95,7 +98,8 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 			return
 		}
 
-		await genericRefresh(endpoint: "users/friends/\(userId)") { (fetchedFriends: [FullFriendUserDTO]) in
+		await genericRefresh(endpoint: "users/friends/\(userId)") { [weak self] (fetchedFriends: [FullFriendUserDTO]) in
+			guard let self = self else { return }
 			self.updateFriendsForUser(fetchedFriends, userId: userId)
 		}
 
@@ -156,7 +160,8 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 		}
 
 		await genericRefresh(endpoint: "users/recommended-friends/\(userId)") {
-			(fetchedRecommendedFriends: [RecommendedFriendUserDTO]) in
+			[weak self] (fetchedRecommendedFriends: [RecommendedFriendUserDTO]) in
+			guard let self = self else { return }
 			self.updateRecommendedFriendsForUser(fetchedRecommendedFriends, userId: userId)
 		}
 	}
@@ -248,7 +253,8 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 		print("🔄 [FRIENDSHIP-CACHE] Refreshing incoming friend requests for user: \(userId)")
 
 		await genericRefresh(endpoint: "friend-requests/incoming/\(userId)") {
-			(fetchedFriendRequests: [FetchFriendRequestDTO]) in
+			[weak self] (fetchedFriendRequests: [FetchFriendRequestDTO]) in
+			guard let self = self else { return }
 			print("🔄 [FRIENDSHIP-CACHE] Retrieved \(fetchedFriendRequests.count) incoming friend requests from API")
 			self.updateFriendRequestsForUser(fetchedFriendRequests, userId: userId)
 		}
@@ -345,7 +351,8 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 		print("🔄 [FRIENDSHIP-CACHE] Refreshing sent friend requests for user: \(userId)")
 
 		await genericRefresh(endpoint: "friend-requests/sent/\(userId)") {
-			(fetchedSentFriendRequests: [FetchSentFriendRequestDTO]) in
+			[weak self] (fetchedSentFriendRequests: [FetchSentFriendRequestDTO]) in
+			guard let self = self else { return }
 			print("🔄 [FRIENDSHIP-CACHE] Retrieved \(fetchedSentFriendRequests.count) sent friend requests from API")
 			self.updateSentFriendRequestsForUser(fetchedSentFriendRequests, userId: userId)
 		}
@@ -367,6 +374,45 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 		await sentTask
 	}
 
+	// MARK: - Recently Spawned With Methods
+
+	/// Get recently spawned with users for a user
+	func getRecentlySpawnedWith(for userId: UUID) -> [RecentlySpawnedUserDTO] {
+		return recentlySpawnedWith[userId] ?? []
+	}
+
+	/// Update recently spawned with users for a user
+	func updateRecentlySpawnedWithForUser(_ users: [RecentlySpawnedUserDTO], userId: UUID) {
+		recentlySpawnedWith[userId] = users
+		setLastCheckedForUser(userId, cacheType: CacheKeys.recentlySpawnedWith, date: Date())
+		saveToDisk()
+
+		// Preload profile pictures for recently spawned with users
+		Task {
+			await preloadProfilePicturesForRecentlySpawnedWith([userId: users])
+		}
+	}
+
+	/// Refresh recently spawned with users from the backend
+	func refreshRecentlySpawnedWith() async {
+		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+			print("Cannot refresh recently spawned with: No logged in user")
+			return
+		}
+
+		await genericRefresh(endpoint: "users/\(userId)/recent-users") {
+			[weak self] (users: [RecentlySpawnedUserDTO]) in
+			guard let self = self else { return }
+			self.updateRecentlySpawnedWithForUser(users, userId: userId)
+		}
+	}
+
+	/// Clear recently spawned with users for a user
+	func clearRecentlySpawnedWithForUser(_ userId: UUID) {
+		recentlySpawnedWith.removeValue(forKey: userId)
+		saveToDisk()
+	}
+
 	// MARK: - CacheService Protocol
 
 	func clearAllCaches() {
@@ -374,14 +420,16 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 		recommendedFriends = [:]
 		friendRequests = [:]
 		sentFriendRequests = [:]
+		recentlySpawnedWith = [:]
 		lastChecked = [:]
 
-		// Clear UserDefaults data on background queue
-		diskQueue.async {
+		// Clear UserDefaults data on background task
+		Task.detached(priority: .utility) {
 			UserDefaults.standard.removeObject(forKey: CacheKeys.friends)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.recommendedFriends)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.friendRequests)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.sentFriendRequests)
+			UserDefaults.standard.removeObject(forKey: CacheKeys.recentlySpawnedWith)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.lastChecked)
 		}
 	}
@@ -391,6 +439,7 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 		clearRecommendedFriendsForUser(userId)
 		clearFriendRequestsForUser(userId)
 		clearSentFriendRequestsForUser(userId)
+		clearRecentlySpawnedWithForUser(userId)
 
 		// Clear cache timestamps for this user
 		clearLastCheckedForUser(userId)
@@ -409,11 +458,13 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 		async let recommendedTask: () = refreshRecommendedFriends()
 		async let requestsTask: () = refreshFriendRequests()
 		async let sentRequestsTask: () = refreshSentFriendRequests()
+		async let recentlySpawnedTask: () = refreshRecentlySpawnedWith()
 
 		await friendsTask
 		await recommendedTask
 		await requestsTask
 		await sentRequestsTask
+		await recentlySpawnedTask
 	}
 
 	/// Diagnostic method to force refresh all data with detailed logging
@@ -429,6 +480,7 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 		print("   - Friend requests: \(friendRequests[userId]?.count ?? 0)")
 		print("   - Sent friend requests: \(sentFriendRequests[userId]?.count ?? 0)")
 		print("   - Recommended friends: \(recommendedFriends[userId]?.count ?? 0)")
+		print("   - Recently spawned with: \(recentlySpawnedWith[userId]?.count ?? 0)")
 
 		await forceRefreshAll()
 
@@ -437,48 +489,67 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 		print("   - Friend requests: \(friendRequests[userId]?.count ?? 0)")
 		print("   - Sent friend requests: \(sentFriendRequests[userId]?.count ?? 0)")
 		print("   - Recommended friends: \(recommendedFriends[userId]?.count ?? 0)")
+		print("   - Recently spawned with: \(recentlySpawnedWith[userId]?.count ?? 0)")
 	}
 
 	// MARK: - Persistence
 
 	override func saveToDisk() {
+		// Capture data on main actor BEFORE passing to background closure
+		let capturedFriends = self.friends
+		let capturedRecommended = self.recommendedFriends
+		let capturedRequests = self.friendRequests
+		let capturedSentRequests = self.sentFriendRequests
+		let capturedRecentlySpawnedWith = self.recentlySpawnedWith
+		let capturedTimestamps = self.lastChecked
+
 		debouncedSaveToDisk { [weak self] in
 			guard let self = self else { return }
 
-			// Capture data on main thread
-			let capturedFriends = self.friends
-			let capturedRecommended = self.recommendedFriends
-			let capturedRequests = self.friendRequests
-			let capturedSentRequests = self.sentFriendRequests
-			let capturedTimestamps = self.lastChecked
-
-			// Encode and write on background queue
+			// Encode and write on background queue using captured data
 			self.saveToDefaults(capturedFriends, key: CacheKeys.friends)
 			self.saveToDefaults(capturedRecommended, key: CacheKeys.recommendedFriends)
 			self.saveToDefaults(capturedRequests, key: CacheKeys.friendRequests)
 			self.saveToDefaults(capturedSentRequests, key: CacheKeys.sentFriendRequests)
+			self.saveToDefaults(capturedRecentlySpawnedWith, key: CacheKeys.recentlySpawnedWith)
 			self.saveToDefaults(capturedTimestamps, key: CacheKeys.lastChecked)
 		}
 	}
 
-	private func loadFromDisk() {
-		let loadedFriends: [UUID: [FullFriendUserDTO]]? = loadFromDefaults(key: CacheKeys.friends)
-		let loadedRecommended: [UUID: [RecommendedFriendUserDTO]]? = loadFromDefaults(key: CacheKeys.recommendedFriends)
-		let loadedRequests: [UUID: [FetchFriendRequestDTO]]? = loadFromDefaults(key: CacheKeys.friendRequests)
-		let loadedSentRequests: [UUID: [FetchSentFriendRequestDTO]]? = loadFromDefaults(
-			key: CacheKeys.sentFriendRequests)
-		let loadedTimestamps: [UUID: [String: Date]]? = loadFromDefaults(key: CacheKeys.lastChecked)
+	/// Async version of loadFromDisk that properly handles main actor isolation
+	private func loadFromDiskAsync() async {
+		// Load data on background queue to avoid blocking main thread
+		let friends: [UUID: [FullFriendUserDTO]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.friends)
+		}.value
 
-		// Update @Published properties on main thread
-		DispatchQueue.main.async { [weak self] in
-			guard let self = self else { return }
+		let recommended: [UUID: [RecommendedFriendUserDTO]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.recommendedFriends)
+		}.value
 
-			if let friends = loadedFriends { self.friends = friends }
-			if let recommended = loadedRecommended { self.recommendedFriends = recommended }
-			if let requests = loadedRequests { self.friendRequests = requests }
-			if let sentRequests = loadedSentRequests { self.sentFriendRequests = sentRequests }
-			if let timestamps = loadedTimestamps { self.lastChecked = timestamps }
-		}
+		let requests: [UUID: [FetchFriendRequestDTO]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.friendRequests)
+		}.value
+
+		let sentRequests: [UUID: [FetchSentFriendRequestDTO]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.sentFriendRequests)
+		}.value
+
+		let recentlySpawned: [UUID: [RecentlySpawnedUserDTO]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.recentlySpawnedWith)
+		}.value
+
+		let timestamps: [UUID: [String: Date]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.lastChecked)
+		}.value
+
+		// Update @Published properties - already on MainActor
+		if let friends { self.friends = friends }
+		if let recommended { self.recommendedFriends = recommended }
+		if let requests { self.friendRequests = requests }
+		if let sentRequests { self.sentFriendRequests = sentRequests }
+		if let recentlySpawned { self.recentlySpawnedWith = recentlySpawned }
+		if let timestamps { self.lastChecked = timestamps }
 	}
 
 	// MARK: - Profile Picture Preloading
@@ -543,6 +614,30 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 							_ = await profilePictureCache.getCachedImageWithRefresh(
 								for: request.receiverUser.id,
 								from: receiverPicture,
+								maxAge: 6 * 60 * 60  // 6 hours
+							)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/// Preload profile pictures for recently spawned with users
+	private func preloadProfilePicturesForRecentlySpawnedWith(_ recentlySpawnedWith: [UUID: [RecentlySpawnedUserDTO]])
+		async
+	{
+		let profilePictureCache = ProfilePictureCache.shared
+
+		// Use withTaskGroup to preload all profile pictures in parallel
+		await withTaskGroup(of: Void.self) { group in
+			for (_, users) in recentlySpawnedWith {
+				for recentUser in users {
+					if let profilePicture = recentUser.user.profilePicture {
+						group.addTask {
+							_ = await profilePictureCache.getCachedImageWithRefresh(
+								for: recentUser.user.id,
+								from: profilePicture,
 								maxAge: 6 * 60 * 60  // 6 hours
 							)
 						}

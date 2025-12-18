@@ -11,7 +11,7 @@ import SwiftUI
 
 struct MapView: View {
 	// MARK: - Properties
-	@ObservedObject var viewModel: FeedViewModel
+	var viewModel: FeedViewModel
 	@ObservedObject private var locationManager = LocationManager.shared
 
 	let user: BaseUserDTO
@@ -364,10 +364,8 @@ struct MapView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-	@Previewable @ObservedObject var appCache = AppCache.shared
 	let previewViewModel = FeedViewModel(
 		userId: BaseUserDTO.danielAgapov.id
 	)
 	MapView(user: .danielAgapov, viewModel: previewViewModel)
-		.environmentObject(appCache)
 }

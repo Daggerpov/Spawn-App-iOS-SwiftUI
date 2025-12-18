@@ -5,18 +5,18 @@
 //  Created by Daniel Agapov on 2025-05-17.
 //
 
-import Combine
 import Foundation
 
-class FriendRequestsViewModel: ObservableObject {
-	@Published var incomingFriendRequests: [FetchFriendRequestDTO] = []
-	@Published var sentFriendRequests: [FetchSentFriendRequestDTO] = []
-	@Published var isLoading: Bool = false
-	@Published var errorMessage: String = ""
+@Observable
+@MainActor
+final class FriendRequestsViewModel {
+	var incomingFriendRequests: [FetchFriendRequestDTO] = []
+	var sentFriendRequests: [FetchSentFriendRequestDTO] = []
+	var isLoading: Bool = false
+	var errorMessage: String = ""
 
 	private let userId: UUID
 	private var dataService: DataService
-	private var cancellables = Set<AnyCancellable>()
 
 	init(userId: UUID, dataService: DataService? = nil) {
 		self.userId = userId
@@ -39,7 +39,6 @@ class FriendRequestsViewModel: ObservableObject {
 		return result
 	}
 
-	@MainActor
 	func fetchFriendRequests() async {
 		isLoading = true
 		defer { isLoading = false }
@@ -79,7 +78,6 @@ class FriendRequestsViewModel: ObservableObject {
 		}
 	}
 
-	@MainActor
 	func respondToFriendRequest(requestId: UUID, action: FriendRequestAction) async {
 		let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
 		if requestId == zeroUUID { return }

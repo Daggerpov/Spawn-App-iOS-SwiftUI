@@ -13,7 +13,7 @@ struct ActivityTypeEditView: View {
 	@State private var showEmojiPicker: Bool = false
 	@FocusState private var isTitleFieldFocused: Bool
 
-	@StateObject private var viewModel: ActivityTypeViewModel
+	@State private var viewModel: ActivityTypeViewModel
 
 	// Track if this is a new activity type (no associated friends yet)
 	private var isNewActivityType: Bool {
@@ -29,7 +29,7 @@ struct ActivityTypeEditView: View {
 
 		// Initialize the view model with userId
 		let userId = UserAuthViewModel.shared.spawnUser?.id ?? UUID()
-		self._viewModel = StateObject(wrappedValue: ActivityTypeViewModel(userId: userId))
+		self._viewModel = State(wrappedValue: ActivityTypeViewModel(userId: userId))
 	}
 
 	var body: some View {
@@ -47,10 +47,11 @@ struct ActivityTypeEditView: View {
 		}
 		.onAppear {
 			setupInitialState()
+		}
+		.task {
 			// Auto-focus the title field when the view appears
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-				isTitleFieldFocused = true
-			}
+			try? await Task.sleep(for: .seconds(0.1))
+			isTitleFieldFocused = true
 		}
 		.onChange(of: editedTitle) { _, newValue in
 			print("DEBUG: editedTitle changed to: \(newValue)")

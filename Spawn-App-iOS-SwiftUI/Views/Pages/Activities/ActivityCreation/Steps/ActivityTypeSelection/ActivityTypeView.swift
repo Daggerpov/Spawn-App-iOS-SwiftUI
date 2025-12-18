@@ -5,7 +5,7 @@ struct ActivityTypeView: View {
 	let onNext: () -> Void
 
 	@EnvironmentObject var appCache: AppCache
-	@StateObject private var viewModel: ActivityTypeViewModel
+	@State private var viewModel: ActivityTypeViewModel
 	@State private var navigateToManageType = false
 	@State private var navigateToCreateType = false
 	@State private var selectedActivityTypeForManagement: ActivityTypeDTO?
@@ -24,7 +24,7 @@ struct ActivityTypeView: View {
 
 		// Get userId from UserAuthViewModel like the original code
 		let userId = UserAuthViewModel.shared.spawnUser?.id ?? UUID()
-		self._viewModel = StateObject(wrappedValue: ActivityTypeViewModel(userId: userId))
+		self._viewModel = State(wrappedValue: ActivityTypeViewModel(userId: userId))
 	}
 
 	var body: some View {

@@ -2,14 +2,17 @@ import SwiftUI
 
 struct ManagePeopleView: View {
 	@Environment(\.dismiss) private var dismiss
-	@StateObject private var searchViewModel = SearchViewModel()
-	@StateObject private var friendsViewModel: FriendsTabViewModel
-	@StateObject private var activityTypeViewModel: ActivityTypeViewModel
-	@ObservedObject var activityCreationViewModel = ActivityCreationViewModel.shared
+	@State private var searchViewModel: SearchViewModel?
+	// CRITICAL FIX: Use optional ViewModels to prevent repeated init() calls
+	// when SwiftUI recreates this view struct. Initialize lazily in .task.
+	@State private var friendsViewModel: FriendsTabViewModel?
+	@State private var activityTypeViewModel: ActivityTypeViewModel?
+	var activityCreationViewModel = ActivityCreationViewModel.shared
 	@State private var searchText = ""
 	@State private var selectedFriends: Set<UUID> = []
 	@State private var isSuggestedCollapsed = false
 	@State private var isLoading = false
+	@State private var isInitialized = false
 
 	let user: BaseUserDTO
 	let activityTitle: String
@@ -19,19 +22,9 @@ struct ManagePeopleView: View {
 		self.user = user
 		self.activityTitle = activityTitle
 		self.activityTypeDTO = activityTypeDTO
-		self._friendsViewModel = StateObject(
-			wrappedValue: FriendsTabViewModel(
-				userId: user.id,
-				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: user.id) as IAPIService : APIService() as IAPIService
-			)
-		)
-		self._activityTypeViewModel = StateObject(
-			wrappedValue: ActivityTypeViewModel(
-				userId: user.id,
-				dataService: DataService.shared
-			)
-		)
+		// CRITICAL: Do NOT initialize ViewModels here.
+		// ViewModels are initialized lazily in .task to prevent repeated init() calls
+		// when SwiftUI recreates this view struct.
 	}
 
 	var body: some View {
@@ -41,51 +34,73 @@ struct ManagePeopleView: View {
 				universalBackgroundColor
 					.ignoresSafeArea()
 
-				VStack(spacing: 0) {
-					// Header
-					headerView
-						.padding(.top, 12)
+				// Show content only when ViewModels are initialized
+				if isInitialized {
+					VStack(spacing: 0) {
+						// Header
+						headerView
+							.padding(.top, 12)
 
-					// Content
-					ScrollView {
-						VStack(alignment: .leading, spacing: 24) {
-							// Search bar
-							searchBarView
+						// Content
+						ScrollView {
+							VStack(alignment: .leading, spacing: 24) {
+								// Search bar
+								searchBarView
 
-							// Suggested friends section
-							if !suggestedFriends.isEmpty {
-								suggestedFriendsSection
+								// Suggested friends section
+								if !suggestedFriends.isEmpty {
+									suggestedFriendsSection
+								}
+
+								// Added friends section
+								if !addedFriends.isEmpty {
+									addedFriendsSection
+								}
 							}
-
-							// Added friends section
-							if !addedFriends.isEmpty {
-								addedFriendsSection
-							}
+							.padding(.horizontal, 24)
+							.padding(.top, 24)
 						}
-						.padding(.horizontal, 24)
-						.padding(.top, 24)
 					}
+				} else {
+					// Minimal loading state while ViewModels initialize
+					Color.clear
 				}
 			}
 		}
 		.navigationBarHidden(true)
-		.onAppear {
-			friendsViewModel.connectSearchViewModel(searchViewModel)
-			loadFriendsData()
+		.task {
+			// CRITICAL: Initialize ViewModels lazily to prevent repeated init() calls
+			if searchViewModel == nil {
+				searchViewModel = SearchViewModel()
+			}
+			if friendsViewModel == nil {
+				friendsViewModel = FriendsTabViewModel(userId: user.id)
+			}
+			if activityTypeViewModel == nil {
+				activityTypeViewModel = ActivityTypeViewModel(userId: user.id, dataService: DataService.shared)
+			}
 
-			// Initialize selected friends based on context
-			if let activityTypeDTO = activityTypeDTO {
-				// For managing existing activity type - use associated friends
-				selectedFriends = Set(activityTypeDTO.associatedFriends.map { $0.id })
-			} else {
-				// For activity creation - use activity creation view model
-				selectedFriends = Set(activityCreationViewModel.selectedFriends.map { $0.id })
+			// Connect search and load data
+			if let friendsVM = friendsViewModel, let searchVM = searchViewModel {
+				friendsVM.connectSearchViewModel(searchVM)
+
+				// Initialize selected friends based on context
+				if let activityTypeDTO = activityTypeDTO {
+					// For managing existing activity type - use associated friends
+					selectedFriends = Set(activityTypeDTO.associatedFriends.map { $0.id })
+				} else {
+					// For activity creation - use activity creation view model
+					selectedFriends = Set(activityCreationViewModel.selectedFriends.map { $0.id })
+				}
+
+				isInitialized = true
+				loadFriendsData()
 			}
 		}
 		.onDisappear {
 			// Only update the activity creation view model if we're in activity creation mode
-			if activityTypeDTO == nil {
-				let selectedFriendObjects = friendsViewModel.friends.filter { selectedFriends.contains($0.id) }
+			if activityTypeDTO == nil, let friendsVM = friendsViewModel {
+				let selectedFriendObjects = friendsVM.friends.filter { selectedFriends.contains($0.id) }
 				activityCreationViewModel.selectedFriends = selectedFriendObjects
 			}
 			// For activity type management, changes are saved immediately on selection
@@ -269,11 +284,12 @@ struct ManagePeopleView: View {
 	}
 
 	private var filteredFriends: [FullFriendUserDTO] {
+		guard let friendsVM = friendsViewModel else { return [] }
 		if searchText.isEmpty {
-			return friendsViewModel.friends
+			return friendsVM.friends
 		}
 
-		return friendsViewModel.friends.filter { friend in
+		return friendsVM.friends.filter { friend in
 			let name = friend.name?.lowercased() ?? ""
 			let username = (friend.username ?? "").lowercased()
 			let search = searchText.lowercased()
@@ -284,8 +300,9 @@ struct ManagePeopleView: View {
 
 	// MARK: - Methods
 	private func loadFriendsData() {
+		guard let friendsVM = friendsViewModel else { return }
 		Task {
-			await friendsViewModel.fetchAllData()
+			await friendsVM.fetchAllData()
 		}
 	}
 
@@ -307,10 +324,11 @@ struct ManagePeopleView: View {
 
 	@MainActor
 	private func saveActivityTypeChanges(_ activityType: ActivityTypeDTO) async {
+		guard let friendsVM = friendsViewModel, let activityTypeVM = activityTypeViewModel else { return }
 		isLoading = true
 
 		// Create updated associated friends list
-		let updatedAssociatedFriends = friendsViewModel.friends
+		let updatedAssociatedFriends = friendsVM.friends
 			.filter { selectedFriends.contains($0.id) }
 			.map { $0.asBaseUser }
 
@@ -324,45 +342,28 @@ struct ManagePeopleView: View {
 			isPinned: activityType.isPinned
 		)
 
-		do {
-			// Make direct API call to update the activity type
-			let endpoint = "users/\(user.id)/activity-types"
-			guard let url = URL(string: APIService.baseURL + endpoint) else {
-				print("❌ Invalid URL for activity type update")
-				isLoading = false
-				return
-			}
+		let batchUpdateDTO = BatchActivityTypeUpdateDTO(
+			updatedActivityTypes: [updatedActivityTypeDTO],
+			deletedActivityTypeIds: []
+		)
 
-			let batchUpdateDTO = BatchActivityTypeUpdateDTO(
-				updatedActivityTypes: [updatedActivityTypeDTO],
-				deletedActivityTypeIds: []
-			)
+		// Use DataService with WriteOperationType
+		let dataService = DataService.shared
+		let operationType = WriteOperationType.batchUpdateActivityTypes(userId: user.id, update: batchUpdateDTO)
+		let result: DataResult<[ActivityTypeDTO]> = await dataService.write(operationType, body: batchUpdateDTO)
 
-			let apiService: IAPIService =
-				MockAPIService.isMocking
-				? MockAPIService(userId: user.id) : APIService()
-
-			let updatedActivityTypes: [ActivityTypeDTO] = try await apiService.updateData(
-				batchUpdateDTO,
-				to: url,
-				parameters: nil
-			)
-
+		switch result {
+		case .success(let updatedActivityTypes, _):
 			// Update the view model with the confirmed data from API
-			activityTypeViewModel.activityTypes = updatedActivityTypes
-
-			// Update cache with confirmed data
-			AppCache.shared.updateActivityTypesForUser(updatedActivityTypes, userId: user.id)
+			activityTypeVM.activityTypes = updatedActivityTypes
 
 			// Post notification for UI updates
 			NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
 
-		} catch {
-			print("❌ Error updating activity type: \(error)")
+		case .failure(let error):
+			print("❌ Error updating activity type: \(ErrorFormattingService.shared.formatError(error))")
 			// On error, refresh from cache/API to get correct state
-			Task {
-				await activityTypeViewModel.fetchActivityTypes()
-			}
+			await activityTypeVM.fetchActivityTypes()
 		}
 
 		isLoading = false

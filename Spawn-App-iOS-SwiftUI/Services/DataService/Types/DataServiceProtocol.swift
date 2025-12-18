@@ -14,6 +14,7 @@ import Foundation
 
 /// Unified protocol for data operations (read and write)
 /// This is the only interface ViewModels should interact with
+@MainActor
 protocol IDataService {
 
 	// MARK: - Read Operations (GET)

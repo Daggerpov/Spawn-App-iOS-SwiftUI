@@ -9,7 +9,8 @@ import Foundation
 import MessageUI
 import SwiftUI
 
-class SMSShareService: NSObject, ObservableObject {
+@MainActor
+final class SMSShareService: NSObject, ObservableObject {
 	static let shared = SMSShareService()
 
 	private override init() {
@@ -32,7 +33,7 @@ class SMSShareService: NSObject, ObservableObject {
 
 		// Generate the share URL first
 		ServiceConstants.generateActivityShareCodeURL(for: activity.id) { [weak self] url in
-			DispatchQueue.main.async {
+			Task { @MainActor in
 				let shareURL = url ?? ServiceConstants.generateActivityShareURL(for: activity.id)
 				let message = self?.generateActivitySMSMessage(activity: activity, shareURL: shareURL) ?? ""
 
@@ -112,16 +113,17 @@ class SMSShareService: NSObject, ObservableObject {
 		phoneNumbers: [String]? = nil,
 		message: String? = nil
 	) {
-		var smsMessage = message
-
-		if smsMessage == nil, let activity = activity {
-			ServiceConstants.generateActivityShareCodeURL(for: activity.id) { url in
-				let shareURL = url ?? ServiceConstants.generateActivityShareURL(for: activity.id)
-				smsMessage = self.generateActivitySMSMessage(activity: activity, shareURL: shareURL)
-				self.openSystemSMS(message: smsMessage!, phoneNumbers: phoneNumbers)
+		if message == nil, let activity = activity {
+			ServiceConstants.generateActivityShareCodeURL(for: activity.id) { [weak self] url in
+				Task { @MainActor in
+					guard let self = self else { return }
+					let shareURL = url ?? ServiceConstants.generateActivityShareURL(for: activity.id)
+					let generatedMessage = self.generateActivitySMSMessage(activity: activity, shareURL: shareURL)
+					self.openSystemSMS(message: generatedMessage, phoneNumbers: phoneNumbers)
+				}
 			}
-		} else if let message = smsMessage {
-			openSystemSMS(message: message, phoneNumbers: phoneNumbers)
+		} else if let messageToSend = message {
+			openSystemSMS(message: messageToSend, phoneNumbers: phoneNumbers)
 		}
 	}
 
@@ -149,36 +151,40 @@ class SMSShareService: NSObject, ObservableObject {
 // MARK: - MFMessageComposeViewControllerDelegate
 
 extension SMSShareService: MFMessageComposeViewControllerDelegate {
-	func messageComposeViewController(
+	nonisolated func messageComposeViewController(
 		_ controller: MFMessageComposeViewController, didFinishWith result: MessageComposeResult
 	) {
-		controller.dismiss(animated: true) {
-			switch result {
-			case .cancelled:
-				print("📱 SMS sharing cancelled")
-			case .sent:
-				// Show success notification
-				DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-					InAppNotificationManager.shared.showNotification(
-						title: "Invitation sent!",
-						message: "Your activity invitation has been sent via SMS",
-						type: .success,
-						duration: 3.0
-					)
+		Task { @MainActor in
+			controller.dismiss(animated: true) {
+				switch result {
+				case .cancelled:
+					print("📱 SMS sharing cancelled")
+				case .sent:
+					// Show success notification
+					Task { @MainActor in
+						try? await Task.sleep(for: .seconds(0.5))
+						InAppNotificationManager.shared.showNotification(
+							title: "Invitation sent!",
+							message: "Your activity invitation has been sent via SMS",
+							type: .success,
+							duration: 3.0
+						)
+					}
+				case .failed:
+					print("❌ SMS sending failed")
+					// Show error notification
+					Task { @MainActor in
+						try? await Task.sleep(for: .seconds(0.5))
+						InAppNotificationManager.shared.showNotification(
+							title: "Message failed",
+							message: "Failed to send SMS invitation. Please try again.",
+							type: .error,
+							duration: 4.0
+						)
+					}
+				@unknown default:
+					print("❓ Unknown SMS result")
 				}
-			case .failed:
-				print("❌ SMS sending failed")
-				// Show error notification
-				DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-					InAppNotificationManager.shared.showNotification(
-						title: "Message failed",
-						message: "Failed to send SMS invitation. Please try again.",
-						type: .error,
-						duration: 4.0
-					)
-				}
-			@unknown default:
-				print("❓ Unknown SMS result")
 			}
 		}
 	}

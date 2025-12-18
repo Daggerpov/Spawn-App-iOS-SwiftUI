@@ -1,9 +1,9 @@
 import FirebaseCore
-import FirebaseMessaging
+@preconcurrency import FirebaseMessaging
 import SwiftUI
-import UserNotifications
+@preconcurrency import UserNotifications
 
-class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, MessagingDelegate {
+final class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, @preconcurrency MessagingDelegate {
 	// This gives us access to the methods from our main app code inside the app delegate
 	var app: (any App)?
 
@@ -69,14 +69,15 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, Mess
 		print("🔄 CustomAppDelegate: App will enter foreground")
 
 		// Only refresh if user is logged in
-		guard UserAuthViewModel.shared.isLoggedIn, UserAuthViewModel.shared.spawnUser != nil else {
+		guard UserAuthViewModel.shared.isLoggedIn, let userId = UserAuthViewModel.shared.spawnUser?.id else {
 			print("🔄 Skipping refresh - no logged in user")
 			return
 		}
 
 		print("🔄 Refreshing activities for logged in user")
 		Task {
-			await AppCache.shared.refreshActivities()
+			let _: DataResult<[FullFeedActivityDTO]> = await DataService.shared.read(
+				.activities(userId: userId), cachePolicy: .apiOnly)
 			// Notify all listeners to refresh activities
 			NotificationCenter.default.post(name: .shouldRefreshActivities, object: nil)
 		}
@@ -98,6 +99,7 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, Mess
 		}
 	}
 
+	@MainActor
 	func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
 		if let deviceToken = fcmToken {
 			print("Sending registration token to server")
@@ -117,8 +119,10 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, Mess
 }
 
 // Extend the CustomAppDelegate to handle notification events
-extension CustomAppDelegate: UNUserNotificationCenterDelegate {
+// Using @preconcurrency to handle non-Sendable types from system frameworks
+extension CustomAppDelegate: @preconcurrency UNUserNotificationCenterDelegate {
 	// This function lets us do something when the user interacts with a notification
+	@MainActor
 	func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
 		// Get the notification data
 		let userInfo = response.notification.request.content.userInfo
@@ -134,6 +138,7 @@ extension CustomAppDelegate: UNUserNotificationCenterDelegate {
 	}
 
 	// This function allows us to view notifications with the app in the foreground
+	@MainActor
 	func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async
 		-> UNNotificationPresentationOptions
 	{
@@ -141,9 +146,7 @@ extension CustomAppDelegate: UNUserNotificationCenterDelegate {
 		print("[PUSH DEBUG] Notification userInfo: \(notification.request.content.userInfo)")
 
 		// Show in-app notification instead of system notification when app is in foreground
-		await MainActor.run {
-			InAppNotificationManager.shared.showNotificationFromPushData(notification.request.content.userInfo)
-		}
+		InAppNotificationManager.shared.showNotificationFromPushData(notification.request.content.userInfo)
 
 		// Process the notification data for cache updates
 		handleReceivedNotification(notification.request.content.userInfo)

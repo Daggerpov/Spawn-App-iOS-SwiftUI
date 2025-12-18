@@ -4,7 +4,7 @@ import SwiftUI
 struct EditProfileView: View {
 	@Environment(\.presentationMode) var presentationMode
 	@ObservedObject var userAuth = UserAuthViewModel.shared
-	@ObservedObject var profileViewModel: ProfileViewModel
+	var profileViewModel: ProfileViewModel
 
 	@State private var name: String
 	@State private var username: String
@@ -232,7 +232,8 @@ struct EditProfileView: View {
 				showAlert = true
 
 				// Dismiss after a short delay
-				DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+				Task { @MainActor in
+					try? await Task.sleep(for: .seconds(1.5))
 					presentationMode.wrappedValue.dismiss()
 				}
 			}
@@ -268,7 +269,7 @@ struct EditProfileView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-	@Previewable @StateObject var profileViewModel = ProfileViewModel(
+	@Previewable @State var profileViewModel = ProfileViewModel(
 		userId: BaseUserDTO.danielAgapov.id,
 		dataService: DataService.shared
 	)

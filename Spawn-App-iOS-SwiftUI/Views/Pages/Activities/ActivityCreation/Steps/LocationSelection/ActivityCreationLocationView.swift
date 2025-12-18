@@ -3,7 +3,7 @@ import MapKit
 import SwiftUI
 
 struct ActivityCreationLocationView: View {
-	@ObservedObject var viewModel: ActivityCreationViewModel =
+	var viewModel: ActivityCreationViewModel =
 		ActivityCreationViewModel.shared
 	@ObservedObject private var locationManager = LocationManager.shared
 	@State private var region: MKCoordinateRegion = {
@@ -56,12 +56,7 @@ struct ActivityCreationLocationView: View {
 	@State private var is3DMode: Bool = false  // Only used on iOS 17+
 
 	var body: some View {
-		print("🔍 DEBUG: ActivityCreationLocationView body being rendered")
-		print("🔍 DEBUG: Current region: \(region)")
-		print("🔍 DEBUG: Current is3DMode: \(is3DMode)")
-		print("🔍 DEBUG: Current searchText: \(searchText)")
-
-		return ZStack {
+		ZStack {
 			// Unified Map View using the same component as MapView (works on all iOS versions)
 			UnifiedMapView(
 				region: $region,
@@ -491,13 +486,17 @@ struct ActivityCreationLocationView: View {
 
 	// Function to update location text based on coordinates
 	private func updateLocationText(for coordinate: CLLocationCoordinate2D) {
-		// Cancel any existing timer
-		debounceTimer?.invalidate()
+		// Defer state modification to avoid "Modifying state during view update" warning
+		DispatchQueue.main.async {
+			// Cancel any existing timer
+			self.debounceTimer?.invalidate()
 
-		// Create a new timer with a delay to debounce the calls
-		debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { _ in
-			DispatchQueue.main.async {
-				self.performReverseGeocoding(for: coordinate)
+			// Create a new timer with a delay to debounce the calls
+			self.debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { _ in
+				// Use Task to ensure we're on the main actor when calling the method
+				Task { @MainActor in
+					self.performReverseGeocoding(for: coordinate)
+				}
 			}
 		}
 	}

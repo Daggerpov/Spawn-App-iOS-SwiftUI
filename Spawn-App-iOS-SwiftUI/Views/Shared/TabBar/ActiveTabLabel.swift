@@ -18,11 +18,10 @@ struct ActiveTabLabel: View {
 					)!
 				)
 				.scaleEffect(isAnimating ? 1.2 : 1.0)
-				.onAppear {
+				.task {
 					isAnimating = true
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-						isAnimating = false
-					}
+					try? await Task.sleep(for: .seconds(0.3))
+					isAnimating = false
 				}
 				.animation(.bouncy(duration: 0.2, extraBounce: 0.1), value: isAnimating)
 

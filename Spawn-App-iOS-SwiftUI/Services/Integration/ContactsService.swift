@@ -5,23 +5,23 @@
 //  Created By Daniel Agapov on 2025-01-30.
 //
 
-import Contacts
+@preconcurrency import Contacts
 import Foundation
 import SwiftUI
 
-struct Contact {
+struct Contact: Sendable {
 	let id: String
 	let name: String
 	let phoneNumbers: [String]
 }
 
-struct ContactsOnSpawn {
+struct ContactsOnSpawn: Sendable {
 	let contact: Contact
 	let spawnUser: BaseUserDTO
 }
 
 @MainActor
-class ContactsService: ObservableObject {
+final class ContactsService: ObservableObject {
 	static let shared = ContactsService()
 
 	@Published var authorizationStatus: CNAuthorizationStatus = .notDetermined
@@ -45,17 +45,13 @@ class ContactsService: ObservableObject {
 	func requestContactsPermission() async -> Bool {
 		do {
 			let granted = try await contactStore.requestAccess(for: .contacts)
-			await MainActor.run {
-				self.authorizationStatus = CNContactStore.authorizationStatus(
-					for: .contacts
-				)
-			}
+			self.authorizationStatus = CNContactStore.authorizationStatus(
+				for: .contacts
+			)
 			return granted
 		} catch {
-			await MainActor.run {
-				self.errorMessage =
-					"Failed to request contacts permission: \(error.localizedDescription)"
-			}
+			self.errorMessage =
+				"Failed to request contacts permission: \(error.localizedDescription)"
 			return false
 		}
 	}
@@ -64,16 +60,12 @@ class ContactsService: ObservableObject {
 
 	func loadContacts() async {
 		guard authorizationStatus == .authorized else {
-			await MainActor.run {
-				self.errorMessage = "Contacts access not authorized"
-			}
+			self.errorMessage = "Contacts access not authorized"
 			return
 		}
 
-		await MainActor.run {
-			self.isLoading = true
-			self.errorMessage = nil
-		}
+		self.isLoading = true
+		self.errorMessage = nil
 
 		let keysToFetch: [CNKeyDescriptor] = [
 			CNContactGivenNameKey as CNKeyDescriptor,
@@ -84,55 +76,46 @@ class ContactsService: ObservableObject {
 		let request = CNContactFetchRequest(keysToFetch: keysToFetch)
 
 		do {
-			// Move contacts enumeration to background thread to avoid blocking UI
-			let fetchedContacts = try await withCheckedThrowingContinuation { continuation in
-				Task.detached {
-					var contacts: [Contact] = []
+			// Create a new contact store for background thread usage
+			let fetchedContacts = try await Task.detached { [request] () -> [Contact] in
+				var contacts: [Contact] = []
+				let backgroundStore = CNContactStore()
 
-					do {
-						try await self.contactStore.enumerateContacts(with: request) {
-							(contact, stop) in
-							let phoneNumbers = contact.phoneNumbers.compactMap {
-								phoneNumber in
-								self.cleanPhoneNumber(phoneNumber.value.stringValue)
-							}.filter { !$0.isEmpty }
+				try backgroundStore.enumerateContacts(with: request) {
+					(contact, _) in
+					let phoneNumbers = contact.phoneNumbers.compactMap {
+						phoneNumber in
+						ContactsService.cleanPhoneNumber(phoneNumber.value.stringValue)
+					}.filter { !$0.isEmpty }
 
-							// Only include contacts that have phone numbers
-							if !phoneNumbers.isEmpty {
-								let fullName = "\(contact.givenName) \(contact.familyName)"
-									.trimmingCharacters(in: .whitespacesAndNewlines)
-								let displayName =
-									fullName.isEmpty ? "Unknown Contact" : fullName
+					// Only include contacts that have phone numbers
+					if !phoneNumbers.isEmpty {
+						let fullName = "\(contact.givenName) \(contact.familyName)"
+							.trimmingCharacters(in: .whitespacesAndNewlines)
+						let displayName =
+							fullName.isEmpty ? "Unknown Contact" : fullName
 
-								let contactItem = Contact(
-									id: contact.identifier,
-									name: displayName,
-									phoneNumbers: phoneNumbers
-								)
-								contacts.append(contactItem)
-							}
-						}
-						continuation.resume(returning: contacts)
-					} catch {
-						continuation.resume(throwing: error)
+						let contactItem = Contact(
+							id: contact.identifier,
+							name: displayName,
+							phoneNumbers: phoneNumbers
+						)
+						contacts.append(contactItem)
 					}
 				}
-			}
+				return contacts
+			}.value
 
-			await MainActor.run {
-				self.contacts = fetchedContacts.sorted {
-					$0.name.localizedCaseInsensitiveCompare($1.name)
-						== .orderedAscending
-				}
-				self.isLoading = false
+			self.contacts = fetchedContacts.sorted {
+				$0.name.localizedCaseInsensitiveCompare($1.name)
+					== .orderedAscending
 			}
+			self.isLoading = false
 
 		} catch {
-			await MainActor.run {
-				self.errorMessage =
-					"Failed to load contacts: \(error.localizedDescription)"
-				self.isLoading = false
-			}
+			self.errorMessage =
+				"Failed to load contacts: \(error.localizedDescription)"
+			self.isLoading = false
 		}
 	}
 
@@ -146,10 +129,8 @@ class ContactsService: ObservableObject {
 			}
 		}
 
-		await MainActor.run {
-			self.isLoading = true
-			self.errorMessage = nil
-		}
+		self.isLoading = true
+		self.errorMessage = nil
 
 		// Extract all phone numbers from contacts with contact mapping
 		var phoneNumberToContact: [String: Contact] = [:]
@@ -235,27 +216,25 @@ class ContactsService: ObservableObject {
 				)
 			}
 
-			await MainActor.run {
-				self.contactsOnSpawn = matchedContacts.sorted {
-					$0.contact.name.localizedCaseInsensitiveCompare(
-						$1.contact.name
-					) == .orderedAscending
-				}
-				self.isLoading = false
+			self.contactsOnSpawn = matchedContacts.sorted {
+				$0.contact.name.localizedCaseInsensitiveCompare(
+					$1.contact.name
+				) == .orderedAscending
 			}
+			self.isLoading = false
 
 		} catch {
-			await MainActor.run {
-				self.errorMessage =
-					"Failed to find contacts on Spawn: \(error.localizedDescription)"
-				self.isLoading = false
-			}
+			self.errorMessage =
+				"Failed to find contacts on Spawn: \(error.localizedDescription)"
+			self.isLoading = false
 		}
 	}
 
 	// MARK: - Helper Methods
 
-	private nonisolated func cleanPhoneNumber(_ phoneNumber: String) -> String {
+	/// Cleans and normalizes a phone number string.
+	/// Nonisolated because it's a pure function with no MainActor dependencies.
+	private nonisolated static func cleanPhoneNumber(_ phoneNumber: String) -> String {
 		print("🧹 CLEANING PHONE: '\(phoneNumber)'")
 
 		// Check if it's obviously not a phone number
@@ -326,11 +305,11 @@ class ContactsService: ObservableObject {
 
 // MARK: - DTOs for API
 
-struct ContactCrossReferenceRequestDTO: Codable {
+struct ContactCrossReferenceRequestDTO: Codable, Sendable {
 	let phoneNumbers: [String]
 	let requestingUserId: UUID
 }
 
-struct ContactCrossReferenceResponseDTO: Codable {
+struct ContactCrossReferenceResponseDTO: Codable, Sendable {
 	let users: [BaseUserDTO]
 }

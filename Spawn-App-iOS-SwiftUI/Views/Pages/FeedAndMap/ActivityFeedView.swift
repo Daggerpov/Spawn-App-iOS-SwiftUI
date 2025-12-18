@@ -8,9 +8,9 @@ import SwiftUI
 
 struct ActivityFeedView: View {
 	var user: BaseUserDTO
-	@ObservedObject var viewModel: FeedViewModel
+	var viewModel: FeedViewModel
 	@ObservedObject private var locationManager = LocationManager.shared
-	@ObservedObject private var tutorialViewModel = TutorialViewModel.shared
+	private var tutorialViewModel = TutorialViewModel.shared
 	@State private var showingActivityPopup: Bool = false
 	@State private var activityInPopup: FullFeedActivityDTO?
 	@State private var colorInPopup: Color?
@@ -145,7 +145,8 @@ struct ActivityFeedView: View {
 							selectedTab = TabType.activities
 
 							// Initialize with selected activity type and skip people management if no friends
-							DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+							Task { @MainActor in
+								try? await Task.sleep(for: .seconds(0.1))
 								if tutorialViewModel.userHasFriends() {
 									// Has friends - go through normal flow
 									ActivityCreationViewModel.initializeWithSelectedActivityType(activityType)
@@ -168,7 +169,8 @@ struct ActivityFeedView: View {
 		.onChange(of: showingActivityPopup) { _, isShowing in
 			if !isShowing {
 				// Clean up when popup is dismissed
-				DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+				Task { @MainActor in
+					try? await Task.sleep(for: .seconds(0.1))
 					activityInPopup = nil
 					colorInPopup = nil
 				}
@@ -279,7 +281,8 @@ struct ActivityFeedView: View {
 						isFetchingDeepLinkedActivity = false
 
 						// Force a small delay to ensure UI is ready, then show popup
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+						Task { @MainActor in
+							try? await Task.sleep(for: .seconds(0.1))
 							showingActivityPopup = true
 							print(
 								"🎯 ActivityFeedView: Set popup state - showing: \(showingActivityPopup), activity: \(activity.title ?? "No title")"

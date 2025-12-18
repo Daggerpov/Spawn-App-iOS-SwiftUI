@@ -7,7 +7,7 @@ struct ActivityTypeFriendMenuView: View {
 	let navigateToProfile: () -> Void
 	@Environment(\.dismiss) private var dismiss
 	@State private var isLoading: Bool = true
-	@StateObject private var activityTypeViewModel = ActivityTypeViewModel(
+	@State private var activityTypeViewModel = ActivityTypeViewModel(
 		userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
 
 	private var firstName: String {
@@ -32,11 +32,10 @@ struct ActivityTypeFriendMenuView: View {
 			}
 		}
 		.background(universalBackgroundColor)
-		.onAppear {
+		.task {
 			// Simulate a very brief loading state to ensure smooth animation
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-				isLoading = false
-			}
+			try? await Task.sleep(for: .seconds(0.1))
+			isLoading = false
 		}
 	}
 

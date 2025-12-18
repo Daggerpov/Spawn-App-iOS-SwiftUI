@@ -8,7 +8,8 @@
 import CoreLocation
 import Foundation
 
-class FormatterService {
+/// Thread-safe formatting service with no mutable state
+final class FormatterService: Sendable {
 	static let shared: FormatterService = FormatterService()
 
 	private init() {}

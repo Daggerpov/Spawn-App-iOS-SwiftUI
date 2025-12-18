@@ -91,9 +91,6 @@ enum WriteOperationType {
 
 	// MARK: - Chat Operations
 
-	/// Fetch activity chat messages
-	case fetchActivityChats(activityId: UUID)
-
 	/// Send a chat message
 	case sendChatMessage(message: CreateChatMessageDTO)
 
@@ -164,14 +161,13 @@ enum WriteOperationType {
 			.leaveActivity,
 			.removeFromActivity,
 			.deleteUser,
-			.unregisterDeviceToken:
+			.unregisterDeviceToken,
+			.unblockUser:
 			return .delete
 
 		case .joinActivity,
 			.inviteToActivity,
-			.blockUser,
-			.unblockUser,
-			.fetchActivityChats:
+			.blockUser:
 			return .post
 
 		case .partialUpdateActivity,
@@ -200,7 +196,7 @@ enum WriteOperationType {
 			.declineFriendRequest(let requestId):
 			return "friend-requests/\(requestId)"
 		case .removeFriend(let currentUserId, let friendId):
-			return "api/v1/users/friends/\(currentUserId)/\(friendId)"
+			return "users/friends/\(currentUserId)/\(friendId)"
 
 		// Activity Types
 		case .batchUpdateActivityTypes(let userId, _):
@@ -224,23 +220,21 @@ enum WriteOperationType {
 
 		// Reporting & Blocking
 		case .reportUser:
-			return "reports/create"
+			return "reports"
 		case .reportChatMessage:
-			return "reports/create"
+			return "reports"
 		case .blockUser:
-			return "blocked-users/block"
-		case .unblockUser:
-			return "blocked-users/unblock"
+			return "blocked-users"
+		case .unblockUser(let blockerId, let blockedId):
+			return "blocked-users/\(blockerId)/\(blockedId)"
 
 		// User Management
 		case .deleteUser(let userId):
 			return "users/\(userId)"
 
 		// Chats
-		case .fetchActivityChats(let activityId):
-			return "activities/\(activityId)/chats"
 		case .sendChatMessage:
-			return "chatMessages"
+			return "chat-messages"
 
 		// Feedback
 		case .submitFeedback:
@@ -250,7 +244,7 @@ enum WriteOperationType {
 		case .partialUpdateActivity(let activityId, _):
 			return "activities/\(activityId)/partial"
 		case .toggleActivityParticipation(let activityId, let userId):
-			return "activities/\(activityId)/toggleStatus/\(userId)"
+			return "activities/\(activityId)/toggle-status/\(userId)"
 		case .reportActivity:
 			return "reports/activities"
 
@@ -260,9 +254,9 @@ enum WriteOperationType {
 
 		// Notifications
 		case .registerDeviceToken:
-			return "notifications/device-tokens/register"
+			return "notifications/device-tokens"
 		case .unregisterDeviceToken:
-			return "notifications/device-tokens/unregister"
+			return "notifications/device-tokens"
 		case .updateNotificationPreferences(let preferences):
 			return "notifications/preferences/\(preferences.userId)"
 		case .patchDeviceToken(let userId, _):
@@ -277,11 +271,6 @@ enum WriteOperationType {
 			return ["friendRequestAction": "accept"]
 		case .declineFriendRequest:
 			return ["friendRequestAction": "reject"]
-		case .unblockUser(let blockerId, let blockedId):
-			return [
-				"blockerId": blockerId.uuidString,
-				"blockedId": blockedId.uuidString,
-			]
 		default:
 			return nil
 		}
@@ -329,10 +318,22 @@ enum WriteOperationType {
 		// Reporting & Blocking
 		case .reportUser, .reportChatMessage:
 			return []  // No cache invalidation needed for reports
-		case .blockUser(let blockerId, _, _):
-			return ["friends-\(blockerId)"]
-		case .unblockUser(let blockerId, _):
-			return ["friends-\(blockerId)"]
+		case .blockUser(let blockerId, let blockedId, _):
+			return [
+				"friends-\(blockerId)",
+				"blockedUsers_\(blockerId)_true",
+				"blockedUsers_\(blockerId)_false",
+				"isUserBlocked_\(blockerId)_\(blockedId)",
+				"recommendedFriends-\(blockerId)",
+			]
+		case .unblockUser(let blockerId, let blockedId):
+			return [
+				"friends-\(blockerId)",
+				"blockedUsers_\(blockerId)_true",
+				"blockedUsers_\(blockerId)_false",
+				"isUserBlocked_\(blockerId)_\(blockedId)",
+				"recommendedFriends-\(blockerId)",
+			]
 
 		// User Management
 		case .deleteUser:
@@ -340,8 +341,6 @@ enum WriteOperationType {
 			return []
 
 		// Chats
-		case .fetchActivityChats(let activityId):
-			return ["activityChats-\(activityId)"]
 		case .sendChatMessage(let message):
 			return ["activityChats-\(message.activityId)"]
 
@@ -412,8 +411,6 @@ enum WriteOperationType {
 			return "Unblock User"
 		case .deleteUser:
 			return "Delete User"
-		case .fetchActivityChats:
-			return "Fetch Activity Chats"
 		case .sendChatMessage:
 			return "Send Chat Message"
 		case .submitFeedback:
@@ -475,8 +472,6 @@ enum WriteOperationType {
 			return EmptyRequestBody() as? T
 		case .deleteUser:
 			return EmptyRequestBody() as? T
-		case .fetchActivityChats:
-			return EmptyRequestBody() as? T
 		case .sendChatMessage(let message):
 			return message as? T
 		case .submitFeedback(let feedback):
@@ -498,6 +493,65 @@ enum WriteOperationType {
 		case .patchDeviceToken(_, let token):
 			let tokenData = ["deviceToken": token]
 			return tokenData as? T
+		}
+	}
+
+	/// Get the request body as a type-erased AnyEncodable
+	/// This preserves the actual body type without requiring generic type inference
+	func getAnyBody() -> AnyEncodable? {
+		switch self {
+		case .addProfileInterest(_, let interest):
+			return AnyEncodable(interest)
+		case .updateSocialMedia(_, let socialMedia):
+			return AnyEncodable(socialMedia)
+		case .sendFriendRequest(let request):
+			return AnyEncodable(request)
+		case .acceptFriendRequest, .declineFriendRequest:
+			return AnyEncodable(EmptyRequestBody())
+		case .removeProfileInterest, .removeFriend, .deleteActivity, .leaveActivity, .removeFromActivity:
+			return AnyEncodable(EmptyRequestBody())
+		case .batchUpdateActivityTypes(_, let update):
+			return AnyEncodable(update)
+		case .createActivity(let activity):
+			return AnyEncodable(activity)
+		case .updateActivity(_, let update):
+			return AnyEncodable(update)
+		case .joinActivity(_, _):
+			return AnyEncodable(EmptyRequestBody())
+		case .inviteToActivity(_, _):
+			return AnyEncodable(EmptyRequestBody())
+		case .reportUser(let report):
+			return AnyEncodable(report)
+		case .reportChatMessage(let report):
+			return AnyEncodable(report)
+		case .blockUser(let blockerId, let blockedId, let reason):
+			let blockDTO = BlockedUserCreationDTO(blockerId: blockerId, blockedId: blockedId, reason: reason)
+			return AnyEncodable(blockDTO)
+		case .unblockUser:
+			return AnyEncodable(EmptyRequestBody())
+		case .deleteUser:
+			return AnyEncodable(EmptyRequestBody())
+		case .sendChatMessage(let message):
+			return AnyEncodable(message)
+		case .submitFeedback(let feedback):
+			return AnyEncodable(feedback)
+		case .partialUpdateActivity(_, let update):
+			return AnyEncodable(update)
+		case .toggleActivityParticipation:
+			return AnyEncodable(EmptyRequestBody())
+		case .reportActivity(let report):
+			return AnyEncodable(report)
+		case .crossReferenceContacts(let request):
+			return AnyEncodable(request)
+		case .registerDeviceToken(let token):
+			return AnyEncodable(token)
+		case .unregisterDeviceToken(let token):
+			return AnyEncodable(token)
+		case .updateNotificationPreferences(let preferences):
+			return AnyEncodable(preferences)
+		case .patchDeviceToken(_, let token):
+			let tokenData = ["deviceToken": token]
+			return AnyEncodable(tokenData)
 		}
 	}
 }
@@ -528,6 +582,18 @@ extension WriteOperationType {
 			cacheInvalidationKeys: self.cacheInvalidationKeys
 		)
 	}
+
+	/// Convert this write operation type to a type-erased WriteOperation
+	/// This preserves the actual body type without requiring generic type inference at call site
+	func toTypeErasedWriteOperation() -> WriteOperation<AnyEncodable> {
+		return WriteOperation(
+			method: self.method,
+			endpoint: self.endpoint,
+			body: self.getAnyBody(),
+			parameters: self.parameters,
+			cacheInvalidationKeys: self.cacheInvalidationKeys
+		)
+	}
 }
 
 // MARK: - DataService Extension for Convenience
@@ -539,12 +605,13 @@ extension IDataService {
 		_ operationType: WriteOperationType,
 		invalidateCache: Bool = true
 	) async -> DataResult<Response> {
-		let operation: WriteOperation<EmptyRequestBody> = operationType.toWriteOperation()
+		// Use type-erased operation to preserve the actual body type
+		let operation = operationType.toTypeErasedWriteOperation()
 		return await write(operation, invalidateCache: invalidateCache)
 	}
 
 	/// Perform a write operation using WriteOperationType configuration with explicit body
-	func write<Body: Encodable, Response: Decodable>(
+	func write<Body: Encodable & Sendable, Response: Decodable>(
 		_ operationType: WriteOperationType,
 		body: Body,
 		invalidateCache: Bool = true
@@ -558,7 +625,8 @@ extension IDataService {
 		_ operationType: WriteOperationType,
 		invalidateCache: Bool = true
 	) async -> DataResult<EmptyResponse> {
-		let operation: WriteOperation<EmptyRequestBody> = operationType.toWriteOperation()
+		// Use type-erased operation to preserve the actual body type
+		let operation = operationType.toTypeErasedWriteOperation()
 		return await writeWithoutResponse(operation, invalidateCache: invalidateCache)
 	}
 }

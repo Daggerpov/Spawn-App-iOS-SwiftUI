@@ -2,14 +2,11 @@ import Combine
 import SwiftUI
 
 @MainActor
-class InAppNotificationManager: ObservableObject {
+final class InAppNotificationManager: ObservableObject {
 	static let shared = InAppNotificationManager()
 
 	@Published var isShowingNotification = false
 	@Published var currentNotification: InAppNotificationData?
-
-	private var notificationTimer: Timer?
-	private var dismissWorkItem: DispatchWorkItem?
 
 	private init() {}
 
@@ -19,6 +16,11 @@ class InAppNotificationManager: ObservableObject {
 	///   - message: The notification message
 	///   - type: The notification type
 	///   - duration: How long to show the notification (default: 4 seconds)
+	/// Track the current auto-dismiss task
+	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit if needed.
+	/// This is a singleton so deinit won't be called in practice, but marking it for consistency.
+	private nonisolated(unsafe) var dismissTask: Task<Void, Never>?
+
 	func showNotification(
 		title: String,
 		message: String,
@@ -27,9 +29,9 @@ class InAppNotificationManager: ObservableObject {
 	) {
 		print("📱 [InAppNotificationManager] Showing notification: \(title) - Duration: \(duration)s")
 
-		// Cancel any existing dismiss work
-		dismissWorkItem?.cancel()
-		dismissWorkItem = nil
+		// Cancel any existing dismiss task
+		dismissTask?.cancel()
+		dismissTask = nil
 
 		// Set new notification data immediately
 		currentNotification = InAppNotificationData(
@@ -45,24 +47,18 @@ class InAppNotificationManager: ObservableObject {
 
 		print("📱 [InAppNotificationManager] Notification shown, will dismiss in \(duration)s")
 
-		// Auto-dismiss after duration
-		dismissWorkItem = DispatchWorkItem { [weak self] in
-			Task { @MainActor in
-				print("📱 [InAppNotificationManager] Auto-dismissing notification")
-				self?.dismissNotification()
-			}
+		// Auto-dismiss after duration using Task
+		dismissTask = Task { [weak self] in
+			try? await Task.sleep(for: .seconds(duration))
+			guard !Task.isCancelled else { return }
+			print("📱 [InAppNotificationManager] Auto-dismissing notification")
+			self?.dismissNotification()
 		}
-
-		DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: dismissWorkItem!)
 	}
 
 	/// Dismiss the current notification
 	func dismissNotification() {
 		print("📱 [InAppNotificationManager] Dismissing notification")
-
-		// Cancel any pending dismiss work
-		dismissWorkItem?.cancel()
-		dismissWorkItem = nil
 
 		// Hide notification with animation
 		withAnimation(.easeInOut(duration: 0.3)) {
@@ -70,8 +66,9 @@ class InAppNotificationManager: ObservableObject {
 		}
 
 		// Clear notification data after animation
-		DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-			self.currentNotification = nil
+		Task {
+			try? await Task.sleep(for: .seconds(0.3))
+			currentNotification = nil
 		}
 	}
 

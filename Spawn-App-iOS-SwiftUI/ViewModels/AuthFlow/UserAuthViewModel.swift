@@ -11,7 +11,8 @@ import GoogleSignIn
 import SwiftUI
 import UIKit
 
-class UserAuthViewModel: NSObject, ObservableObject {
+@MainActor
+final class UserAuthViewModel: NSObject, ObservableObject {
 	static let shared: UserAuthViewModel = UserAuthViewModel(
 		apiService: MockAPIService.isMocking ? MockAPIService() : APIService())  // Singleton instance
 	@Published var errorMessage: String?
@@ -132,20 +133,19 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			return
 		}
 
-		Task { @MainActor in
+		Task {
 			self.isNavigating = true
 
 			// Small delay to ensure UI state is settled
 			if delay > 0 {
-				try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+				try? await Task.sleep(for: .seconds(delay))
 			}
 
 			self.navigationState = state
 
 			// Reset the navigation lock after a short delay
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-				self?.isNavigating = false
-			}
+			try? await Task.sleep(for: .seconds(0.5))
+			self.isNavigating = false
 		}
 	}
 
@@ -470,28 +470,35 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					}
 					guard let user = user else { return }
 
+					// Extract user data before Task to avoid Sendable issues with GIDGoogleUser
+					let idTokenString = user.idToken?.tokenString ?? ""
+					let userEmail = user.profile?.email
+					let userName = user.profile?.name
+					let userProfilePicUrl = user.profile?.imageURL(withDimension: 400)?.absoluteString
+					let userExternalId = user.userID
+
 					Task { @MainActor in
 						guard let self = self else { return }
 
 						if self.isOnboarding {
 							await self.registerWithOAuth(
-								idToken: user.idToken?.tokenString ?? "",
+								idToken: idTokenString,
 								provider: .google,
-								email: user.profile?.email,
-								name: user.profile?.name,
-								profilePictureUrl: user.profile?.imageURL(withDimension: 400)?.absoluteString
+								email: userEmail,
+								name: userName,
+								profilePictureUrl: userProfilePicUrl
 							)
 							return
 						}
 
 						// Request a higher resolution image (400px instead of 100px)
-						self.profilePicUrl = user.profile?.imageURL(withDimension: 400)?.absoluteString ?? ""
-						self.name = user.profile?.name
-						self.email = user.profile?.email
+						self.profilePicUrl = userProfilePicUrl ?? ""
+						self.name = userName
+						self.email = userEmail
 						self.isLoggedIn = true
-						self.externalUserId = user.userID
+						self.externalUserId = userExternalId
 						self.authProvider = .google
-						self.idToken = user.idToken?.tokenString
+						self.idToken = idTokenString
 
 						// Now that all properties are set, check if user exists
 						// This must happen AFTER setting idToken to avoid race condition
@@ -1149,7 +1156,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			}
 
 			// Fallback to the old method if needed (only for mock implementation)
-			if let url = URL(string: APIService.baseURL + "users/update-pfp/\(userId)") {
+			if let url = URL(string: APIService.baseURL + "users/\(userId)/profile-picture") {
 				// Create a URLRequest with PATCH method
 				var request = URLRequest(url: url)
 				request.httpMethod = "PATCH"
@@ -1213,7 +1220,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			)
 		}
 
-		if let url = URL(string: APIService.baseURL + "users/update/\(userId)") {
+		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
 			do {
 				let updateDTO = UserUpdateDTO(
 					username: username,
