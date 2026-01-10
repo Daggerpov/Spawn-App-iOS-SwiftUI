@@ -351,57 +351,60 @@ struct ActivityDateTimeView: View {
 
 	var body: some View {
 		VStack(spacing: 0) {
-			// Header (Friend Requests style)
-			if let onBack = onBack {
-				HStack {
-					ActivityBackButton {
-						// Sync current values to view model before checking changes
-						// Check for local changes before syncing
-						let hasLocalChanges = hasAnyLocalChanges()
+			// Header (Friend Requests style) - Pinned at top
+			VStack(spacing: 0) {
+				if let onBack = onBack {
+					HStack {
+						ActivityBackButton {
+							// Sync current values to view model before checking changes
+							// Check for local changes before syncing
+							let hasLocalChanges = hasAnyLocalChanges()
 
-						if hasLocalChanges {
-							showSaveConfirmation = true
-						} else {
-							onBack()
+							if hasLocalChanges {
+								showSaveConfirmation = true
+							} else {
+								onBack()
+							}
 						}
+
+						Spacer()
+
+						Text("What time?")
+							.font(.onestSemiBold(size: 20))
+							.foregroundColor(headerTextColor)
+
+						Spacer()
+
+						// Invisible chevron to balance the back button
+						Image(systemName: "chevron.left")
+							.font(.system(size: 20, weight: .semibold))
+							.foregroundColor(.clear)
 					}
-
-					Spacer()
-
-					Text("What time?")
-						.font(.onestSemiBold(size: 20))
-						.foregroundColor(headerTextColor)
-
-					Spacer()
-
-					// Invisible chevron to balance the back button
-					Image(systemName: "chevron.left")
-						.font(.system(size: 20, weight: .semibold))
-						.foregroundColor(.clear)
+					.padding(.horizontal, 25)
+					.padding(.vertical, 12)
+				} else {
+					HStack {
+						// Invisible chevron to balance layout when no back
+						Image(systemName: "chevron.left")
+							.font(.onestSemiBold(size: 20))
+							.foregroundColor(.clear)
+						Spacer()
+						Text("What time?")
+							.font(.onestSemiBold(size: 20))
+							.foregroundColor(headerTextColor)
+						Spacer()
+						Image(systemName: "chevron.left")
+							.font(.onestSemiBold(size: 20))
+							.foregroundColor(.clear)
+					}
+					.padding(.horizontal, 25)
+					.padding(.vertical, 12)
 				}
-				.padding(.horizontal, 25)
-				.padding(.vertical, 12)
-			} else {
-				HStack {
-					// Invisible chevron to balance layout when no back
-					Image(systemName: "chevron.left")
-						.font(.onestSemiBold(size: 20))
-						.foregroundColor(.clear)
-					Spacer()
-					Text("What time?")
-						.font(.onestSemiBold(size: 20))
-						.foregroundColor(headerTextColor)
-					Spacer()
-					Image(systemName: "chevron.left")
-						.font(.onestSemiBold(size: 20))
-						.foregroundColor(.clear)
-				}
-				.padding(.horizontal, 25)
-				.padding(.vertical, 12)
+				Text("Set a time for your Activity")
+					.font(.custom("Onest", size: 16))
+					.foregroundColor(secondaryTextColor)
 			}
-			Text("Set a time for your Activity")
-				.font(.custom("Onest", size: 16))
-				.foregroundColor(secondaryTextColor)
+			.background(universalBackgroundColor)
 
 			ScrollView {
 				VStack(spacing: 0) {
