@@ -23,7 +23,6 @@ struct UserProfileView: View {
 	@State private var showAddToActivityType: Bool = false
 	@State private var showSuccessDrawer: Bool = false
 	@State private var navigateToAddToActivityType: Bool = false
-	@State private var showProfileShareSheet: Bool = false
 
 	// Store background refresh task so we can cancel it on disappear
 	@State private var backgroundDataLoadTask: Task<Void, Never>?
@@ -50,86 +49,100 @@ struct UserProfileView: View {
 	}
 
 	var body: some View {
-		profileContent
-			.background(universalBackgroundColor.ignoresSafeArea())
-			.background(universalBackgroundColor)
-			.task {
-				// CRITICAL FIX: Load critical profile data on MainActor to block view appearance
-				// This prevents empty state flashes and ensures view renders with data
+		ZStack {
+			profileContent
+				.background(universalBackgroundColor.ignoresSafeArea())
+				.background(universalBackgroundColor)
 
-				// Load critical data that's required for the view to render meaningfully
-				await profileViewModel.loadCriticalProfileData(userId: user.id)
-
-				// Check friendship status if not viewing own profile (critical for UI)
-				if let currentUserId = userAuth.spawnUser?.id {
-					// Check if user is a RecommendedFriendUserDTO with relationship status
-					if let recommendedFriend = user as? RecommendedFriendUserDTO,
-						recommendedFriend.relationshipStatus != nil
-					{
-						// Use the relationship status from the DTO - no API call needed
-						profileViewModel.setFriendshipStatusFromRecommendedFriend(recommendedFriend)
-					} else {
-						// For other user types (BaseUserDTO, etc.), use the original API call
-						await profileViewModel.checkFriendshipStatus(
-							currentUserId: currentUserId,
-							profileUserId: user.id
-						)
+			// Success drawer overlay - placed at root level to cover tab bar
+			if showSuccessDrawer {
+				FriendRequestSuccessDrawer(
+					friendUser: user as! BaseUserDTO,
+					isPresented: $showSuccessDrawer,
+					onAddToActivityType: {
+						navigateToAddToActivityType = true
 					}
+				)
+			}
+		}
+		.toolbar(showSuccessDrawer ? .hidden : .visible, for: .tabBar)
+		.task {
+			// CRITICAL FIX: Load critical profile data on MainActor to block view appearance
+			// This prevents empty state flashes and ensures view renders with data
 
-					// Fetch activities if they're friends OR if viewing own profile
-					if profileViewModel.friendshipStatus == .friends || profileViewModel.friendshipStatus == .themself {
-						await profileViewModel.fetchProfileActivities(
-							profileUserId: user.id
-						)
-					}
+			// Load critical data that's required for the view to render meaningfully
+			await profileViewModel.loadCriticalProfileData(userId: user.id)
+
+			// Check friendship status if not viewing own profile (critical for UI)
+			if let currentUserId = userAuth.spawnUser?.id {
+				// Check if user is a RecommendedFriendUserDTO with relationship status
+				if let recommendedFriend = user as? RecommendedFriendUserDTO,
+					recommendedFriend.relationshipStatus != nil
+				{
+					// Use the relationship status from the DTO - no API call needed
+					profileViewModel.setFriendshipStatusFromRecommendedFriend(recommendedFriend)
+				} else {
+					// For other user types (BaseUserDTO, etc.), use the original API call
+					await profileViewModel.checkFriendshipStatus(
+						currentUserId: currentUserId,
+						profileUserId: user.id
+					)
 				}
 
-				// Check if task was cancelled before starting background enhancements
-				guard !Task.isCancelled else {
-					return
-				}
-
-				// Capture user properties before Task.detached (they're not Sendable)
-				let userId = user.id
-				let profilePictureUrl = user.profilePicture
-
-				// Load enhancement data in background (non-blocking progressive enhancements)
-				backgroundDataLoadTask = Task.detached(priority: .background) { [profileViewModel] in
-					// Profile picture refresh (can use cached version initially)
-					if let profilePictureUrl = profilePictureUrl {
-						let profilePictureCache = ProfilePictureCache.shared
-						_ = await profilePictureCache.getCachedImageWithRefresh(
-							for: userId,
-							from: profilePictureUrl,
-							maxAge: 6 * 60 * 60  // 6 hours
-						)
-					}
-
-					// Load non-critical enhancement data
-					await profileViewModel.loadEnhancementData(userId: userId)
+				// Fetch activities if they're friends OR if viewing own profile
+				if profileViewModel.friendshipStatus == .friends || profileViewModel.friendshipStatus == .themself {
+					await profileViewModel.fetchProfileActivities(
+						profileUserId: user.id
+					)
 				}
 			}
-			.onDisappear {
-				// Cancel any ongoing background tasks to prevent blocking
-				backgroundDataLoadTask?.cancel()
-				backgroundDataLoadTask = nil
+
+			// Check if task was cancelled before starting background enhancements
+			guard !Task.isCancelled else {
+				return
 			}
-			.onChange(of: profileViewModel.friendshipStatus) { _, newStatus in
-				// Fetch activities when friendship status changes to friends
-				if newStatus == .friends {
-					Task {
-						await profileViewModel.fetchProfileActivities(
-							profileUserId: user.id
-						)
-					}
+
+			// Capture user properties before Task.detached (they're not Sendable)
+			let userId = user.id
+			let profilePictureUrl = user.profilePicture
+
+			// Load enhancement data in background (non-blocking progressive enhancements)
+			backgroundDataLoadTask = Task.detached(priority: .background) { [profileViewModel] in
+				// Profile picture refresh (can use cached version initially)
+				if let profilePictureUrl = profilePictureUrl {
+					let profilePictureCache = ProfilePictureCache.shared
+					_ = await profilePictureCache.getCachedImageWithRefresh(
+						for: userId,
+						from: profilePictureUrl,
+						maxAge: 6 * 60 * 60  // 6 hours
+					)
+				}
+
+				// Load non-critical enhancement data
+				await profileViewModel.loadEnhancementData(userId: userId)
+			}
+		}
+		.onDisappear {
+			// Cancel any ongoing background tasks to prevent blocking
+			backgroundDataLoadTask?.cancel()
+			backgroundDataLoadTask = nil
+		}
+		.onChange(of: profileViewModel.friendshipStatus) { _, newStatus in
+			// Fetch activities when friendship status changes to friends
+			if newStatus == .friends {
+				Task {
+					await profileViewModel.fetchProfileActivities(
+						profileUserId: user.id
+					)
 				}
 			}
-			.accentColor(universalAccentColor)
-			.toast(
-				isShowing: $showNotification,
-				message: notificationMessage,
-				duration: 5.0
-			)
+		}
+		.accentColor(universalAccentColor)
+		.toast(
+			isShowing: $showNotification,
+			message: notificationMessage,
+			duration: 5.0
+		)
 	}
 
 	// Main content broken into a separate computed property to reduce complexity
@@ -164,10 +177,13 @@ struct UserProfileView: View {
 		ZStack {
 			universalBackgroundColor.ignoresSafeArea()
 
-			VStack {
-				profileInnerComponentsView
-					.padding(.horizontal)
+			ScrollView {
+				VStack {
+					profileInnerComponentsView
+						.padding(.horizontal)
+				}
 			}
+			.scrollIndicators(.hidden)
 			.navigationBarBackButtonHidden(true)
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
@@ -204,28 +220,10 @@ struct UserProfileView: View {
 			.navigationDestination(isPresented: $navigateToAddToActivityType) {
 				AddToActivityTypeView(user: user)
 			}
+			.toolbar(showSuccessDrawer ? .hidden : .visible, for: .navigationBar)
 
 			// Overlay for profile menu
 			profileMenuOverlay
-
-			// Success drawer overlay
-			if showSuccessDrawer {
-				FriendRequestSuccessDrawer(
-					friendUser: user as! BaseUserDTO,
-					isPresented: $showSuccessDrawer,
-					onAddToActivityType: {
-						navigateToAddToActivityType = true
-					}
-				)
-			}
-
-			// Profile share drawer overlay
-			if showProfileShareSheet {
-				ProfileShareDrawer(
-					user: user,
-					showShareSheet: $showProfileShareSheet
-				)
-			}
 		}
 	}
 
@@ -434,7 +432,7 @@ struct UserProfileView: View {
 				showActivityDetails: $showActivityDetails
 			)
 			.padding(.horizontal, 16)
-			.padding(.bottom, 15)
+			.padding(.bottom, 100)
 		}
 	}
 
@@ -617,8 +615,12 @@ struct UserProfileView: View {
 	}
 
 	private func shareProfile() {
-		// Show the custom profile share drawer
-		showProfileShareSheet = true
+		// Post notification to show global profile share drawer
+		NotificationCenter.default.post(
+			name: .showGlobalProfileShareDrawer,
+			object: nil,
+			userInfo: ["user": user]
+		)
 	}
 
 	private func copyProfileURL() {

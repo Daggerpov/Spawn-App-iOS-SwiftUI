@@ -27,7 +27,6 @@ struct MyProfileView: View {
 	@State private var showActivityDetails: Bool = false
 	@State private var navigateToDayActivities: Bool = false
 	@State private var selectedDayActivities: [CalendarActivityDTO] = []
-	@State private var showProfileShareSheet: Bool = false
 
 	// Store background refresh task so we can cancel it on disappear
 	@State private var backgroundDataLoadTask: Task<Void, Never>?
@@ -184,10 +183,13 @@ struct MyProfileView: View {
 		ZStack {
 			universalBackgroundColor.ignoresSafeArea()
 
-			VStack {
-				profileInnerComponentsView
-					.padding(.horizontal)
+			ScrollView {
+				VStack {
+					profileInnerComponentsView
+						.padding(.horizontal)
+				}
 			}
+			.scrollIndicators(.hidden)
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
 				ToolbarItem(placement: .principal) {
@@ -208,14 +210,6 @@ struct MyProfileView: View {
 			}
 			.navigationDestination(isPresented: $navigateToDayActivities) {
 				dayActivitiesPageView
-			}
-
-			// Profile share drawer overlay
-			if showProfileShareSheet {
-				ProfileShareDrawer(
-					user: user,
-					showShareSheet: $showProfileShareSheet
-				)
 			}
 		}
 	}
@@ -271,6 +265,7 @@ struct MyProfileView: View {
 				showMonthHeader: false
 			)
 			.padding(.horizontal, 16)
+			.padding(.bottom, 100)
 		}
 	}
 
@@ -339,8 +334,12 @@ struct MyProfileView: View {
 	}
 
 	private func shareProfile() {
-		// Show the custom profile share drawer
-		showProfileShareSheet = true
+		// Post notification to show global profile share drawer
+		NotificationCenter.default.post(
+			name: .showGlobalProfileShareDrawer,
+			object: nil,
+			userInfo: ["user": user]
+		)
 	}
 
 	// Add a function to refresh user data from UserAuthViewModel
