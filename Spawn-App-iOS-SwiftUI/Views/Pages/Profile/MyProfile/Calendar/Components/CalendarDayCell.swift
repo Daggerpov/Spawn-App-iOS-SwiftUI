@@ -5,43 +5,48 @@ struct CalendarDayCell: View {
 	let activities: [CalendarActivityDTO]
 	let dayNumber: Int
 
+	@Environment(\.colorScheme) private var colorScheme
+
+	// MARK: - Theme-aware colors
+
+	private var cellTextColor: Color {
+		// Use dark text on colored backgrounds for readability
+		Color.black
+	}
+
+	private var shadowOpacity: Double {
+		colorScheme == .dark ? 0.3 : 0.1
+	}
+
 	var body: some View {
 		ZStack {
 			if activities.count == 1, !activities.isEmpty {
 				// Single activity - show its icon and color
 				let activity = activities[0]
-				RoundedRectangle(cornerRadius: 4.5)
+				RoundedRectangle(cornerRadius: 7)
 					.fill(activityColor(for: activity))
-					.frame(width: 32, height: 32)
-					.shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 1)
+					.frame(width: 46, height: 46)
+					.shadow(color: Color.black.opacity(shadowOpacity), radius: 7, x: 0, y: 1.65)
 					.overlay(
-						VStack(spacing: 1) {
-							activityIcon(for: activity)
-								.font(.onestMedium(size: 12))
-								.foregroundColor(.black)
-							Text("\(dayNumber)")
-								.font(.onestMedium(size: 8))
-								.foregroundColor(.black)
-						}
+						activityIcon(for: activity)
+							.font(.onestMedium(size: 26))
+							.foregroundColor(cellTextColor)
 					)
 			} else if activities.count > 1, !activities.isEmpty {
 				// Multiple activities - show primary activity color with count
 				let primaryActivity = activities[0]
-				RoundedRectangle(cornerRadius: 4.5)
+				RoundedRectangle(cornerRadius: 7)
 					.fill(activityColor(for: primaryActivity))
-					.frame(width: 32, height: 32)
-					.shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 1)
+					.frame(width: 46, height: 46)
+					.shadow(color: Color.black.opacity(shadowOpacity), radius: 7, x: 0, y: 1.65)
 					.overlay(
 						VStack(spacing: 0) {
 							activityIcon(for: primaryActivity)
-								.font(.onestMedium(size: 10))
-								.foregroundColor(.black)
+								.font(.onestMedium(size: 20))
+								.foregroundColor(cellTextColor)
 							Text("\(activities.count)")
-								.font(.onestMedium(size: 8))
-								.foregroundColor(.black)
-							Text("\(dayNumber)")
-								.font(.onestMedium(size: 6))
-								.foregroundColor(.black)
+								.font(.onestMedium(size: 10))
+								.foregroundColor(cellTextColor)
 						}
 					)
 			}

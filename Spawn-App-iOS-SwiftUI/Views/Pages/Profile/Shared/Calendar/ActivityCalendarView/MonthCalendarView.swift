@@ -7,12 +7,14 @@ struct MonthCalendarView: View {
 	let onActivitySelected: ((CalendarActivityDTO) -> Void)?
 	let onDayActivitiesSelected: ([CalendarActivityDTO]) -> Void
 
+	@Environment(\.colorScheme) private var colorScheme
+
 	var body: some View {
 		VStack(alignment: .leading, spacing: 16) {
 			// Month header
 			Text(monthYearString())
 				.font(.onestMedium(size: 16))
-				.foregroundColor(figmaBlack300)
+				.foregroundColor(monthHeaderColor)
 				.padding(.leading, 8)
 
 			// Calendar grid - 4 days per row
@@ -85,5 +87,11 @@ struct MonthCalendarView: View {
 		let formatter = DateFormatter()
 		formatter.dateFormat = "MMMM yyyy"
 		return formatter.string(from: month)
+	}
+
+	// MARK: - Theme-aware colors
+
+	private var monthHeaderColor: Color {
+		colorScheme == .dark ? Color(hex: colorsGray300) : Color(hex: colorsGray500)
 	}
 }
