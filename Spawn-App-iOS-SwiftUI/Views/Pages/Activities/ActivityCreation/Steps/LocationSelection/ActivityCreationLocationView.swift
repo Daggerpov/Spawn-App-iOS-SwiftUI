@@ -48,9 +48,13 @@ struct ActivityCreationLocationView: View {
 	@State private var isUpdatingLocation = false
 	@State private var debounceTimer: Timer?
 	@State private var is3DMode: Bool = false
+	@State private var isMapDragging: Bool = false
 
 	// Location error handling
 	@State private var showLocationError = false
+
+	// Current location address (reverse geocoded)
+	@State private var currentLocationAddress: String = "Fetching address..."
 
 	let onNext: () -> Void
 	let onBack: (() -> Void)?
@@ -130,9 +134,18 @@ struct ActivityCreationLocationView: View {
 			showsUserLocation: true,
 			annotationItems: [],
 			isLocationSelectionMode: selectionMode == .map,
-			onMapWillChange: nil,
+			onMapWillChange: {
+				if selectionMode == .map {
+					withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+						isMapDragging = true
+					}
+				}
+			},
 			onMapDidChange: { coordinate in
 				if selectionMode == .map {
+					withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+						isMapDragging = false
+					}
 					updateLocationText(for: coordinate)
 				}
 			},
@@ -306,19 +319,28 @@ struct ActivityCreationLocationView: View {
 			VStack {
 				Spacer()
 				ZStack {
-					// Base ellipse under the pin
+					// Base ellipse (shadow) under the pin - scales when lifted
 					Ellipse()
-						.fill(Color(red: 0.15, green: 0.55, blue: 1))
-						.frame(width: 19.90, height: 9.95)
-						.opacity(0.9)
-						.shadow(color: Color.black.opacity(0.25), radius: 12, x: 0, y: 3)
+						.fill(Color.black.opacity(isMapDragging ? 0.15 : 0.25))
+						.frame(
+							width: isMapDragging ? 28 : 19.90,
+							height: isMapDragging ? 14 : 9.95
+						)
+						.blur(radius: isMapDragging ? 4 : 2)
 						.offset(y: 18)
 
-					// Pin icon
+					// Pin icon - lifts up when dragging
 					Image(systemName: "mappin")
 						.font(.system(size: 34))
 						.foregroundColor(.blue)
-						.shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 3)
+						.shadow(
+							color: .black.opacity(isMapDragging ? 0.35 : 0.25),
+							radius: isMapDragging ? 10 : 6,
+							x: 0,
+							y: isMapDragging ? 8 : 3
+						)
+						.offset(y: isMapDragging ? -16 : 0)
+						.scaleEffect(isMapDragging ? 1.1 : 1.0)
 				}
 				Spacer()
 			}
@@ -460,6 +482,10 @@ struct ActivityCreationLocationView: View {
 			|| locationManager.authorizationStatus == .authorizedAlways
 		{
 			locationManager.startLocationUpdates()
+			// Fetch current location address if we already have location
+			if locationManager.userLocation != nil {
+				updateCurrentLocationAddress()
+			}
 		} else if locationManager.authorizationStatus == .notDetermined {
 			locationManager.requestLocationPermission()
 		}
@@ -471,6 +497,11 @@ struct ActivityCreationLocationView: View {
 	}
 
 	private func handleUserLocationUpdate(_ location: CLLocationCoordinate2D?) {
+		// Update current location address whenever we get a location update
+		if location != nil {
+			updateCurrentLocationAddress()
+		}
+
 		// Only auto-center if we don't have a selected location and we're in search mode
 		guard viewModel.selectedLocation == nil,
 			selectionMode == .search,
@@ -491,8 +522,49 @@ struct ActivityCreationLocationView: View {
 	}
 
 	private func getCurrentLocationAddress() -> String {
-		// Return a placeholder - in production, you'd reverse geocode the user's location
-		return "Your current location"
+		return currentLocationAddress
+	}
+
+	private func updateCurrentLocationAddress() {
+		guard let userLocation = locationManager.userLocation,
+			CLLocationCoordinate2DIsValid(userLocation)
+		else {
+			currentLocationAddress = "Fetching address..."
+			return
+		}
+
+		let geocoder = CLGeocoder()
+		let location = CLLocation(latitude: userLocation.latitude, longitude: userLocation.longitude)
+
+		geocoder.reverseGeocodeLocation(location) { placemarks, error in
+			DispatchQueue.main.async {
+				guard let placemark = placemarks?.first, error == nil else {
+					self.currentLocationAddress = String(
+						format: "%.4f, %.4f", userLocation.latitude, userLocation.longitude)
+					return
+				}
+
+				var addressComponents: [String] = []
+				if let thoroughfare = placemark.thoroughfare, !thoroughfare.isEmpty {
+					if let subThoroughfare = placemark.subThoroughfare, !subThoroughfare.isEmpty {
+						addressComponents.append("\(subThoroughfare) \(thoroughfare)")
+					} else {
+						addressComponents.append(thoroughfare)
+					}
+				}
+				if let city = placemark.locality, !city.isEmpty {
+					addressComponents.append(city)
+				}
+				if let state = placemark.administrativeArea, !state.isEmpty {
+					addressComponents.append(state)
+				}
+
+				self.currentLocationAddress =
+					addressComponents.isEmpty
+					? String(format: "%.4f, %.4f", userLocation.latitude, userLocation.longitude)
+					: addressComponents.joined(separator: ", ")
+			}
+		}
 	}
 
 	private func distanceFromUser(to coordinate: CLLocationCoordinate2D) -> String? {
@@ -550,9 +622,15 @@ struct ActivityCreationLocationView: View {
 			CLLocationCoordinate2DIsValid(userLocation)
 		else { return }
 
+		// Use the actual address instead of "Current Location" so other users can see it
+		let locationName =
+			currentLocationAddress == "Fetching address..."
+			? String(format: "%.4f, %.4f", userLocation.latitude, userLocation.longitude)
+			: currentLocationAddress
+
 		let location = LocationDTO(
 			id: UUID(),
-			name: "Current Location",
+			name: locationName,
 			latitude: userLocation.latitude,
 			longitude: userLocation.longitude
 		)
