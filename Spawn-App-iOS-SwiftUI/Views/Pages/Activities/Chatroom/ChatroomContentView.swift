@@ -8,13 +8,15 @@ struct ChatroomContentView: View {
 	@ObservedObject var activity: FullFeedActivityDTO
 	var backgroundColor: Color
 	var isExpanded: Bool
+	var fromMapView: Bool?
 	@State var viewModel: ChatViewModel
 	let onBack: () -> Void
 
-	init(activity: FullFeedActivityDTO, backgroundColor: Color, isExpanded: Bool, onBack: @escaping () -> Void) {
+	init(activity: FullFeedActivityDTO, backgroundColor: Color, isExpanded: Bool, fromMapView: Bool? = nil, onBack: @escaping () -> Void) {
 		self.activity = activity
 		self.backgroundColor = backgroundColor
 		self.isExpanded = isExpanded
+		self.fromMapView = fromMapView
 		self.onBack = onBack
 		let userId = user.id
 		self._viewModel = State(wrappedValue: ChatViewModel(senderUserId: userId, activity: activity))
@@ -54,27 +56,31 @@ struct ChatroomContentView: View {
 							messageInputView
 								.padding(.bottom, geometry.safeAreaInsets.bottom)
 						}
+						.padding(.bottom, fromMapView ?? false ? -16 : 0)
 						.background(backgroundColor.opacity(0.97))  // Match the main background
 					}
 				}
 			} else {
 				// When minimized, don't use GeometryReader to avoid expanding to fill available space
+				// Use fixed total height to match main card content and prevent overflow
 				VStack(spacing: 0) {
-					// Header - always visible at top
+					// Header - always visible at top with proper spacing from handle bar
+					// Figma shows header at top-[41px] from drawer, handle bar ends at ~16px
 					headerView
+						.padding(.top, 20)  // Match Figma spacing
 
-					// Messages area - fixed size for minimized state
+					// Messages area - fills available space within the constrained height
 					messagesScrollView
-						.frame(height: minimizedMessagesHeight)
 						.clipped()
 
-					// Input area - always anchored at bottom with no spacing below
+					// Input area - directly after messages
 					VStack(spacing: 0) {
 						errorMessageView
 						messageInputView
 					}
-					.background(backgroundColor.opacity(0.97))  // Match the main background
 				}
+				.padding(.bottom, 90)
+				.frame(height: minimizedContentHeight)  // Fixed total height to match drawer
 			}
 		}
 		.onAppear {
@@ -84,8 +90,11 @@ struct ChatroomContentView: View {
 		}
 	}
 
-	// Fixed heights for messages area
-	private let minimizedMessagesHeight: CGFloat = 480
+	// Fixed heights for content areas
+	// Figma: Drawer is 588px total, handle bar ~16px, so content area ~572px
+	// But we need to account for the drawer offset (20% of screen), so visible content is less
+	// Using a fixed total height ensures consistent sizing that matches main card content
+	private let minimizedContentHeight: CGFloat = 600  // Total height for chatroom when minimized
 	private let expandedMessagesHeight: CGFloat = 710
 
 	// MARK: - View Components
@@ -99,7 +108,7 @@ struct ChatroomContentView: View {
 			invisibleBalanceButton
 		}
 		.padding(.horizontal, 24)
-		.padding(.bottom, 16)
+		.padding(.bottom, 8)  // Reduced from 16 to fit content better
 	}
 
 	private var backButton: some View {
@@ -147,7 +156,7 @@ struct ChatroomContentView: View {
 					}
 				}
 				.padding(.horizontal, 24)
-				.padding(.top, 8)  // Add some top padding
+				.padding(.vertical, 8)  // Minimal vertical padding
 				.onChange(of: viewModel.chats.count) {
 					// Auto-scroll to newest message when new messages arrive
 					if let lastMessage = sortedMessages.last {
@@ -176,7 +185,6 @@ struct ChatroomContentView: View {
 				}
 			}
 			.frame(maxWidth: .infinity)
-			.padding(.vertical)
 		}
 	}
 
@@ -216,7 +224,7 @@ struct ChatroomContentView: View {
 	}
 
 	private var messageInputView: some View {
-		HStack(spacing: 12) {
+		HStack(spacing: 8) {  // Figma: gap-[8px]
 			userAvatarView
 			messageTextField
 			sendButton
@@ -242,9 +250,10 @@ struct ChatroomContentView: View {
 				.foregroundColor(.primary)
 				.textFieldStyle(PlainTextFieldStyle())
 		}
-		.padding(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+		.padding(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
 		.background(.white)
-		.cornerRadius(20)
+		.cornerRadius(100)  // Figma: rounded-[100px]
+		.shadow(color: Color.black.opacity(0.25), radius: 2, x: 2, y: 2)  // Inner shadow effect
 		.onChange(of: messageText) {
 			if viewModel.creationMessage != nil {
 				viewModel.creationMessage = nil
@@ -258,13 +267,34 @@ struct ChatroomContentView: View {
 		}) {
 			Image("chat_message_send_button")
 				.resizable()
-				.frame(width: 24, height: 24)
-				.padding(6)
+				.frame(width: 16, height: 16)
+				.padding(8)
 		}
 		.frame(width: 36, height: 36)
-		.background(figmaSoftBlue)
-		.cornerRadius(18)
+		.background(
+			// Figma gradient: linear-gradient(218deg, rgba(107, 129, 251, 1) 24%, rgba(255, 128, 236, 1) 104%)
+			LinearGradient(
+				gradient: Gradient(colors: [
+					Color(red: 0.42, green: 0.51, blue: 0.98),  // #6B81FB
+					Color(red: 1.0, green: 0.5, blue: 0.93)     // #FF80EC
+				]),
+				startPoint: .topLeading,
+				endPoint: .bottomTrailing
+			)
+		)
+		.cornerRadius(100)
+		.shadow(color: Color.black.opacity(0.25), radius: 2, x: -2, y: -2)  // Inner shadow effect
 		.disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 		.opacity(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1.0)
 	}
+}
+
+#Preview {
+	@Previewable @ObservedObject var appCache = AppCache.shared
+	ChatroomContentView(
+		activity: FullFeedActivityDTO.mockDinnerActivity,
+		backgroundColor: Color.blue,
+		isExpanded: false,
+		onBack: {}
+	)
 }

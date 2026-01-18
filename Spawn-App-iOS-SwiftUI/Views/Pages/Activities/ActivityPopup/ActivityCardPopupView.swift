@@ -93,6 +93,7 @@ struct ActivityCardPopupView: View {
 					activity: activity,
 					backgroundColor: activityColor,
 					isExpanded: isExpanded,
+					fromMapView: fromMapView,
 					onBack: {
 						withAnimation(.easeInOut(duration: 0.3)) {
 							showingChatroom = false

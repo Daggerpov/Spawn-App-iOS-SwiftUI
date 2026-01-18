@@ -70,19 +70,21 @@ struct ParticipantsContentView: View {
 				}
 			} else {
 				// When minimized, don't use GeometryReader to avoid expanding to fill available space
+				// Use fixed total height to match main card content and prevent overflow
 				VStack(spacing: 0) {
 					ParticipantsHeaderView(onBack: onBack)
+						.padding(.top, 20)  // Match Figma spacing
 
-					// Participants content with fixed height when minimized
+					// Participants content fills remaining space
 					ScrollView {
 						SharedParticipantsContent(activity: activity) { user in
 							navigateToUserProfile(user)
 						}
 						.padding(.horizontal, 24)
-						.padding(.bottom, 85)
+						.padding(.bottom, 16)
 					}
-					.frame(maxHeight: 500)  // Limit height when minimized to match main content
 				}
+				.frame(height: 450)  // Fixed total height to match drawer and chatroom
 			}
 		}
 		.fullScreenCover(isPresented: $showProfile) {
