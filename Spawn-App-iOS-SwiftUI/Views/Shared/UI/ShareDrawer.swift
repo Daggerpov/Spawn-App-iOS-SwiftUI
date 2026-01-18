@@ -190,6 +190,10 @@ struct ShareDrawer: View {
 					.padding(.horizontal, 24)
 					.padding(.top, 24)
 					.padding(.bottom, 24)
+
+					// Extra bottom padding for safe area (home indicator)
+					Spacer()
+						.frame(height: 34)
 				}
 				.frame(maxWidth: .infinity)
 				.background(adaptiveBackgroundColor)

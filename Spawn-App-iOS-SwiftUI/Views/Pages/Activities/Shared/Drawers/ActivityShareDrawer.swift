@@ -2,178 +2,21 @@ import SwiftUI
 
 struct ActivityShareDrawer: View {
 	let activity: FullFeedActivityDTO
-	@Environment(\.dismiss) private var dismiss
-	@Environment(\.colorScheme) private var colorScheme
-	@ObservedObject var themeService = ThemeService.shared
-
-	// MARK: - Adaptive Colors
-	private var adaptiveBackgroundColor: Color {
-		universalBackgroundColor(from: themeService, environment: colorScheme)
-	}
-
-	private var adaptiveTitleColor: Color {
-		universalAccentColor(from: themeService, environment: colorScheme)
-	}
-
-	private var adaptiveHandleColor: Color {
-		switch colorScheme {
-		case .dark: return Color(red: 0.56, green: 0.52, blue: 0.52)
-		case .light: return Color(red: 0.56, green: 0.52, blue: 0.52)
-		@unknown default: return Color(red: 0.56, green: 0.52, blue: 0.52)
-		}
-	}
-
-	/// Button background color (tertiary background from Figma)
-	private var adaptiveButtonBackgroundColor: Color {
-		switch colorScheme {
-		case .dark: return Color(red: 0.35, green: 0.33, blue: 0.33)
-		case .light: return Color(red: 0.88, green: 0.85, blue: 0.85)
-		@unknown default: return Color(red: 0.88, green: 0.85, blue: 0.85)
-		}
-	}
-
-	/// Button text color (secondary text from Figma)
-	private var adaptiveButtonTextColor: Color {
-		switch colorScheme {
-		case .dark: return Color(red: 0.82, green: 0.80, blue: 0.80)
-		case .light: return Color(red: 0.15, green: 0.14, blue: 0.14)
-		@unknown default: return Color(red: 0.15, green: 0.14, blue: 0.14)
-		}
-	}
+	@Binding var showShareSheet: Bool
 
 	private var activityTitle: String {
 		return activity.title ?? "Activity"
 	}
 
 	var body: some View {
-		VStack(spacing: 0) {
-			// Title
-			Text("Share this Spawn")
-				.font(.custom("Onest", size: 20).weight(.semibold))
-				.foregroundColor(adaptiveTitleColor)
-				.frame(maxWidth: .infinity, alignment: .leading)
-				.padding(.top, 17)
-				.padding(.horizontal, 29)
-
-			// Share options
-			HStack(spacing: 0) {
-				// Share via button
-				shareButton(
-					action: {
-						triggerHaptic()
-						dismiss()
-						shareViaSystem()
-					},
-					icon: AnyView(
-						ZStack {
-							Circle()
-								.fill(adaptiveButtonBackgroundColor)
-								.frame(width: 64, height: 64)
-							Image("share_via_button")
-								.resizable()
-								.renderingMode(.template)
-								.foregroundColor(adaptiveButtonTextColor)
-								.aspectRatio(contentMode: .fit)
-								.frame(width: 28, height: 28)
-						}
-					),
-					label: "Share"
-				)
-
-				Spacer()
-
-				// Copy Link button
-				shareButton(
-					action: {
-						triggerHaptic()
-						shareViaLink()
-						Task { @MainActor in
-							try? await Task.sleep(for: .seconds(0.1))
-							dismiss()
-						}
-					},
-					icon: AnyView(
-						ZStack {
-							Circle()
-								.fill(adaptiveButtonBackgroundColor)
-								.frame(width: 64, height: 64)
-							Image("copy_link_button")
-								.resizable()
-								.renderingMode(.template)
-								.foregroundColor(adaptiveButtonTextColor)
-								.aspectRatio(contentMode: .fit)
-								.frame(width: 28, height: 28)
-						}
-					),
-					label: "Copy"
-				)
-
-				Spacer()
-
-				// WhatsApp button
-				shareButton(
-					action: {
-						triggerHaptic()
-						dismiss()
-						shareViaWhatsApp()
-					},
-					icon: AnyView(
-						Image("whatsapp_logo_for_sharing")
-							.resizable()
-							.aspectRatio(contentMode: .fit)
-							.frame(width: 64, height: 64)
-							.clipShape(Circle())
-					),
-					label: "WhatsApp"
-				)
-
-				Spacer()
-
-				// iMessage button
-				shareButton(
-					action: {
-						triggerHaptic()
-						dismiss()
-						shareViaSMS()
-					},
-					icon: AnyView(
-						Image("imessage_for_sharing")
-							.resizable()
-							.aspectRatio(contentMode: .fit)
-							.frame(width: 64, height: 64)
-							.clipShape(Circle())
-					),
-					label: "iMessage"
-				)
-			}
-			.padding(.horizontal, 24)
-			.padding(.top, 24)
-		}
-		.background(adaptiveBackgroundColor)
-	}
-
-	// MARK: - Share Button Component
-	private func shareButton(
-		action: @escaping () -> Void,
-		icon: AnyView,
-		label: String
-	) -> some View {
-		Button(action: action) {
-			VStack(spacing: 8) {
-				icon
-				Text(label)
-					.font(.system(size: 14, weight: .regular))
-					.foregroundColor(adaptiveButtonTextColor)
-					.lineLimit(1)
-					.minimumScaleFactor(0.8)
-			}
-			.frame(minWidth: 64)
-		}
-	}
-
-	private func triggerHaptic() {
-		let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-		impactGenerator.impactOccurred()
+		ShareDrawer(
+			title: "Share this Spawn",
+			isPresented: $showShareSheet,
+			onShareVia: shareViaSystem,
+			onCopyLink: shareViaLink,
+			onWhatsApp: shareViaWhatsApp,
+			oniMessage: shareViaSMS
+		)
 	}
 
 	// MARK: - Share Functions
@@ -246,7 +89,7 @@ struct ActivityShareDrawer: View {
 	}
 
 	private func shareViaSMS() {
-		// Use the new SMS sharing service with enhanced messaging
+		// Use the SMS sharing service with enhanced messaging
 		SMSShareService.shared.shareActivity(activity)
 	}
 
@@ -258,6 +101,29 @@ struct ActivityShareDrawer: View {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
-	ActivityShareDrawer(activity: .mockDinnerActivity)
+	@Previewable @State var showShareSheet: Bool = true
+
+	ZStack {
+		Color.black.ignoresSafeArea()
+
+		VStack {
+			Button("Toggle Share Sheet") {
+				showShareSheet.toggle()
+			}
+			.padding()
+			.background(Color.blue)
+			.foregroundColor(.white)
+			.cornerRadius(10)
+
+			Spacer()
+		}
+		.padding()
+
+		ActivityShareDrawer(
+			activity: .mockDinnerActivity,
+			showShareSheet: $showShareSheet
+		)
+	}
 }
