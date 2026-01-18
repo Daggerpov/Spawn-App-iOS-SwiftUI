@@ -12,7 +12,10 @@ struct ChatroomContentView: View {
 	@State var viewModel: ChatViewModel
 	let onBack: () -> Void
 
-	init(activity: FullFeedActivityDTO, backgroundColor: Color, isExpanded: Bool, fromMapView: Bool? = nil, onBack: @escaping () -> Void) {
+	init(
+		activity: FullFeedActivityDTO, backgroundColor: Color, isExpanded: Bool, fromMapView: Bool? = nil,
+		onBack: @escaping () -> Void
+	) {
 		self.activity = activity
 		self.backgroundColor = backgroundColor
 		self.isExpanded = isExpanded
@@ -276,7 +279,7 @@ struct ChatroomContentView: View {
 			LinearGradient(
 				gradient: Gradient(colors: [
 					Color(red: 0.42, green: 0.51, blue: 0.98),  // #6B81FB
-					Color(red: 1.0, green: 0.5, blue: 0.93)     // #FF80EC
+					Color(red: 1.0, green: 0.5, blue: 0.93),  // #FF80EC
 				]),
 				startPoint: .topLeading,
 				endPoint: .bottomTrailing
