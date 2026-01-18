@@ -90,14 +90,6 @@ final class CacheCoordinator: ObservableObject {
 			return
 		}
 
-		// Clear calendar caches due to data format changes
-		do {
-			let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-			try await apiService.clearCalendarCaches()
-		} catch {
-			print("⚠️ Failed to clear calendar caches on startup: \(error.localizedDescription)")
-		}
-
 		// Collect timestamps from all cache services
 		var allTimestamps: [String: Date] = [:]
 
