@@ -41,9 +41,15 @@ struct ActivityPopupDrawer: View {
 	}
 
 	private var halfScreenOffset: CGFloat {
-		// When opened from map view, position card higher since there's no map preview needed
-		// Lower percentage = card appears higher on screen
-		screenHeight * 0.30
+		// Calculate offset so popup sits at the bottom of the screen
+		// Lower percentage = popup top is higher = more content visible
+		if fromMapView {
+			// Map view: no inline map, but still needs to show location row + chatroom
+			return screenHeight * 0.22
+		} else {
+			// Feed view: has inline map preview, needs more content visible
+			return screenHeight * 0.20
+		}
 	}
 
 	private var currentOffset: CGFloat {
@@ -66,19 +72,18 @@ struct ActivityPopupDrawer: View {
 				}
 				.opacity(0.75)
 				.zIndex(isExpanded ? 999 : 0)  // Ensure blur covers tab bar when expanded
-			// Popup content
-			VStack(spacing: 0) {
-				ActivityCardPopupView(
-					activity: activity,
-					activityColor: activityColor,
-					isExpanded: $isExpanded,
-					selectedTab: $selectedTab,
-					fromMapView: fromMapView,
-					onDismiss: dismissPopup,
-					onMinimize: minimizePopup
-				)
-			}
-			.frame(maxWidth: .infinity, maxHeight: isExpanded ? .infinity : nil)
+			// Popup content - extends from current offset to bottom of screen
+			ActivityCardPopupView(
+				activity: activity,
+				activityColor: activityColor,
+				isExpanded: $isExpanded,
+				selectedTab: $selectedTab,
+				fromMapView: fromMapView,
+				onDismiss: dismissPopup,
+				onMinimize: minimizePopup
+			)
+			.frame(maxWidth: .infinity)
+			.frame(maxHeight: isExpanded ? .infinity : screenHeight)  // Fill to bottom when minimized
 			.cornerRadius(isExpanded ? 0 : 20, corners: [.topLeft, .topRight])
 			.offset(y: currentOffset)
 			.gesture(
@@ -95,7 +100,7 @@ struct ActivityPopupDrawer: View {
 					}
 			)
 			.allowsHitTesting(true)  // Ensure buttons inside can still be tapped
-			.ignoresSafeArea(isExpanded ? .all : .container, edges: isExpanded ? .all : .bottom)
+			.ignoresSafeArea(.all, edges: .bottom)  // Always extend to bottom edge
 			.zIndex(isExpanded ? 1000 : 1)  // Ensure expanded popup appears above tab bar
 		}
 		.transition(.move(edge: .bottom))

@@ -78,12 +78,12 @@ struct ActivityCardPopupView: View {
 				RoundedRectangle(cornerRadius: 2.5)
 					.fill(Color.white.opacity(0.6))
 					.frame(width: 50, height: 4)
-					.padding(.top, fromMapView ? 8 : 12)  // Reduced padding for map view
+					.padding(.top, 12)  // Consistent padding for handle bar
 			} else {
-				// Add equivalent padding when expanded to avoid status bar
-				// Reduce padding when opened from map view since it has additional header padding
+				// Add top padding when expanded to match Figma design (~70px from top)
+				// This ensures the X button is positioned lower, matching the design
 				Spacer()
-					.frame(height: fromMapView ? 8 : 24)  // Reduced padding for map view
+					.frame(height: 60)  // Consistent for all expanded popups
 			}
 
 			// Conditional content based on navigation state
@@ -127,7 +127,7 @@ struct ActivityCardPopupView: View {
 			edges: (showingChatroom || showingParticipants) && isExpanded
 				? .all : .bottom
 		)  // Fill entire screen when chatroom/participants are maximized
-		.frame(maxWidth: .infinity, maxHeight: .infinity)  // Ensure consistent framing
+		.frame(maxWidth: .infinity, maxHeight: isExpanded ? .infinity : nil)  // Only expand to fill when expanded
 		.sheet(isPresented: $showActivityMenu) {
 			ActivityMenuView(
 				activity: activity,
@@ -201,7 +201,7 @@ struct ActivityCardPopupView: View {
 	}
 
 	var mainCardContent: some View {
-		VStack(alignment: .leading, spacing: fromMapView ? 12 : 16) {
+		VStack(alignment: .leading, spacing: 16) {
 			// Header with arrow and title
 			HStack {
 				Button(action: {
@@ -238,7 +238,7 @@ struct ActivityCardPopupView: View {
 					.contentShape(Circle())  // Better touch area for circular button
 				}
 			}
-			.padding(.top, fromMapView ? 4 : 11)  // Reduced padding for map view
+			.padding(.top, 8)  // Consistent padding matching Figma's py-[8px]
 
 			// Event title and time
 			titleAndTime
@@ -261,12 +261,14 @@ struct ActivityCardPopupView: View {
 
 			// Chat section
 			ChatroomButtonView(activity: activity, activityColor: activityColor)
-			// Reduce bottom spacing when minimized from MapView by omitting spacer
-			if !(fromMapView && !isExpanded) {
+
+			// Spacer pushes content to top when expanded
+			if isExpanded {
 				Spacer()
 			}
 		}
 		.padding(.horizontal, 26)
+		.padding(.bottom, isExpanded ? 40 : 120)  // Less padding when minimized since content sits at bottom
 	}
 
 	var mapAndLocationView: some View {
