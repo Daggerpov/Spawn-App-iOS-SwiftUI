@@ -296,7 +296,7 @@ struct MyProfileView: View {
 
 		return DayActivitiesPageView(
 			date: date,
-			activities: selectedDayActivities,
+			initialActivities: selectedDayActivities,
 			onDismiss: {
 				// Navigate back to calendar view instead of going back to profile
 				navigateToDayActivities = false

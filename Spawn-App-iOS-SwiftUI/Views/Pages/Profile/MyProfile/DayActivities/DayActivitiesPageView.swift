@@ -2,7 +2,7 @@ import SwiftUI
 
 struct DayActivitiesPageView: View {
 	let date: Date
-	let activities: [CalendarActivityDTO]
+	let initialActivities: [CalendarActivityDTO]
 	let onDismiss: () -> Void
 	let onActivitySelected: (CalendarActivityDTO) -> Void
 
@@ -15,6 +15,8 @@ struct DayActivitiesPageView: View {
 	@State private var showActivityDetails: Bool = false
 	@State private var fullActivities: [UUID: FullFeedActivityDTO] = [:]
 	@State private var isLoadingActivities = false
+	// Mutable copy of activities that can be updated when activities are deleted/updated
+	@State private var activities: [CalendarActivityDTO] = []
 
 	var body: some View {
 		VStack(spacing: 0) {
@@ -51,11 +53,27 @@ struct DayActivitiesPageView: View {
 			}
 		)
 		.task {
+			// Initialize activities from initialActivities on first load
+			if activities.isEmpty {
+				activities = initialActivities
+			}
 			// CRITICAL: Initialize ViewModel lazily to prevent repeated init() calls
 			if profileViewModel == nil {
 				profileViewModel = ProfileViewModel()
 			}
 			fetchAllActivityDetails()
+		}
+		// Listen for activity deletion notifications to update UI immediately
+		.onReceive(NotificationCenter.default.publisher(for: .activityDeleted)) { notification in
+			if let deletedActivityId = notification.object as? UUID {
+				handleActivityDeleted(deletedActivityId)
+			}
+		}
+		// Listen for activity update notifications to refresh activity details
+		.onReceive(NotificationCenter.default.publisher(for: .activityUpdated)) { notification in
+			if let updatedActivity = notification.object as? FullFeedActivityDTO {
+				handleActivityUpdated(updatedActivity)
+			}
 		}
 	}
 
@@ -174,6 +192,29 @@ struct DayActivitiesPageView: View {
 		}
 	}
 
+	/// Handles activity deletion by removing it from the local activities list
+	private func handleActivityDeleted(_ activityId: UUID) {
+		// Remove from the calendar activities list
+		let previousCount = activities.count
+		activities.removeAll { $0.activityId == activityId }
+
+		// Also remove from full activities dictionary
+		fullActivities.removeValue(forKey: activityId)
+
+		if activities.count < previousCount {
+			print("✅ DayActivitiesPageView: Removed deleted activity \(activityId) from list")
+		}
+	}
+
+	/// Handles activity updates by refreshing the activity details
+	private func handleActivityUpdated(_ updatedActivity: FullFeedActivityDTO) {
+		// Update the full activity details if we have it
+		if fullActivities[updatedActivity.id] != nil {
+			fullActivities[updatedActivity.id] = updatedActivity
+			print("✅ DayActivitiesPageView: Updated activity \(updatedActivity.id) in list")
+		}
+	}
+
 	private func handleActivitySelection(_ activity: CalendarActivityDTO) {
 		guard let viewModel = profileViewModel else { return }
 		Task {
@@ -222,7 +263,7 @@ struct DayActivitiesPageView: View {
 #Preview {
 	DayActivitiesPageView(
 		date: Date(),
-		activities: [],
+		initialActivities: [],
 		onDismiss: {},
 		onActivitySelected: { _ in }
 	)
