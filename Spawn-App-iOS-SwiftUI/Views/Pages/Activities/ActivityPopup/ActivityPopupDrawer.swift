@@ -43,7 +43,7 @@ struct ActivityPopupDrawer: View {
 	private var halfScreenOffset: CGFloat {
 		// When opened from map view, position card higher since there's no map preview needed
 		// Lower percentage = card appears higher on screen
-		fromMapView ? screenHeight * 0.28 : screenHeight * 0.30
+		fromMapView ? screenHeight * 0.10 : screenHeight * 0.30
 	}
 
 	private var currentOffset: CGFloat {

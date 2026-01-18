@@ -157,7 +157,7 @@ struct ActivityCardView: View {
 			}
 			.sheet(isPresented: $showShareDrawer) {
 				ActivityShareDrawer(activity: activity)
-					.presentationDetents([.height(280)])
+					.presentationDetents([.height(200)])
 					.presentationDragIndicator(.visible)
 			}
 
