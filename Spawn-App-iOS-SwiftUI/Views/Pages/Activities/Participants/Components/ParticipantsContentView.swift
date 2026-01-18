@@ -50,18 +50,38 @@ struct ParticipantsContentView: View {
 	}
 
 	var body: some View {
-		GeometryReader { geometry in
-			VStack(spacing: 0) {
-				ParticipantsHeaderView(onBack: onBack)
-					.padding(.top, isExpanded ? geometry.safeAreaInsets.top + 24 : 0)
+		Group {
+			if isExpanded {
+				// When expanded, use GeometryReader for safe area handling
+				GeometryReader { geometry in
+					VStack(spacing: 0) {
+						ParticipantsHeaderView(onBack: onBack)
+							.padding(.top, geometry.safeAreaInsets.top + 24)
 
-				// Participants content that takes remaining space
-				ScrollView {
-					SharedParticipantsContent(activity: activity) { user in
-						navigateToUserProfile(user)
+						// Participants content that takes remaining space
+						ScrollView {
+							SharedParticipantsContent(activity: activity) { user in
+								navigateToUserProfile(user)
+							}
+							.padding(.horizontal, 24)
+							.padding(.bottom, 20)
+						}
 					}
-					.padding(.horizontal, 24)
-					.padding(.bottom, isExpanded ? 20 : 85)  // Increased to match chatroom padding for visibility
+				}
+			} else {
+				// When minimized, don't use GeometryReader to avoid expanding to fill available space
+				VStack(spacing: 0) {
+					ParticipantsHeaderView(onBack: onBack)
+
+					// Participants content with fixed height when minimized
+					ScrollView {
+						SharedParticipantsContent(activity: activity) { user in
+							navigateToUserProfile(user)
+						}
+						.padding(.horizontal, 24)
+						.padding(.bottom, 85)
+					}
+					.frame(maxHeight: 500)  // Limit height when minimized to match main content
 				}
 			}
 		}

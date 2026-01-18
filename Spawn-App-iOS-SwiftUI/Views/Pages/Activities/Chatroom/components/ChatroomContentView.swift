@@ -34,24 +34,47 @@ struct ChatroomContentView: View {
 	}
 
 	var body: some View {
-		GeometryReader { geometry in
-			VStack(spacing: 0) {
-				// Header - always visible at top
-				headerView
-					.padding(.top, isExpanded ? geometry.safeAreaInsets.top + 16 : 0)
+		Group {
+			if isExpanded {
+				// When expanded, use GeometryReader for safe area handling
+				GeometryReader { geometry in
+					VStack(spacing: 0) {
+						// Header - always visible at top
+						headerView
+							.padding(.top, geometry.safeAreaInsets.top + 16)
 
-				// Messages area - fixed size based on expansion state
-				messagesScrollView
-					.frame(height: isExpanded ? expandedMessagesHeight : minimizedMessagesHeight)
-					.clipped()
+						// Messages area - fixed size based on expansion state
+						messagesScrollView
+							.frame(height: expandedMessagesHeight)
+							.clipped()
 
-				// Input area - always anchored at bottom with no spacing below
-				VStack(spacing: 0) {
-					errorMessageView
-					messageInputView
-						.padding(.bottom, isExpanded ? geometry.safeAreaInsets.bottom : 0)
+						// Input area - always anchored at bottom with no spacing below
+						VStack(spacing: 0) {
+							errorMessageView
+							messageInputView
+								.padding(.bottom, geometry.safeAreaInsets.bottom)
+						}
+						.background(backgroundColor.opacity(0.97))  // Match the main background
+					}
 				}
-				.background(backgroundColor.opacity(0.97))  // Match the main background
+			} else {
+				// When minimized, don't use GeometryReader to avoid expanding to fill available space
+				VStack(spacing: 0) {
+					// Header - always visible at top
+					headerView
+
+					// Messages area - fixed size for minimized state
+					messagesScrollView
+						.frame(height: minimizedMessagesHeight)
+						.clipped()
+
+					// Input area - always anchored at bottom with no spacing below
+					VStack(spacing: 0) {
+						errorMessageView
+						messageInputView
+					}
+					.background(backgroundColor.opacity(0.97))  // Match the main background
+				}
 			}
 		}
 		.onAppear {
