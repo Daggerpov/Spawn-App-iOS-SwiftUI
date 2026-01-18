@@ -250,7 +250,7 @@ struct ChatroomContentView: View {
 		HStack {
 			TextField("Send a message!", text: $messageText)
 				.font(Font.custom("Onest", size: 16).weight(.medium))
-				.foregroundColor(.primary)
+				.foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))  // Dark text on white background
 				.textFieldStyle(PlainTextFieldStyle())
 		}
 		.padding(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
