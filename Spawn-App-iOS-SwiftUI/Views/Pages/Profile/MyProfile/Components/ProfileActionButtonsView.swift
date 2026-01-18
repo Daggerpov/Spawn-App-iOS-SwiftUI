@@ -26,14 +26,8 @@ struct ProfileActionButtonsView: View {
 	}
 
 	private var buttonBackgroundColor: Color {
-		switch colorScheme {
-		case .dark:
-			return Color(red: 0.15, green: 0.15, blue: 0.15)
-		case .light:
-			return Color.white
-		@unknown default:
-			return Color.white
-		}
+		// Per Figma design: buttons have white background in both light and dark mode
+		return Color.white
 	}
 
 	var body: some View {

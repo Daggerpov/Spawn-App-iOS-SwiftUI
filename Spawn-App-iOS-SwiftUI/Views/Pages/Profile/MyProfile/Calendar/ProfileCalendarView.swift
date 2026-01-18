@@ -118,12 +118,12 @@ struct ProfileCalendarView: View {
 	}
 
 	private var weekDaysHeader: some View {
-		HStack(spacing: 4) {
+		HStack(spacing: 7) {
 			ForEach(0..<weekDays.count, id: \.self) { index in
 				Text(weekDays[index])
-					.font(.onestMedium(size: 9))
+					.font(.onestMedium(size: 13))
 					.foregroundColor(weekDayLabelColor)
-					.frame(width: 32, height: 12)
+					.frame(width: 46, height: 17)
 			}
 		}
 		.padding(.horizontal, 4)
@@ -155,7 +155,7 @@ struct ProfileCalendarView: View {
 	}
 
 	private var calendarGrid: some View {
-		VStack(spacing: 4) {
+		VStack(spacing: 7) {
 			ForEach(0..<5, id: \.self) { row in
 				calendarRow(row)
 			}
@@ -164,7 +164,7 @@ struct ProfileCalendarView: View {
 	}
 
 	private func calendarRow(_ row: Int) -> some View {
-		HStack(spacing: 4) {
+		HStack(spacing: 7) {
 			ForEach(0..<7, id: \.self) { col in
 				calendarDayCell(row: row, col: col)
 			}
@@ -193,19 +193,19 @@ struct ProfileCalendarView: View {
 	}
 
 	private var emptyDayCell: some View {
-		RoundedRectangle(cornerRadius: 4.5)
+		RoundedRectangle(cornerRadius: 7)
 			.fill(emptyDayCellColor)
-			.frame(width: 32, height: 32)
-			.shadow(color: Color.black.opacity(colorScheme == .dark ? 0.3 : 0.1), radius: 4, x: 0, y: 1)
+			.frame(width: 46, height: 46)
+			.shadow(color: Color.black.opacity(colorScheme == .dark ? 0.3 : 0.1), radius: 4, x: 0, y: 1.65)
 			.onTapGesture {
 				handleDaySelection(activities: [])
 			}
 	}
 
 	private var outsideMonthCell: some View {
-		RoundedRectangle(cornerRadius: 4.5)
+		RoundedRectangle(cornerRadius: 7)
 			.fill(Color.clear)
-			.frame(width: 32, height: 32)
+			.frame(width: 46, height: 46)
 	}
 
 	private func handleDaySelection(activities: [CalendarActivityDTO]) {
