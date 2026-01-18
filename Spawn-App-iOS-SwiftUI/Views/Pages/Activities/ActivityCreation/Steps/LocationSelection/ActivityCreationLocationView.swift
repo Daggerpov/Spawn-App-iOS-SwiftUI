@@ -40,6 +40,9 @@ struct ActivityCreationLocationView: View {
 	@State private var searchResults: [SearchResultItem] = []
 	@State private var isSearching = false
 
+	// Drag gesture state for dismissing drawer
+	@State private var dragOffset: CGFloat = 0
+
 	// Map state
 	@State private var locationDisplayText: String = ""
 	@State private var isUpdatingLocation = false
@@ -148,7 +151,7 @@ struct ActivityCreationLocationView: View {
 					.fill(figmaBlack300)
 					.frame(width: 50, height: 4)
 					.padding(.top, 12)
-					.padding(.bottom, 26)
+					.padding(.bottom, 22)
 
 				// Header with back button and title
 				HStack {
@@ -171,7 +174,7 @@ struct ActivityCreationLocationView: View {
 					Color.clear
 						.frame(width: 27)
 				}
-				.padding(.horizontal, 24)
+				.padding(.horizontal, 26)
 				.padding(.bottom, 16)
 
 				// Search bar
@@ -189,8 +192,8 @@ struct ActivityCreationLocationView: View {
 					RoundedRectangle(cornerRadius: 8)
 						.stroke(figmaBlack300, lineWidth: 1)
 				)
-				.padding(.horizontal, 29)
-				.padding(.bottom, 16)
+				.padding(.horizontal, 26)
+				.padding(.bottom, 2)
 
 				// Location list
 				ScrollView {
@@ -250,7 +253,8 @@ struct ActivityCreationLocationView: View {
 							}
 						}
 					}
-					.padding(.horizontal, 29)
+					.padding(.horizontal, 26)
+					Spacer()
 				}
 			}
 			.frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -266,7 +270,34 @@ struct ActivityCreationLocationView: View {
 					)
 					.shadow(color: Color.black.opacity(0.1), radius: 16, x: 0, y: 0)
 			)
-			.padding(.top, 102)  // Leave some map visible at the top
+			.offset(y: max(0, dragOffset))
+			.gesture(
+				DragGesture()
+					.onChanged { value in
+						// Only allow dragging down
+						if value.translation.height > 0 {
+							dragOffset = value.translation.height
+						}
+					}
+					.onEnded { value in
+						let translation = value.translation.height
+						let velocity = value.predictedEndTranslation.height - value.translation.height
+
+						// If dragged down enough or with enough velocity, switch to map mode
+						if translation > 100 || velocity > 500 {
+							withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+								dragOffset = 0
+								selectionMode = .map
+							}
+						} else {
+							// Snap back
+							withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+								dragOffset = 0
+							}
+						}
+					}
+			)
+			.padding(.top, 60)  // Leave some map visible at the top
 		}
 	}
 
@@ -300,6 +331,7 @@ struct ActivityCreationLocationView: View {
 				HStack {
 					Button(action: {
 						withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+							dragOffset = 0
 							selectionMode = .search
 						}
 					}) {
@@ -363,6 +395,7 @@ struct ActivityCreationLocationView: View {
 
 							Button(action: {
 								withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+									dragOffset = 0
 									selectionMode = .search
 								}
 							}) {
