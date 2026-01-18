@@ -79,8 +79,7 @@ struct ActivityCardPopupView: View {
 					RoundedRectangle(cornerRadius: 2.5)
 						.fill(Color.white.opacity(0.6))
 						.frame(width: 50, height: 4)
-						.padding(.top, 8)
-						.padding(.bottom, 12)
+						.padding(.top, 12)
 				} else {
 					// Add equivalent padding when expanded to avoid status bar
 					// Reduce padding when opened from map view since it has additional header padding
@@ -270,7 +269,7 @@ struct ActivityCardPopupView: View {
 				Spacer()
 			}
 		}
-		.padding(.horizontal, 24)
+		.padding(.horizontal, 26)
 	}
 
 	var mapAndLocationView: some View {
