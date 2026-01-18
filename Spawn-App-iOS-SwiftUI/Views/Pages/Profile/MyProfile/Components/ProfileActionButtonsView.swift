@@ -37,7 +37,7 @@ struct ProfileActionButtonsView: View {
 	}
 
 	var body: some View {
-		HStack(spacing: 8) {
+		HStack(spacing: 10) {
 			if isCurrentUserProfile {
 				NavigationLink(
 					destination: EditProfileView(
@@ -45,21 +45,20 @@ struct ProfileActionButtonsView: View {
 						profileViewModel: profileViewModel
 					)
 				) {
-					HStack(spacing: 8) {
+					HStack(spacing: 10) {
 						Image(systemName: "pencil.circle")
+							.font(.system(size: 15))
 						Text("Edit Profile")
-							.font(.onestSemiBold(size: 12))
+							.font(.onestSemiBold(size: 15))
 					}
-					.bold()
-					.font(.caption)
 					.foregroundColor(universalSecondaryColor)
-					.frame(height: 30)
-					.frame(width: 128)
+					.frame(height: 40)
+					.frame(width: 160)
 					.background(buttonBackgroundColor)
-					.cornerRadius(12)
+					.cornerRadius(15)
 					.overlay(
-						RoundedRectangle(cornerRadius: 12)
-							.stroke(universalSecondaryColor, lineWidth: 2)
+						RoundedRectangle(cornerRadius: 15)
+							.stroke(universalSecondaryColor, lineWidth: 1.25)
 					)
 					.scaleEffect(editButtonScale)
 					.shadow(
@@ -104,21 +103,20 @@ struct ProfileActionButtonsView: View {
 						shareProfile()
 					}
 				}) {
-					HStack(spacing: 8) {
+					HStack(spacing: 10) {
 						Image(systemName: "square.and.arrow.up")
+							.font(.system(size: 15))
 						Text("Share Profile")
-							.font(.onestSemiBold(size: 12))
+							.font(.onestSemiBold(size: 15))
 					}
-					.bold()
-					.font(.caption)
 					.foregroundColor(universalSecondaryColor)
-					.frame(height: 30)
-					.frame(width: 128)
+					.frame(height: 40)
+					.frame(width: 160)
 					.background(buttonBackgroundColor)
-					.cornerRadius(12)
+					.cornerRadius(15)
 					.overlay(
-						RoundedRectangle(cornerRadius: 12)
-							.stroke(universalSecondaryColor, lineWidth: 2)
+						RoundedRectangle(cornerRadius: 15)
+							.stroke(universalSecondaryColor, lineWidth: 1.25)
 					)
 					.scaleEffect(shareButtonScale)
 					.shadow(
