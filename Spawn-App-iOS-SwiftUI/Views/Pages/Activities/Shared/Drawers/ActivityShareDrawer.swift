@@ -47,12 +47,6 @@ struct ActivityShareDrawer: View {
 
 	var body: some View {
 		VStack(spacing: 0) {
-			// Pull-down handle
-			RoundedRectangle(cornerRadius: 100)
-				.fill(adaptiveHandleColor)
-				.frame(width: 50, height: 4)
-				.padding(.top, 12)
-
 			// Title
 			Text("Share this Spawn")
 				.font(.custom("Onest", size: 20).weight(.semibold))
@@ -80,11 +74,10 @@ struct ActivityShareDrawer: View {
 								.renderingMode(.template)
 								.foregroundColor(adaptiveButtonTextColor)
 								.aspectRatio(contentMode: .fit)
-								.frame(width: 24, height: 24)
+								.frame(width: 28, height: 28)
 						}
 					),
-					label: "Share via",
-					width: 64
+					label: "Share"
 				)
 
 				Spacer()
@@ -109,11 +102,10 @@ struct ActivityShareDrawer: View {
 								.renderingMode(.template)
 								.foregroundColor(adaptiveButtonTextColor)
 								.aspectRatio(contentMode: .fit)
-								.frame(width: 24, height: 24)
+								.frame(width: 28, height: 28)
 						}
 					),
-					label: "Copy Link",
-					width: 68
+					label: "Copy"
 				)
 
 				Spacer()
@@ -132,8 +124,7 @@ struct ActivityShareDrawer: View {
 							.frame(width: 64, height: 64)
 							.clipShape(Circle())
 					),
-					label: "WhatsApp",
-					width: 72
+					label: "WhatsApp"
 				)
 
 				Spacer()
@@ -152,20 +143,11 @@ struct ActivityShareDrawer: View {
 							.frame(width: 64, height: 64)
 							.clipShape(Circle())
 					),
-					label: "iMessage",
-					width: 65
+					label: "iMessage"
 				)
 			}
-			.padding(.horizontal, 29)
+			.padding(.horizontal, 24)
 			.padding(.top, 24)
-
-			Spacer()
-
-			// Home indicator
-			RoundedRectangle(cornerRadius: 100)
-				.fill(adaptiveHandleColor)
-				.frame(width: 134, height: 5)
-				.padding(.bottom, 8)
 		}
 		.background(adaptiveBackgroundColor)
 	}
@@ -174,17 +156,18 @@ struct ActivityShareDrawer: View {
 	private func shareButton(
 		action: @escaping () -> Void,
 		icon: AnyView,
-		label: String,
-		width: CGFloat
+		label: String
 	) -> some View {
 		Button(action: action) {
 			VStack(spacing: 8) {
 				icon
 				Text(label)
-					.font(.system(size: 16, weight: .regular))
+					.font(.system(size: 14, weight: .regular))
 					.foregroundColor(adaptiveButtonTextColor)
+					.lineLimit(1)
+					.minimumScaleFactor(0.8)
 			}
-			.frame(width: width)
+			.frame(minWidth: 64)
 		}
 	}
 

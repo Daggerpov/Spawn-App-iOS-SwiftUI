@@ -22,11 +22,13 @@ struct ShareDrawer: View {
 		universalBackgroundColor(from: themeService, environment: colorScheme)
 	}
 
+	/// Overlay background color (matching Figma: 60% white for light, 60% black for dark)
+	/// This is used on top of the blur material
 	private var adaptiveOverlayColor: Color {
 		switch colorScheme {
-		case .dark: return Color.black.opacity(0.60)
-		case .light: return Color.black.opacity(0.40)
-		@unknown default: return Color.black.opacity(0.40)
+		case .dark: return Color.black.opacity(0.40)
+		case .light: return Color.white.opacity(0.40)
+		@unknown default: return Color.white.opacity(0.40)
 		}
 	}
 
@@ -62,10 +64,17 @@ struct ShareDrawer: View {
 
 	var body: some View {
 		ZStack {
-			// Background overlay
+			// Background overlay with blur - covers entire screen including tab bar
+			// Matching Figma design: backdrop-blur with semi-transparent overlay
 			if isPresented {
+				// Blur layer (backdrop-blur-[4px] equivalent)
+				Rectangle()
+					.fill(.ultraThinMaterial)
+					.ignoresSafeArea(.all)
+
+				// Color tint on top of blur (matching Figma's transparent overlay)
 				adaptiveOverlayColor
-					.ignoresSafeArea()
+					.ignoresSafeArea(.all)
 					.onTapGesture {
 						withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
 							isPresented = false
@@ -79,12 +88,6 @@ struct ShareDrawer: View {
 
 				// Share drawer
 				VStack(spacing: 0) {
-					// Pull-down handle
-					RoundedRectangle(cornerRadius: 100)
-						.fill(adaptiveHandleColor)
-						.frame(width: 50, height: 4)
-						.padding(.top, 12)
-
 					// Title
 					Text(title)
 						.font(.custom("Onest", size: 20).weight(.semibold))
@@ -112,11 +115,10 @@ struct ShareDrawer: View {
 										.renderingMode(.template)
 										.foregroundColor(adaptiveButtonTextColor)
 										.aspectRatio(contentMode: .fit)
-										.frame(width: 24, height: 24)
+										.frame(width: 28, height: 28)
 								}
 							),
-							label: "Share via",
-							width: 64
+							label: "Share"
 						)
 
 						Spacer()
@@ -141,11 +143,10 @@ struct ShareDrawer: View {
 										.renderingMode(.template)
 										.foregroundColor(adaptiveButtonTextColor)
 										.aspectRatio(contentMode: .fit)
-										.frame(width: 24, height: 24)
+										.frame(width: 28, height: 28)
 								}
 							),
-							label: "Copy Link",
-							width: 68
+							label: "Copy"
 						)
 
 						Spacer()
@@ -164,8 +165,7 @@ struct ShareDrawer: View {
 									.frame(width: 64, height: 64)
 									.clipShape(Circle())
 							),
-							label: "WhatsApp",
-							width: 72
+							label: "WhatsApp"
 						)
 
 						Spacer()
@@ -184,23 +184,14 @@ struct ShareDrawer: View {
 									.frame(width: 64, height: 64)
 									.clipShape(Circle())
 							),
-							label: "iMessage",
-							width: 65
+							label: "iMessage"
 						)
 					}
-					.padding(.horizontal, 29)
+					.padding(.horizontal, 24)
 					.padding(.top, 24)
-
-					Spacer()
-
-					// Home indicator
-					RoundedRectangle(cornerRadius: 100)
-						.fill(adaptiveHandleColor)
-						.frame(width: 134, height: 5)
-						.padding(.bottom, 8)
+					.padding(.bottom, 24)
 				}
 				.frame(maxWidth: .infinity)
-				.frame(height: 236)
 				.background(adaptiveBackgroundColor)
 				.cornerRadius(20, corners: [.topLeft, .topRight])
 				.shadow(
@@ -233,6 +224,7 @@ struct ShareDrawer: View {
 						}
 				)
 			}
+			.ignoresSafeArea(.all)
 		}
 		.animation(.spring(response: 0.6, dampingFraction: 0.8), value: isPresented)
 	}
@@ -242,17 +234,18 @@ struct ShareDrawer: View {
 	private func shareButton(
 		action: @escaping () -> Void,
 		icon: AnyView,
-		label: String,
-		width: CGFloat
+		label: String
 	) -> some View {
 		Button(action: action) {
 			VStack(spacing: 8) {
 				icon
 				Text(label)
-					.font(.system(size: 16, weight: .regular))
+					.font(.system(size: 14, weight: .regular))
 					.foregroundColor(adaptiveButtonTextColor)
+					.lineLimit(1)
+					.minimumScaleFactor(0.8)
 			}
-			.frame(width: width)
+			.frame(minWidth: 64)
 		}
 	}
 
