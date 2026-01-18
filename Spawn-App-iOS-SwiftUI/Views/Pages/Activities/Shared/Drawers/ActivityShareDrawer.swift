@@ -11,29 +11,33 @@ struct ActivityShareDrawer: View {
 		universalBackgroundColor(from: themeService, environment: colorScheme)
 	}
 
-	private var adaptiveTextColor: Color {
+	private var adaptiveTitleColor: Color {
 		universalAccentColor(from: themeService, environment: colorScheme)
 	}
 
-	private var adaptiveShareButtonBackgroundColor: Color {
+	private var adaptiveHandleColor: Color {
 		switch colorScheme {
-		case .dark:
-			return Color(red: 0.52, green: 0.49, blue: 0.49)
-		case .light:
-			return Color(red: 0.85, green: 0.82, blue: 0.82)
-		@unknown default:
-			return Color(red: 0.85, green: 0.82, blue: 0.82)
+		case .dark: return Color(red: 0.56, green: 0.52, blue: 0.52)
+		case .light: return Color(red: 0.56, green: 0.52, blue: 0.52)
+		@unknown default: return Color(red: 0.56, green: 0.52, blue: 0.52)
 		}
 	}
 
-	private var adaptiveShareButtonTextColor: Color {
+	/// Button background color (tertiary background from Figma)
+	private var adaptiveButtonBackgroundColor: Color {
 		switch colorScheme {
-		case .dark:
-			return Color(red: 0.82, green: 0.80, blue: 0.80)
-		case .light:
-			return Color(red: 0.52, green: 0.49, blue: 0.49)
-		@unknown default:
-			return Color(red: 0.52, green: 0.49, blue: 0.49)
+		case .dark: return Color(red: 0.35, green: 0.33, blue: 0.33)
+		case .light: return Color(red: 0.88, green: 0.85, blue: 0.85)
+		@unknown default: return Color(red: 0.88, green: 0.85, blue: 0.85)
+		}
+	}
+
+	/// Button text color (secondary text from Figma)
+	private var adaptiveButtonTextColor: Color {
+		switch colorScheme {
+		case .dark: return Color(red: 0.82, green: 0.80, blue: 0.80)
+		case .light: return Color(red: 0.15, green: 0.14, blue: 0.14)
+		@unknown default: return Color(red: 0.15, green: 0.14, blue: 0.14)
 		}
 	}
 
@@ -43,117 +47,150 @@ struct ActivityShareDrawer: View {
 
 	var body: some View {
 		VStack(spacing: 0) {
-			// Handle bar
-			RoundedRectangle(cornerRadius: 2)
-				.fill(Color(.systemGray4))
-				.frame(width: 36, height: 4)
-				.padding(.top, 8)
-				.padding(.bottom, 16)
+			// Pull-down handle
+			RoundedRectangle(cornerRadius: 100)
+				.fill(adaptiveHandleColor)
+				.frame(width: 50, height: 4)
+				.padding(.top, 12)
 
 			// Title
 			Text("Share this Spawn")
-				.font(.onestSemiBold(size: 20))
-				.foregroundColor(adaptiveTextColor)
-				.padding(.bottom, 24)
+				.font(.custom("Onest", size: 20).weight(.semibold))
+				.foregroundColor(adaptiveTitleColor)
+				.frame(maxWidth: .infinity, alignment: .leading)
+				.padding(.top, 17)
+				.padding(.horizontal, 29)
 
 			// Share options
-			HStack(spacing: 32) {
+			HStack(spacing: 0) {
 				// Share via button
-				Button(action: {
-					let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-					impactGenerator.impactOccurred()
-					dismiss()
-					shareViaSystem()
-				}) {
-					VStack(spacing: 8) {
+				shareButton(
+					action: {
+						triggerHaptic()
+						dismiss()
+						shareViaSystem()
+					},
+					icon: AnyView(
 						ZStack {
 							Circle()
-								.fill(adaptiveShareButtonBackgroundColor)
+								.fill(adaptiveButtonBackgroundColor)
 								.frame(width: 64, height: 64)
 							Image("share_via_button")
 								.resizable()
+								.renderingMode(.template)
+								.foregroundColor(adaptiveButtonTextColor)
 								.aspectRatio(contentMode: .fit)
-								.frame(width: 40, height: 40)
+								.frame(width: 24, height: 24)
 						}
-						Text("Share via")
-							.font(.system(size: 14, weight: .medium))
-							.foregroundColor(adaptiveShareButtonTextColor)
-					}
-					.frame(width: 64)
-				}
+					),
+					label: "Share via",
+					width: 64
+				)
+
+				Spacer()
 
 				// Copy Link button
-				Button(action: {
-					let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-					impactGenerator.impactOccurred()
-					shareViaLink()
-					// Delay dismissing to show notification
-					Task { @MainActor in
-						try? await Task.sleep(for: .seconds(0.1))
-						dismiss()
-					}
-				}) {
-					VStack(spacing: 8) {
+				shareButton(
+					action: {
+						triggerHaptic()
+						shareViaLink()
+						Task { @MainActor in
+							try? await Task.sleep(for: .seconds(0.1))
+							dismiss()
+						}
+					},
+					icon: AnyView(
 						ZStack {
 							Circle()
-								.fill(adaptiveShareButtonBackgroundColor)
+								.fill(adaptiveButtonBackgroundColor)
 								.frame(width: 64, height: 64)
 							Image("copy_link_button")
 								.resizable()
+								.renderingMode(.template)
+								.foregroundColor(adaptiveButtonTextColor)
 								.aspectRatio(contentMode: .fit)
-								.frame(width: 40, height: 40)
+								.frame(width: 24, height: 24)
 						}
-						Text("Copy Link")
-							.font(.system(size: 14, weight: .medium))
-							.foregroundColor(adaptiveShareButtonTextColor)
-					}
-					.frame(width: 68)
-				}
+					),
+					label: "Copy Link",
+					width: 68
+				)
+
+				Spacer()
 
 				// WhatsApp button
-				Button(action: {
-					let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-					impactGenerator.impactOccurred()
-					dismiss()
-					shareViaWhatsApp()
-				}) {
-					VStack(spacing: 8) {
+				shareButton(
+					action: {
+						triggerHaptic()
+						dismiss()
+						shareViaWhatsApp()
+					},
+					icon: AnyView(
 						Image("whatsapp_logo_for_sharing")
 							.resizable()
 							.aspectRatio(contentMode: .fit)
 							.frame(width: 64, height: 64)
-						Text("WhatsApp")
-							.font(.system(size: 14, weight: .medium))
-							.foregroundColor(adaptiveShareButtonTextColor)
-					}
-					.frame(width: 72)
-				}
+							.clipShape(Circle())
+					),
+					label: "WhatsApp",
+					width: 72
+				)
+
+				Spacer()
 
 				// iMessage button
-				Button(action: {
-					let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-					impactGenerator.impactOccurred()
-					dismiss()
-					shareViaSMS()
-				}) {
-					VStack(spacing: 8) {
+				shareButton(
+					action: {
+						triggerHaptic()
+						dismiss()
+						shareViaSMS()
+					},
+					icon: AnyView(
 						Image("imessage_for_sharing")
 							.resizable()
 							.aspectRatio(contentMode: .fit)
 							.frame(width: 64, height: 64)
-						Text("Message")
-							.font(.system(size: 14, weight: .medium))
-							.foregroundColor(adaptiveShareButtonTextColor)
-					}
-					.frame(width: 65)
-				}
+							.clipShape(Circle())
+					),
+					label: "iMessage",
+					width: 65
+				)
 			}
-			.padding(.horizontal, 16)
-			.padding(.bottom, 24)
+			.padding(.horizontal, 29)
+			.padding(.top, 24)
 
 			Spacer()
+
+			// Home indicator
+			RoundedRectangle(cornerRadius: 100)
+				.fill(adaptiveHandleColor)
+				.frame(width: 134, height: 5)
+				.padding(.bottom, 8)
 		}
 		.background(adaptiveBackgroundColor)
+	}
+
+	// MARK: - Share Button Component
+	private func shareButton(
+		action: @escaping () -> Void,
+		icon: AnyView,
+		label: String,
+		width: CGFloat
+	) -> some View {
+		Button(action: action) {
+			VStack(spacing: 8) {
+				icon
+				Text(label)
+					.font(.system(size: 16, weight: .regular))
+					.foregroundColor(adaptiveButtonTextColor)
+			}
+			.frame(width: width)
+		}
+	}
+
+	private func triggerHaptic() {
+		let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+		impactGenerator.impactOccurred()
 	}
 
 	// MARK: - Share Functions
