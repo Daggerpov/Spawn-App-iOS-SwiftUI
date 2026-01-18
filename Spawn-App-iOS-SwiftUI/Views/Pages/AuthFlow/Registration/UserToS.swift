@@ -17,23 +17,18 @@ struct UserToS: View {
 
 	var body: some View {
 		VStack(spacing: 0) {
-			Spacer()
-			// Navigation Bar
+			// Navigation Bar - matches activity creation flow positioning
 			HStack {
-				Button(action: {
+				UnifiedBackButton {
 					// Clear any error states when going back
 					userAuth.clearAllErrors()
 					// Go back one step in the onboarding flow
 					dismiss()
-				}) {
-					Image(systemName: "chevron.left")
-						.font(.title2)
-						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
 				}
 				Spacer()
 			}
-			.padding(.horizontal, 20)
-			.padding(.top, 10)
+			.padding(.horizontal, 25)
+			.padding(.top, 16)
 
 			Spacer()
 
@@ -140,8 +135,7 @@ struct UserToS: View {
 
 			Spacer()
 		}
-		.background(universalBackgroundColor(from: themeService, environment: colorScheme))
-		.ignoresSafeArea(.all)
+		.background(universalBackgroundColor(from: themeService, environment: colorScheme).ignoresSafeArea())
 		.navigationBarHidden(true)
 		.onAppear {
 			// Clear any previous error state when this view appears

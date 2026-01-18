@@ -22,20 +22,16 @@ struct RegisterInputView: View {
 
 	var body: some View {
 		VStack(spacing: 0) {
-			// Navigation Bar
+			// Navigation Bar - matches activity creation flow positioning
 			HStack {
-				Button(action: {
+				UnifiedBackButton {
 					viewModel.clearAllErrors()
 					dismiss()
-				}) {
-					Image(systemName: "chevron.left")
-						.font(.title2)
-						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
 				}
 				Spacer()
 			}
-			.padding(.horizontal, 20)
-			.padding(.top, 10)
+			.padding(.horizontal, 25)
+			.padding(.top, 16)
 
 			Spacer()
 

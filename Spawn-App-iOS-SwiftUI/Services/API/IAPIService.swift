@@ -34,7 +34,6 @@ protocol IAPIService: Sendable {
 	func updateProfilePicture(_ imageData: Data, userId: UUID) async throws -> BaseUserDTO
 	func sendMultipartFormData(_ formData: [String: Any], to url: URL) async throws -> Data
 	func validateCache(_ cachedItems: [String: Date]) async throws -> [String: CacheValidationResponse]
-	func clearCalendarCaches() async throws
 	func createUser(
 		userDTO: UserCreateDTO, profilePicture: UIImage?,
 		parameters: [String: String]?

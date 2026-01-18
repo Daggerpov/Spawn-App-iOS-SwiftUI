@@ -72,88 +72,85 @@ struct ActivityCardPopupView: View {
 	}
 
 	var body: some View {
-		NavigationStack {
-			VStack(spacing: 0) {
-				// Handle bar - only show when not expanded
-				if !isExpanded {
-					RoundedRectangle(cornerRadius: 2.5)
-						.fill(Color.white.opacity(0.6))
-						.frame(width: 50, height: 4)
-						.padding(.top, 8)
-						.padding(.bottom, 12)
-				} else {
-					// Add equivalent padding when expanded to avoid status bar
-					// Reduce padding when opened from map view since it has additional header padding
-					Spacer()
-						.frame(height: fromMapView ? 8 : 24)  // Reduced padding for map view
-				}
-
-				// Conditional content based on navigation state
-				if showingChatroom {
-					// Chatroom content
-					ChatroomContentView(
-						activity: activity,
-						backgroundColor: activityColor,
-						isExpanded: isExpanded,
-						onBack: {
-							withAnimation(.easeInOut(duration: 0.3)) {
-								showingChatroom = false
-							}
-						}
-					)
-				} else if showingParticipants {
-					// Participants content
-					ParticipantsContentView(
-						activity: activity,
-						backgroundColor: activityColor,
-						isExpanded: isExpanded,
-						onBack: {
-							withAnimation(.easeInOut(duration: 0.3)) {
-								showingParticipants = false
-							}
-						},
-						selectedTab: $selectedTab,
-						onDismiss: onDismiss
-					)
-				} else {
-					// Main card content
-					mainCardContent
-				}
+		VStack(spacing: 0) {
+			// Handle bar - only show when not expanded
+			if !isExpanded {
+				RoundedRectangle(cornerRadius: 2.5)
+					.fill(Color.white.opacity(0.6))
+					.frame(width: 50, height: 4)
+					.padding(.top, 12)  // Consistent padding for handle bar
+			} else {
+				// Add top padding when expanded to match Figma design (~70px from top)
+				// This ensures the X button is positioned lower, matching the design
+				Spacer()
+					.frame(height: 60)  // Consistent for all expanded popups
 			}
 
-			.background(activityColor.opacity(0.80).blendMode(.multiply))
-			.cornerRadius(isExpanded ? 0 : 20)
-			.shadow(radius: isExpanded ? 0 : 20)
-			.ignoresSafeArea(
-				(showingChatroom || showingParticipants) && isExpanded
-					? .all : .container,
-				edges: (showingChatroom || showingParticipants) && isExpanded
-					? .all : .bottom
-			)  // Fill entire screen when chatroom/participants are maximized
-			.frame(maxWidth: .infinity, maxHeight: .infinity)  // Ensure consistent framing
-			.sheet(isPresented: $showActivityMenu) {
-				ActivityMenuView(
+			// Conditional content based on navigation state
+			if showingChatroom {
+				// Chatroom content
+				ChatroomContentView(
 					activity: activity,
-					showReportDialog: $showReportDialog
-				)
-				.presentationDetents([.height(200)])
-				.presentationDragIndicator(.visible)
-			}
-			.sheet(isPresented: $showReportDialog) {
-				ReportActivityDrawer(
-					activity: activity,
-					onReport: { reportType, description in
-						Task {
-							await self.reportActivity(
-								reportType: reportType,
-								description: description
-							)
+					backgroundColor: activityColor,
+					isExpanded: isExpanded,
+					fromMapView: fromMapView,
+					onBack: {
+						withAnimation(.easeInOut(duration: 0.3)) {
+							showingChatroom = false
 						}
 					}
 				)
-				.presentationDetents([.medium, .large])
-				.presentationDragIndicator(.visible)
+			} else if showingParticipants {
+				// Participants content
+				ParticipantsContentView(
+					activity: activity,
+					backgroundColor: activityColor,
+					isExpanded: isExpanded,
+					onBack: {
+						withAnimation(.easeInOut(duration: 0.3)) {
+							showingParticipants = false
+						}
+					},
+					selectedTab: $selectedTab,
+					onDismiss: onDismiss
+				)
+			} else {
+				// Main card content
+				mainCardContent
 			}
+		}
+		.background(activityColor.opacity(0.80).blendMode(.multiply))
+		.cornerRadius(isExpanded ? 0 : 20)
+		.shadow(radius: isExpanded ? 0 : 20)
+		.ignoresSafeArea(
+			(showingChatroom || showingParticipants) && isExpanded
+				? .all : .container,
+			edges: (showingChatroom || showingParticipants) && isExpanded
+				? .all : .bottom
+		)  // Fill entire screen when chatroom/participants are maximized
+		.frame(maxWidth: .infinity, maxHeight: isExpanded ? .infinity : nil)  // Only expand to fill when expanded
+		.sheet(isPresented: $showActivityMenu) {
+			ActivityMenuView(
+				activity: activity,
+				showReportDialog: $showReportDialog
+			)
+			.presentationDetents([.height(200)])
+			.presentationDragIndicator(.visible)
+		}
+		.sheet(isPresented: $showReportDialog) {
+			ReportActivityDrawer(
+				activity: activity,
+				onReport: { reportType, description in
+					Task {
+						await self.reportActivity(
+							reportType: reportType,
+							description: description
+						)
+					}
+				}
+			)
+			.presentationDetents([.medium, .large])
+			.presentationDragIndicator(.visible)
 		}
 		.onReceive(NotificationCenter.default.publisher(for: .showChatroom)) {
 			_ in
@@ -242,7 +239,7 @@ struct ActivityCardPopupView: View {
 					.contentShape(Circle())  // Better touch area for circular button
 				}
 			}
-			.padding(.top, fromMapView && isExpanded ? 8 : 23)
+			.padding(.top, 8)  // Consistent padding matching Figma's py-[8px]
 
 			// Event title and time
 			titleAndTime
@@ -265,12 +262,14 @@ struct ActivityCardPopupView: View {
 
 			// Chat section
 			ChatroomButtonView(activity: activity, activityColor: activityColor)
-			// Reduce bottom spacing when minimized from MapView by omitting spacer
-			if !(fromMapView && !isExpanded) {
+
+			// Spacer pushes content to top when expanded
+			if isExpanded {
 				Spacer()
 			}
 		}
-		.padding(.horizontal, 24)
+		.padding(.horizontal, 26)
+		.padding(.bottom, isExpanded ? 40 : 120)  // Less padding when minimized since content sits at bottom
 	}
 
 	var mapAndLocationView: some View {

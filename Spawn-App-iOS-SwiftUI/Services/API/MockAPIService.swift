@@ -803,11 +803,6 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 		return result
 	}
 
-	func clearCalendarCaches() async throws {
-		// In mock mode, just log that we're clearing caches
-		print("🧹 MOCK: Clearing calendar caches")
-	}
-
 	// Helper methods to create mock data
 	private func createMockFriends() -> [FullFriendUserDTO] {
 		// Return mock friends data

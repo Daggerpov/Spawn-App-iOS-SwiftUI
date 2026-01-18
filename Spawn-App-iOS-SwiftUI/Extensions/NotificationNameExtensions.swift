@@ -29,6 +29,12 @@ extension Notification.Name {
 	// Global activity popup notification
 	static let showGlobalActivityPopup = Notification.Name("showGlobalActivityPopup")
 
+	// Global profile share drawer notification
+	static let showGlobalProfileShareDrawer = Notification.Name("showGlobalProfileShareDrawer")
+
+	// Global activity share drawer notification
+	static let showGlobalActivityShareDrawer = Notification.Name("showGlobalActivityShareDrawer")
+
 	// Friend system notifications
 	static let friendRequestsDidChange = Notification.Name("friendRequestsDidChange")
 	static let friendsDidChange = Notification.Name("friendsDidChange")

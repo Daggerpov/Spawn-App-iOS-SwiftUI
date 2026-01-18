@@ -8,19 +8,15 @@ struct UserSetupView: View {
 
 	var body: some View {
 		VStack(spacing: 0) {
-			// Navigation Bar
+			// Navigation Bar - matches activity creation flow positioning
 			HStack {
-				Button(action: {
+				UnifiedBackButton {
 					dismiss()
-				}) {
-					Image(systemName: "chevron.left")
-						.font(.title2)
-						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
 				}
 				Spacer()
 			}
-			.padding(.horizontal, 20)
-			.padding(.top, 10)
+			.padding(.horizontal, 25)
+			.padding(.top, 16)
 
 			Spacer()
 
@@ -63,8 +59,7 @@ struct UserSetupView: View {
 			.buttonStyle(PlainButtonStyle())
 			.padding(.bottom, 40)
 		}
-		.background(universalBackgroundColor(from: themeService, environment: colorScheme))
-		.ignoresSafeArea()
+		.background(universalBackgroundColor(from: themeService, environment: colorScheme).ignoresSafeArea())
 		.navigationBarHidden(true)
 	}
 }

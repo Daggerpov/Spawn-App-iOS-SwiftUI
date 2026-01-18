@@ -70,6 +70,8 @@ struct PeopleRowView: View {
 					onProfileTap(friend)
 				}
 			)
+			.presentationDetents([.height(200)])
+			.presentationDragIndicator(.visible)
 		}
 	}
 }

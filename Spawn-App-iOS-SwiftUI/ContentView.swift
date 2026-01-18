@@ -42,6 +42,14 @@ struct ContentView: View {
 	@State private var globalPopupColor: Color?
 	@State private var globalPopupFromMapView = false
 
+	// Global profile share drawer state
+	@State private var showingGlobalProfileShareDrawer = false
+	@State private var profileShareUser: (any Nameable)?
+
+	// Global activity share drawer state
+	@State private var showingGlobalActivityShareDrawer = false
+	@State private var activityShareActivity: FullFeedActivityDTO?
+
 	// Store background refresh task so we can cancel it on disappear
 	@State private var backgroundRefreshTask: Task<Void, Never>?
 
@@ -143,6 +151,28 @@ struct ContentView: View {
 				.allowsHitTesting(true)
 				.ignoresSafeArea(.all, edges: .all)  // Cover absolutely everything
 				.zIndex(999)  // Below notifications but above everything else
+			}
+
+			// Global profile share drawer overlay - covers entire screen including tab bar
+			if showingGlobalProfileShareDrawer, let user = profileShareUser {
+				ProfileShareDrawer(
+					user: user,
+					showShareSheet: $showingGlobalProfileShareDrawer
+				)
+				.allowsHitTesting(true)
+				.ignoresSafeArea(.all, edges: .all)  // Cover absolutely everything
+				.zIndex(998)  // Below activity popup but above everything else
+			}
+
+			// Global activity share drawer overlay - covers entire screen including tab bar
+			if showingGlobalActivityShareDrawer, let activity = activityShareActivity {
+				ActivityShareDrawer(
+					activity: activity,
+					showShareSheet: $showingGlobalActivityShareDrawer
+				)
+				.allowsHitTesting(true)
+				.ignoresSafeArea(.all, edges: .all)  // Cover absolutely everything
+				.zIndex(997)  // Below profile share drawer
 			}
 		}
 		.task {
@@ -275,6 +305,18 @@ struct ContentView: View {
 			{
 				print("🔄 ContentView: Updating global popup activity for \(updatedActivity.title ?? "Unknown")")
 				globalPopupActivity = updatedActivity
+			}
+		}
+		.onReceive(NotificationCenter.default.publisher(for: .showGlobalProfileShareDrawer)) { notification in
+			if let user = notification.userInfo?["user"] as? (any Nameable) {
+				profileShareUser = user
+				showingGlobalProfileShareDrawer = true
+			}
+		}
+		.onReceive(NotificationCenter.default.publisher(for: .showGlobalActivityShareDrawer)) { notification in
+			if let activity = notification.userInfo?["activity"] as? FullFeedActivityDTO {
+				activityShareActivity = activity
+				showingGlobalActivityShareDrawer = true
 			}
 		}
 	}

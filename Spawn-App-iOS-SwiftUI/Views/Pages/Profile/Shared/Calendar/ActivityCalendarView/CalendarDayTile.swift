@@ -7,6 +7,8 @@ struct CalendarDayTile: View {
 	let tileSize: CGFloat
 	let onDayTapped: ([CalendarActivityDTO]) -> Void
 
+	@Environment(\.colorScheme) private var colorScheme
+
 	private let cornerRadius: CGFloat = 12.34
 
 	private var dayNumber: String {
@@ -20,7 +22,7 @@ struct CalendarDayTile: View {
 				RoundedRectangle(cornerRadius: cornerRadius)
 					.fill(activityBackgroundColor)
 					.frame(width: tileSize, height: tileSize)
-					.shadow(color: Color.black.opacity(0.1), radius: 12.34, x: 0, y: 3.09)
+					.shadow(color: Color.black.opacity(colorScheme == .dark ? 0.3 : 0.1), radius: 12.34, x: 0, y: 3.09)
 					.overlay(
 						// Blue border overlay for current day
 						RoundedRectangle(cornerRadius: cornerRadius)
@@ -34,18 +36,15 @@ struct CalendarDayTile: View {
 								// Single activity emoji
 								activityEmoji(for: activities[0])
 									.font(.onestMedium(size: tileSize * 0.57))  // Scale based on tile size
-									.foregroundColor(figmaBlack300)
 							} else if activities.count > 1 {
 								// Multiple activities - show first two emojis
 								HStack(spacing: 2) {
 									activityEmoji(for: activities[0])
 										.font(.onestMedium(size: tileSize * 0.43))  // Scale based on tile size
-										.foregroundColor(figmaBlack300)
 
 									if activities.count > 1 {
 										activityEmoji(for: activities[1])
 											.font(.onestMedium(size: tileSize * 0.43))  // Scale based on tile size
-											.foregroundColor(figmaBlack300)
 									}
 								}
 							}
@@ -58,9 +57,9 @@ struct CalendarDayTile: View {
 								Spacer()
 								Text(dayNumber)
 									.font(.onestMedium(size: max(10, tileSize * 0.12)))  // Scale based on tile size with minimum
-									.foregroundColor(.black)
+									.foregroundColor(dayBadgeTextColor)
 									.padding(4)
-									.background(Color.white.opacity(0.9))
+									.background(dayBadgeBackgroundColor)
 									.clipShape(Circle())
 							}
 							.padding(.top, 4)
@@ -86,14 +85,27 @@ struct CalendarDayTile: View {
 		Calendar.current.isDate(day, inSameDayAs: Date())
 	}
 
+	// MARK: - Theme-aware colors
+
 	private var activityBackgroundColor: Color {
 		if isToday {
-			return Color(hex: "#848484")
+			// Today: gray that works in both modes
+			return colorScheme == .dark ? Color(hex: colorsGray600) : Color(hex: colorsGray400)
 		} else if activities.isEmpty {
-			return figmaCalendarDayIcon
+			// Empty days: subtle background
+			return colorScheme == .dark ? Color(hex: colorsGray700) : Color(hex: colorsGray200)
 		} else {
-			return Color.white
+			// Days with activities: card-like background
+			return colorScheme == .dark ? Color(hex: colorsGray800) : Color.white
 		}
+	}
+
+	private var dayBadgeTextColor: Color {
+		colorScheme == .dark ? Color.white : Color.black
+	}
+
+	private var dayBadgeBackgroundColor: Color {
+		colorScheme == .dark ? Color.black.opacity(0.7) : Color.white.opacity(0.9)
 	}
 
 	private func activityEmoji(for activity: CalendarActivityDTO) -> some View {

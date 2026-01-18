@@ -19,6 +19,10 @@ struct ProfileCalendarView: View {
 	@Binding var navigateToDayActivities: Bool
 	@Binding var selectedDayActivities: [CalendarActivityDTO]
 
+	// Whether to show the month/year header (default true for backwards compatibility)
+	var showMonthHeader: Bool = true
+
+	@Environment(\.colorScheme) private var colorScheme
 	@State private var currentDate = Date()
 
 	private var currentMonth: Int {
@@ -59,7 +63,9 @@ struct ProfileCalendarView: View {
 
 	var body: some View {
 		VStack(spacing: 8) {
-			monthYearHeader
+			if showMonthHeader {
+				monthYearHeader
+			}
 			weekDaysHeader
 			calendarContent
 		}
@@ -112,15 +118,25 @@ struct ProfileCalendarView: View {
 	}
 
 	private var weekDaysHeader: some View {
-		HStack(spacing: 4) {
+		HStack(spacing: 7) {
 			ForEach(0..<weekDays.count, id: \.self) { index in
 				Text(weekDays[index])
-					.font(.onestMedium(size: 9))
-					.foregroundColor(Color(hex: "#8E8484"))
-					.frame(width: 32, height: 12)
+					.font(.onestMedium(size: 13))
+					.foregroundColor(weekDayLabelColor)
+					.frame(width: 46, height: 17)
 			}
 		}
 		.padding(.horizontal, 4)
+	}
+
+	// MARK: - Theme-aware colors
+
+	private var weekDayLabelColor: Color {
+		colorScheme == .dark ? Color(hex: colorsGray400) : Color(hex: colorsGray500)
+	}
+
+	private var emptyDayCellColor: Color {
+		colorScheme == .dark ? Color(hex: colorsGray700) : Color(hex: colorsGray200)
 	}
 
 	private var calendarContent: some View {
@@ -139,7 +155,7 @@ struct ProfileCalendarView: View {
 	}
 
 	private var calendarGrid: some View {
-		VStack(spacing: 4) {
+		VStack(spacing: 7) {
 			ForEach(0..<5, id: \.self) { row in
 				calendarRow(row)
 			}
@@ -148,7 +164,7 @@ struct ProfileCalendarView: View {
 	}
 
 	private func calendarRow(_ row: Int) -> some View {
-		HStack(spacing: 4) {
+		HStack(spacing: 7) {
 			ForEach(0..<7, id: \.self) { col in
 				calendarDayCell(row: row, col: col)
 			}
@@ -177,19 +193,19 @@ struct ProfileCalendarView: View {
 	}
 
 	private var emptyDayCell: some View {
-		RoundedRectangle(cornerRadius: 4.5)
-			.fill(figmaCalendarDayIcon)
-			.frame(width: 32, height: 32)
-			.shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 1)
+		RoundedRectangle(cornerRadius: 7)
+			.fill(emptyDayCellColor)
+			.frame(width: 46, height: 46)
+			.shadow(color: Color.black.opacity(colorScheme == .dark ? 0.3 : 0.1), radius: 4, x: 0, y: 1.65)
 			.onTapGesture {
 				handleDaySelection(activities: [])
 			}
 	}
 
 	private var outsideMonthCell: some View {
-		RoundedRectangle(cornerRadius: 4.5)
+		RoundedRectangle(cornerRadius: 7)
 			.fill(Color.clear)
-			.frame(width: 32, height: 32)
+			.frame(width: 46, height: 46)
 	}
 
 	private func handleDaySelection(activities: [CalendarActivityDTO]) {

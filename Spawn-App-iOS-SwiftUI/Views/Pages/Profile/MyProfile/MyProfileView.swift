@@ -20,7 +20,6 @@ struct MyProfileView: View {
 	@State private var isImageLoading: Bool = false
 	@State private var showNotification: Bool = false
 	@State private var notificationMessage: String = ""
-	@State private var newInterest: String = ""
 	@State private var whatsappLink: String = ""
 	@State private var instagramLink: String = ""
 	@State private var showCalendarPopup: Bool = false
@@ -28,7 +27,6 @@ struct MyProfileView: View {
 	@State private var showActivityDetails: Bool = false
 	@State private var navigateToDayActivities: Bool = false
 	@State private var selectedDayActivities: [CalendarActivityDTO] = []
-	@State private var showProfileShareSheet: Bool = false
 
 	// Store background refresh task so we can cancel it on disappear
 	@State private var backgroundDataLoadTask: Task<Void, Never>?
@@ -185,10 +183,13 @@ struct MyProfileView: View {
 		ZStack {
 			universalBackgroundColor.ignoresSafeArea()
 
-			VStack {
-				profileInnerComponentsView
-					.padding(.horizontal)
+			ScrollView {
+				VStack {
+					profileInnerComponentsView
+						.padding(.horizontal)
+				}
 			}
+			.scrollIndicators(.hidden)
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
 				ToolbarItem(placement: .principal) {
@@ -210,19 +211,11 @@ struct MyProfileView: View {
 			.navigationDestination(isPresented: $navigateToDayActivities) {
 				dayActivitiesPageView
 			}
-
-			// Profile share drawer overlay
-			if showProfileShareSheet {
-				ProfileShareDrawer(
-					user: user,
-					showShareSheet: $showProfileShareSheet
-				)
-			}
 		}
 	}
 
 	private var profileInnerComponentsView: some View {
-		VStack(alignment: .center, spacing: 10) {
+		VStack(alignment: .center, spacing: 16) {
 			// Profile Header (Profile Picture + Name)
 			ProfileHeaderView(
 				user: user,
@@ -238,8 +231,6 @@ struct MyProfileView: View {
 				profileViewModel: profileViewModel,
 				shareProfile: shareProfile
 			)
-			.padding(.horizontal, 25)
-			.padding(.bottom, 4)
 
 			// Edit Save Cancel buttons (only when editing)
 			if editingState == .save {
@@ -257,39 +248,24 @@ struct MyProfileView: View {
 				)
 			}
 
-			// Interests Section with Social Media Icons
-			ProfileInterestsView(
-				user: user,
-				profileViewModel: profileViewModel,
-				editingState: $editingState,
-				newInterest: $newInterest,
-				openSocialMediaLink: openSocialMediaLink,
-				removeInterest: removeInterest
-			)
-			.padding(.horizontal, 16)
-			.padding(.top, 20)
-			.padding(.bottom, 8)
-
 			// User Stats
 			ProfileStatsView(
 				profileViewModel: profileViewModel
 			)
+			.padding(.top, 8)
 
 			// Calendar Section
-			VStack(spacing: 0) {
-				ProfileCalendarView(
-					profileViewModel: profileViewModel,
-					showCalendarPopup: $showCalendarPopup,
-					showActivityDetails: $showActivityDetails,
-					navigateToCalendar: $navigateToCalendar,
-					navigateToDayActivities: $navigateToDayActivities,
-					selectedDayActivities: $selectedDayActivities
-				)
-				.padding(.horizontal, 16)
-				.padding(.bottom, 15)
-
-				EmptyView()
-			}
+			ProfileCalendarView(
+				profileViewModel: profileViewModel,
+				showCalendarPopup: $showCalendarPopup,
+				showActivityDetails: $showActivityDetails,
+				navigateToCalendar: $navigateToCalendar,
+				navigateToDayActivities: $navigateToDayActivities,
+				selectedDayActivities: $selectedDayActivities,
+				showMonthHeader: false
+			)
+			.padding(.horizontal, 16)
+			.padding(.bottom, 100)
 		}
 	}
 
@@ -320,7 +296,7 @@ struct MyProfileView: View {
 
 		return DayActivitiesPageView(
 			date: date,
-			activities: selectedDayActivities,
+			initialActivities: selectedDayActivities,
 			onDismiss: {
 				// Navigate back to calendar view instead of going back to profile
 				navigateToDayActivities = false
@@ -358,47 +334,12 @@ struct MyProfileView: View {
 	}
 
 	private func shareProfile() {
-		// Show the custom profile share drawer
-		showProfileShareSheet = true
-	}
-
-	private func openSocialMediaLink(platform: String, link: String) {
-		// Handle different platforms
-		var urlString: String?
-
-		switch platform {
-		case "Instagram":
-			if link.hasPrefix("@") {
-				let username = link.dropFirst()  // Remove the @ symbol
-				urlString = "https://instagram.com/\(username)"
-			} else {
-				urlString = link.hasPrefix("http") ? link : "https://\(link)"
-			}
-		case "WhatsApp":
-			// Format phone number for WhatsApp
-			let cleanNumber = link.replacingOccurrences(
-				of: "[^0-9]",
-				with: "",
-				options: .regularExpression
-			)
-			urlString = "https://wa.me/\(cleanNumber)"
-		default:
-			urlString = link
-		}
-
-		// Open URL if valid
-		if let urlString = urlString, let url = URL(string: urlString) {
-			UIApplication.shared.open(url)
-		}
-	}
-
-	private func removeInterest(_ interest: String) {
-		Task {
-			await profileViewModel.removeUserInterest(
-				userId: user.id,
-				interest: interest
-			)
-		}
+		// Post notification to show global profile share drawer
+		NotificationCenter.default.post(
+			name: .showGlobalProfileShareDrawer,
+			object: nil,
+			userInfo: ["user": user]
+		)
 	}
 
 	// Add a function to refresh user data from UserAuthViewModel

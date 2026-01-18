@@ -23,10 +23,19 @@ struct ActivityCalendarView: View {
 	@State private var lastSelectedDate: Date?  // Track the last selected day's date
 	@State private var isReturningFromNavigation = false  // Track if we're returning from day activities
 	@State private var previousActivityCount = 0  // Track activity count changes
+	@State private var targetScrollId: String?  // Track the target scroll position using stable ID
 
 	var onDismiss: (() -> Void)?
 	var onActivitySelected: ((CalendarActivityDTO) -> Void)?
 	var onDayActivitiesSelected: ([CalendarActivityDTO]) -> Void
+
+	/// Creates a stable identifier for a month (e.g., "2024-01")
+	private func monthId(for date: Date) -> String {
+		let calendar = Calendar.current
+		let year = calendar.component(.year, from: date)
+		let month = calendar.component(.month, from: date)
+		return "\(year)-\(String(format: "%02d", month))"
+	}
 
 	var body: some View {
 		ZStack {
@@ -53,7 +62,7 @@ struct ActivityCalendarView: View {
 										onDayActivitiesSelected(activities)
 									}
 								)
-								.id(month)
+								.id(monthId(for: month))  // Use stable string ID instead of Date
 							}
 						}
 						.padding(.horizontal, 8)
@@ -120,20 +129,18 @@ struct ActivityCalendarView: View {
 	private func scrollToMonth(containing date: Date, animated: Bool) {
 		guard let proxy = scrollProxy else { return }
 
-		// Find the month in our array that matches the target date
-		if let targetMonthDate = monthsArray.first(where: { month in
-			Calendar.current.isDate(month, equalTo: date, toGranularity: .month)
-		}) {
-			// Use a small delay to ensure the ScrollView has rendered
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-				if animated {
-					withAnimation(.easeInOut(duration: 0.5)) {
-						proxy.scrollTo(targetMonthDate, anchor: .top)
-					}
-				} else {
-					// Scroll instantly without animation
-					proxy.scrollTo(targetMonthDate, anchor: .top)
+		// Use stable string ID for reliable scrolling (e.g., "2024-01")
+		let targetId = monthId(for: date)
+
+		// Use a small delay to ensure the ScrollView has rendered
+		DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+			if animated {
+				withAnimation(.easeInOut(duration: 0.5)) {
+					proxy.scrollTo(targetId, anchor: .top)
 				}
+			} else {
+				// Scroll instantly without animation
+				proxy.scrollTo(targetId, anchor: .top)
 			}
 		}
 	}

@@ -50,19 +50,41 @@ struct ParticipantsContentView: View {
 	}
 
 	var body: some View {
-		GeometryReader { geometry in
-			VStack(spacing: 0) {
-				ParticipantsHeaderView(onBack: onBack)
-					.padding(.top, isExpanded ? geometry.safeAreaInsets.top + 24 : 0)
+		Group {
+			if isExpanded {
+				// When expanded, use GeometryReader for safe area handling
+				GeometryReader { geometry in
+					VStack(spacing: 0) {
+						ParticipantsHeaderView(onBack: onBack)
+							.padding(.top, geometry.safeAreaInsets.top + 24)
 
-				// Participants content that takes remaining space
-				ScrollView {
-					SharedParticipantsContent(activity: activity) { user in
-						navigateToUserProfile(user)
+						// Participants content that takes remaining space
+						ScrollView {
+							SharedParticipantsContent(activity: activity) { user in
+								navigateToUserProfile(user)
+							}
+							.padding(.horizontal, 24)
+							.padding(.bottom, 20)
+						}
 					}
-					.padding(.horizontal, 24)
-					.padding(.bottom, isExpanded ? 20 : 85)  // Increased to match chatroom padding for visibility
 				}
+			} else {
+				// When minimized, don't use GeometryReader to avoid expanding to fill available space
+				// Use fixed total height to match main card content and prevent overflow
+				VStack(spacing: 0) {
+					ParticipantsHeaderView(onBack: onBack)
+						.padding(.top, 20)  // Match Figma spacing
+
+					// Participants content fills remaining space
+					ScrollView {
+						SharedParticipantsContent(activity: activity) { user in
+							navigateToUserProfile(user)
+						}
+						.padding(.horizontal, 24)
+						.padding(.bottom, 16)
+					}
+				}
+				.frame(height: 450)  // Fixed total height to match drawer and chatroom
 			}
 		}
 		.fullScreenCover(isPresented: $showProfile) {

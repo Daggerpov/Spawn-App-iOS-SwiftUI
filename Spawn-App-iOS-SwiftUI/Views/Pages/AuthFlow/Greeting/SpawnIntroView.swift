@@ -54,11 +54,9 @@ struct SpawnIntroView: View {
 
 	var body: some View {
 		VStack(spacing: 0) {
-			// Navigation Bar
+			// Navigation Bar - matches activity creation flow positioning
 			HStack {
-				Button(action: {
-					HapticFeedbackService.shared.light()
-
+				UnifiedBackButton {
 					if currentPage > 0 {
 						// Go back to previous page
 						currentPage -= 1
@@ -66,15 +64,11 @@ struct SpawnIntroView: View {
 						// Exit onboarding from first page
 						dismiss()
 					}
-				}) {
-					Image(systemName: "chevron.left")
-						.font(.title2)
-						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
 				}
 				Spacer()
 			}
-			.padding(.horizontal, 20)
-			.padding(.top, 10)
+			.padding(.horizontal, 25)
+			.padding(.top, 16)
 
 			Spacer()
 
@@ -146,8 +140,7 @@ struct SpawnIntroView: View {
 			}
 			.padding(.bottom, 20)
 		}
-		.background(universalBackgroundColor(from: themeService, environment: colorScheme))
-		.ignoresSafeArea()
+		.background(universalBackgroundColor(from: themeService, environment: colorScheme).ignoresSafeArea())
 		.navigationBarHidden(true)
 		.onAppear {
 			currentPage = 0

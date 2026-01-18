@@ -58,22 +58,54 @@ final class ProfileViewModel {
 			}
 			.store(in: &cancellables)
 
-		// Register for activity update notifications to refresh calendar
+		// Register for activity update notifications to refresh calendar and profile activities
 		NotificationCenter.default.publisher(for: .activityUpdated)
-			.sink { [weak self] _ in
+			.sink { [weak self] notification in
+				guard let self = self else { return }
+
+				// Optimistically update the activity in profile activities immediately
+				if let updatedActivity = notification.object as? FullFeedActivityDTO {
+					Task { @MainActor in
+						// Update the corresponding profile activity if it exists
+						if let index = self.profileActivities.firstIndex(where: { $0.id == updatedActivity.id }) {
+							// Preserve the isPastActivity flag from the existing activity
+							let isPast = self.profileActivities[index].isPastActivity
+							// Update the profile activity with new data
+							self.profileActivities[index] = ProfileActivityDTO.from(
+								fullFeedActivityDTO: updatedActivity,
+								isPastActivity: isPast
+							)
+							print("✅ ProfileViewModel: Optimistically updated activity in profileActivities")
+						}
+					}
+				}
+
 				Task {
 					// Force refresh from API to show updated activity immediately
-					await self?.fetchAllCalendarActivities(forceRefresh: true)
+					await self.fetchAllCalendarActivities(forceRefresh: true)
 				}
 			}
 			.store(in: &cancellables)
 
-		// Register for activity deletion notifications to refresh calendar
+		// Register for activity deletion notifications to refresh calendar and profile activities
 		NotificationCenter.default.publisher(for: .activityDeleted)
-			.sink { [weak self] _ in
+			.sink { [weak self] notification in
+				guard let self = self else { return }
+
+				// Optimistically remove the activity from profile activities immediately
+				if let deletedActivityId = notification.object as? UUID {
+					Task { @MainActor in
+						let previousCount = self.profileActivities.count
+						self.profileActivities.removeAll { $0.id == deletedActivityId }
+						if self.profileActivities.count < previousCount {
+							print("✅ ProfileViewModel: Optimistically removed deleted activity from profileActivities")
+						}
+					}
+				}
+
 				Task {
 					// Force refresh from API to remove deleted activity immediately
-					await self?.fetchAllCalendarActivities(forceRefresh: true)
+					await self.fetchAllCalendarActivities(forceRefresh: true)
 				}
 			}
 			.store(in: &cancellables)

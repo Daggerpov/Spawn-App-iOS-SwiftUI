@@ -22,20 +22,17 @@ struct VerificationCodeView: View {
 
 	var body: some View {
 		VStack(spacing: 0) {
+			// Navigation Bar - matches activity creation flow positioning
 			HStack {
-				Button(action: {
+				UnifiedBackButton {
 					// Clear any error states when going back
 					userAuthViewModel.clearAllErrors()
 					dismiss()
-				}) {
-					Image(systemName: "chevron.left")
-						.font(.title2)
-						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
 				}
 				Spacer()
 			}
-			.padding(.leading, 80)
-			.padding(.top, 10)
+			.padding(.horizontal, 25)
+			.padding(.top, 16)
 			Spacer()
 			mainContent
 			Spacer()
@@ -55,19 +52,14 @@ struct VerificationCodeView: View {
 
 	private var navigationBar: some View {
 		HStack {
-			Button(action: {
+			UnifiedBackButton {
 				// Go back one step in the onboarding flow
 				dismiss()
-			}) {
-				Image(systemName: "chevron.left")
-					.font(.title2)
-					.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
 			}
 			Spacer()
 		}
-		.padding(.horizontal, 20)
-		.padding(.top, 20)
-		.padding(.bottom, 10)
+		.padding(.horizontal, 25)
+		.padding(.top, 16)
 		.background(universalBackgroundColor(from: themeService, environment: colorScheme))
 		.zIndex(1)
 	}
