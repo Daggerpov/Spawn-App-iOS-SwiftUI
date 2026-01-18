@@ -145,37 +145,34 @@ struct ActivityCreationLocationView: View {
 	private var searchModeView: some View {
 		VStack(spacing: 0) {
 			// Full-height drawer
-			VStack(spacing: 0) {
+			VStack {
 				// Handle bar
 				RoundedRectangle(cornerRadius: 2.5)
 					.fill(figmaBlack300)
 					.frame(width: 50, height: 4)
 					.padding(.top, 12)
-					.padding(.bottom, 22)
+					.padding(.bottom, 10)
 
 				// Header with back button and title
-				HStack {
-					Button(action: { onBack?() }) {
-						Image(systemName: "chevron.left")
-							.font(.system(size: 20, weight: .semibold))
-							.foregroundColor(universalAccentColor)
-					}
-					.frame(width: 27)
-
-					Spacer()
-
+				ZStack {
+					// Title centered in the full width
 					Text("Choose Location")
 						.font(.onestSemiBold(size: 20))
 						.foregroundColor(universalAccentColor)
 
-					Spacer()
-
-					// Invisible spacer for centering
-					Color.clear
-						.frame(width: 27)
+					// Back button aligned to leading edge
+					HStack {
+						Button(action: { onBack?() }) {
+							Image(systemName: "chevron.left")
+								.font(.system(size: 20, weight: .semibold))
+								.foregroundColor(universalAccentColor)
+						}
+						Spacer()
+					}
 				}
+				.frame(height: 24)
 				.padding(.horizontal, 26)
-				.padding(.bottom, 16)
+				.padding(.bottom, 6)
 
 				// Search bar
 				HStack {
@@ -256,6 +253,7 @@ struct ActivityCreationLocationView: View {
 					.padding(.horizontal, 26)
 					Spacer()
 				}
+				Spacer()
 			}
 			.frame(maxWidth: .infinity, maxHeight: .infinity)
 			.background(
@@ -330,10 +328,7 @@ struct ActivityCreationLocationView: View {
 			VStack {
 				HStack {
 					Button(action: {
-						withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-							dragOffset = 0
-							selectionMode = .search
-						}
+						onBack?()
 					}) {
 						Image(systemName: "chevron.left")
 							.font(.system(size: 24, weight: .bold))
@@ -385,20 +380,20 @@ struct ActivityCreationLocationView: View {
 						.frame(maxWidth: .infinity, alignment: .leading)
 
 						// Address display with search button
-						HStack {
-							Text(locationDisplayText.isEmpty ? "Searching..." : locationDisplayText)
-								.font(.onestMedium(size: 16))
-								.foregroundColor(universalSecondaryColor)
-								.lineLimit(1)
+						Button(action: {
+							withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+								dragOffset = 0
+								selectionMode = .search
+							}
+						}) {
+							HStack {
+								Text(locationDisplayText.isEmpty ? "Searching..." : locationDisplayText)
+									.font(.onestMedium(size: 16))
+									.foregroundColor(universalSecondaryColor)
+									.lineLimit(1)
 
-							Spacer()
+								Spacer()
 
-							Button(action: {
-								withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-									dragOffset = 0
-									selectionMode = .search
-								}
-							}) {
 								Image(systemName: "magnifyingglass")
 									.font(.system(size: 16))
 									.foregroundColor(universalSecondaryColor)
