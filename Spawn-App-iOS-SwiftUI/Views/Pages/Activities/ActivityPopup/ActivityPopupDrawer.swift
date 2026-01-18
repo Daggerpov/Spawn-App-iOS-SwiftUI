@@ -41,8 +41,9 @@ struct ActivityPopupDrawer: View {
 	}
 
 	private var halfScreenOffset: CGFloat {
-		// When opened from map view, show a smaller minimized card since there's no map preview
-		fromMapView ? screenHeight * 0.42 : screenHeight * 0.30
+		// When opened from map view, position card higher since there's no map preview needed
+		// Lower percentage = card appears higher on screen
+		fromMapView ? screenHeight * 0.28 : screenHeight * 0.30
 	}
 
 	private var currentOffset: CGFloat {
@@ -63,7 +64,7 @@ struct ActivityPopupDrawer: View {
 					guard isPresented else { return }
 					dismissPopup()
 				}
-				.opacity(0.65)
+				.opacity(0.75)
 				.zIndex(isExpanded ? 999 : 0)  // Ensure blur covers tab bar when expanded
 			// Popup content
 			VStack(spacing: 0) {
@@ -77,7 +78,6 @@ struct ActivityPopupDrawer: View {
 					onMinimize: minimizePopup
 				)
 			}
-			.background(activityColor.opacity(0.08))
 			.frame(maxWidth: .infinity, maxHeight: isExpanded ? .infinity : nil)
 			.cornerRadius(isExpanded ? 0 : 20, corners: [.topLeft, .topRight])
 			.offset(y: currentOffset)

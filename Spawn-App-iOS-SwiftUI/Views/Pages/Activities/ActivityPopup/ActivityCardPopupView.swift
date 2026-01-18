@@ -78,7 +78,7 @@ struct ActivityCardPopupView: View {
 				RoundedRectangle(cornerRadius: 2.5)
 					.fill(Color.white.opacity(0.6))
 					.frame(width: 50, height: 4)
-					.padding(.top, 12)
+					.padding(.top, fromMapView ? 8 : 12)  // Reduced padding for map view
 			} else {
 				// Add equivalent padding when expanded to avoid status bar
 				// Reduce padding when opened from map view since it has additional header padding
@@ -201,7 +201,7 @@ struct ActivityCardPopupView: View {
 	}
 
 	var mainCardContent: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: fromMapView ? 12 : 16) {
 			// Header with arrow and title
 			HStack {
 				Button(action: {
@@ -238,7 +238,7 @@ struct ActivityCardPopupView: View {
 					.contentShape(Circle())  // Better touch area for circular button
 				}
 			}
-			.padding(.top, fromMapView && isExpanded ? 8 : 11)
+			.padding(.top, fromMapView ? 4 : 11)  // Reduced padding for map view
 
 			// Event title and time
 			titleAndTime
