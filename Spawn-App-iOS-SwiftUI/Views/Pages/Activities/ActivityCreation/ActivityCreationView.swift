@@ -303,6 +303,8 @@ struct ActivityCreationView: View {
 						selectedTab = TabType.home
 					} else {
 						// Normal flow from activities tab - go to activity type selection
+						// Clear the selected activity type so the user can re-select the same one
+						viewModel.selectedActivityType = nil
 						currentStep = currentStep.previous()
 					}
 				}
