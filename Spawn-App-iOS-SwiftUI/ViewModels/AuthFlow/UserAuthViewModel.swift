@@ -1351,6 +1351,11 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 					// This matches the behavior of other authentication methods
 					self.isLoggedIn = true
 
+					// Restore or infer auth provider if not already set
+					if self.authProvider == nil {
+						self.restoreOrInferAuthProvider(isOAuthUser: authResponse.isOAuthUser)
+					}
+
 					// Check backend onboarding status and sync with local state
 					let backendOnboardingStatus = authResponse.user.hasCompletedOnboarding ?? false
 					if backendOnboardingStatus && !self.hasCompletedOnboarding {
@@ -1374,6 +1379,53 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 				// This ensures the minimum loading time is respected
 			}
 		}
+	}
+
+	/// Restores auth provider from UserDefaults or infers it from available information
+	private func restoreOrInferAuthProvider(isOAuthUser: Bool?) {
+		// First try to restore from UserDefaults
+		if let savedProviderRawValue = UserDefaults.standard.string(forKey: "authProvider"),
+			let savedProvider = AuthProviderType(rawValue: savedProviderRawValue)
+		{
+			self.authProvider = savedProvider
+			print("🔐 Restored auth provider from UserDefaults: \(savedProvider.rawValue)")
+			return
+		}
+
+		// Check if the server returned the provider in the user data
+		if let serverProvider = self.spawnUser?.provider,
+			let providerType = AuthProviderType(rawValue: serverProvider)
+		{
+			self.authProvider = providerType
+			print("🔐 Got auth provider from server user data: \(serverProvider)")
+			return
+		}
+
+		// If not saved and not from server, try to infer from available information
+		// First check if Google SDK has a current user session (most reliable check for Google)
+		if GIDSignIn.sharedInstance.currentUser != nil {
+			self.authProvider = .google
+			print("🔐 Inferred auth provider from Google SDK: google")
+			return
+		}
+
+		// If isOAuthUser is explicitly true but not Google, assume Apple
+		if isOAuthUser == true {
+			self.authProvider = .apple
+			print("🔐 Inferred auth provider as Apple (OAuth user, not Google)")
+			return
+		}
+
+		// If isOAuthUser is explicitly false, it's email
+		if isOAuthUser == false {
+			self.authProvider = .email
+			print("🔐 Inferred auth provider as email (not OAuth user)")
+			return
+		}
+
+		// If isOAuthUser is nil (not returned by server), we can't determine for sure
+		// Leave authProvider as nil - will show "Unknown Provider" but at least it's honest
+		print("🔐 Could not determine auth provider - isOAuthUser not available from server")
 	}
 
 	// The username argument could be an email as well
@@ -1400,6 +1452,7 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 				await MainActor.run {
 					self.spawnUser = user
 					self.isLoggedIn = true
+					self.authProvider = .email  // Set auth provider for email/username login
 					self.errorMessage = nil  // Clear any previous errors on success
 					self.continueUserOnboarding(authResponse: authResponse)
 				}

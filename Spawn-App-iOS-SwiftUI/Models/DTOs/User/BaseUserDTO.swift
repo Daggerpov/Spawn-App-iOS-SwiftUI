@@ -27,6 +27,7 @@ struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable, Sendable {
 	var bio: String?
 	var email: String?
 	var hasCompletedOnboarding: Bool?
+	var provider: String?  // Auth provider: "google", "apple", or "email"
 
 	init(
 		id: UUID,
@@ -35,7 +36,8 @@ struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable, Sendable {
 		name: String? = nil,
 		bio: String? = nil,
 		email: String? = nil,
-		hasCompletedOnboarding: Bool? = nil
+		hasCompletedOnboarding: Bool? = nil,
+		provider: String? = nil
 	) {
 		self.id = id
 		self.username = username
@@ -44,6 +46,7 @@ struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable, Sendable {
 		self.bio = bio
 		self.email = email
 		self.hasCompletedOnboarding = hasCompletedOnboarding
+		self.provider = provider
 	}
 }
 
