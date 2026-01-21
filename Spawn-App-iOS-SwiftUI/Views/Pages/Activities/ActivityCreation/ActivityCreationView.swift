@@ -15,7 +15,6 @@ struct ActivityCreationView: View {
 	@State private var currentStep: ActivityCreationStep
 	@State private var selectedDuration: ActivityDuration = .indefinite
 	@State private var showLocationPicker = false
-	@State private var showShareSheet = false
 
 	// Time selection state - now initialized with calculated default values
 	@State private var selectedHour: Int
@@ -167,7 +166,6 @@ struct ActivityCreationView: View {
 				activityTitle = ""
 				selectedDuration = .indefinite
 				showLocationPicker = false
-				showShareSheet = false
 
 				// Reset time to next interval
 				let nextInterval = Self.calculateNextFifteenMinuteInterval()
@@ -200,7 +198,6 @@ struct ActivityCreationView: View {
 				}
 				selectedDuration = .indefinite
 				showLocationPicker = false
-				showShareSheet = false
 
 				// Reset time to next interval
 				let nextInterval = Self.calculateNextFifteenMinuteInterval()
@@ -359,7 +356,6 @@ struct ActivityCreationView: View {
 			)
 		case .confirmation:
 			ActivityConfirmationView(
-				showShareSheet: $showShareSheet,
 				onClose: {
 					// Handle tutorial completion
 					if case .activityCreation = tutorialViewModel.tutorialState {

@@ -3,7 +3,6 @@ import SwiftUI
 struct ActivityConfirmationView: View {
 	var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
 	@ObservedObject var themeService = ThemeService.shared
-	@Binding var showShareSheet: Bool
 	@Environment(\.colorScheme) private var colorScheme
 	let onClose: () -> Void
 	let onBack: (() -> Void)?
@@ -106,7 +105,12 @@ struct ActivityConfirmationView: View {
 						// Add haptic feedback
 						let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
 						impactGenerator.impactOccurred()
-						showShareSheet = true
+						// Use global share drawer to ensure it covers the nav bar properly
+						NotificationCenter.default.post(
+							name: .showGlobalActivityShareDrawer,
+							object: nil,
+							userInfo: ["activity": fullActivityForSharing]
+						)
 					}) {
 						HStack(spacing: 8) {
 							Image(systemName: "square.and.arrow.up")
@@ -168,12 +172,6 @@ struct ActivityConfirmationView: View {
 
 				}
 			}
-
-			// Share drawer overlay - uses unified ActivityShareDrawer component
-			ActivityShareDrawer(
-				activity: fullActivityForSharing,
-				showShareSheet: $showShareSheet
-			)
 		}
 		.background(adaptiveBackgroundColor)
 	}
@@ -209,11 +207,9 @@ struct ActivityConfirmationView: View {
 
 @available(iOS 17, *)
 #Preview {
-	@Previewable @State var showShareSheet: Bool = false
 	@Previewable @ObservedObject var appCache = AppCache.shared
 
 	ActivityConfirmationView(
-		showShareSheet: $showShareSheet,
 		onClose: {
 			print("Close tapped")
 		},
