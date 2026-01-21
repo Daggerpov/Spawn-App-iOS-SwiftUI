@@ -288,10 +288,15 @@ final class FormatterService: Sendable {
 		return trimmed
 	}
 
-	func timeUntil(_ startDate: Date?, endDate: Date? = nil) -> String {
+	func timeUntil(_ startDate: Date?, endDate: Date? = nil, isExpired: Bool = false) -> String {
 		guard let startDate = startDate else { return "" }
 		let now = Date()
 		let intervalToStart = startDate.timeIntervalSince(now)
+
+		// Check if activity is marked as expired
+		if isExpired {
+			return "Already Happened"
+		}
 
 		// Check if activity hasn't started yet
 		if intervalToStart > 0 {
@@ -307,6 +312,14 @@ final class FormatterService: Sendable {
 		// Activity has started - check if it has ended
 		if let endDate = endDate {
 			if now >= endDate {
+				return "Already Happened"
+			}
+		} else {
+			// For activities without an end time, check if they started on a previous day
+			let calendar = Calendar.current
+			let activityDate = calendar.startOfDay(for: startDate)
+			let todayDate = calendar.startOfDay(for: now)
+			if activityDate < todayDate {
 				return "Already Happened"
 			}
 		}
