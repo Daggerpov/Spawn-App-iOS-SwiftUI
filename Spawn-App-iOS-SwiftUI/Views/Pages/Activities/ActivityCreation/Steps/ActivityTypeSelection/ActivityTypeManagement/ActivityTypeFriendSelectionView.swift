@@ -241,10 +241,10 @@ struct ActivityTypeFriendSelectionView: View {
 	private func saveActivityType() {
 		isLoading = true
 
-		// Convert selected friend IDs to BaseUserDTO objects
-		let selectedFriendObjects = appCache.getCurrentUserFriends().compactMap { friend in
+		// Convert selected friend IDs to MinimalFriendDTO objects
+		let selectedFriendObjects: [MinimalFriendDTO] = appCache.getCurrentUserFriends().compactMap { friend in
 			if selectedFriends.contains(friend.id) {
-				return BaseUserDTO.from(friendUser: friend)
+				return MinimalFriendDTO.from(friend)
 			}
 			return nil
 		}
