@@ -22,8 +22,8 @@ struct WithTabBarBinding<Content>: View where Content: View {
 
 	// Calculate adaptive bottom padding based on screen size and safe area
 	private func adaptiveBottomPadding(for proxy: GeometryProxy) -> CGFloat {
-		let screenHeight = proxy.size.height
-		let safeAreaBottom = proxy.safeAreaInsets.bottom
+		let screenHeight = proxy.size.height.isNaN ? UIScreen.main.bounds.height : proxy.size.height
+		let safeAreaBottom = proxy.safeAreaInsets.bottom.isNaN ? 0 : proxy.safeAreaInsets.bottom
 
 		// iPhone 8 and similar devices (smaller screens, typically no safe area)
 		if screenHeight <= 667 || safeAreaBottom < 10 {
@@ -37,6 +37,11 @@ struct WithTabBarBinding<Content>: View where Content: View {
 
 	var body: some View {
 		GeometryReader { proxy in
+			let safeWidth =
+				proxy.size.width.isNaN || proxy.size.width <= 0 ? UIScreen.main.bounds.width : proxy.size.width
+			let safeHeight =
+				proxy.size.height.isNaN || proxy.size.height <= 0 ? UIScreen.main.bounds.height : proxy.size.height
+
 			ZStack {
 				// Background that extends to cover entire screen including tab bar area
 				universalBackgroundColor
@@ -44,7 +49,7 @@ struct WithTabBarBinding<Content>: View where Content: View {
 
 				// Main content area - fills entire screen
 				content(selection)
-					.frame(width: proxy.size.width, height: proxy.size.height)
+					.frame(width: safeWidth, height: safeHeight)
 					.padding(.bottom, shouldHideTabBar ? 0 : tabBarSpacing)  // Conditional padding based on tab bar visibility
 					.if(selection != .activities) { view in
 						view.ignoresSafeArea(.keyboard, edges: .bottom)  // Prevent keyboard from pushing content up for non-activities tabs
@@ -60,5 +65,6 @@ struct WithTabBarBinding<Content>: View where Content: View {
 				}
 			}
 		}
+		.ignoresSafeArea(.keyboard)  // Prevent keyboard from affecting the entire layout including tab bar
 	}
 }

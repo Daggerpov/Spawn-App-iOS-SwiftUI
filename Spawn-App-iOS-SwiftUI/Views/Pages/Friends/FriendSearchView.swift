@@ -107,6 +107,7 @@ struct FriendSearchView: View {
 				.padding(.vertical, 16)
 			}
 			.navigationBarHidden(true)
+			.ignoresSafeArea(.keyboard, edges: .bottom)  // Prevent keyboard from pushing header up
 			.task {
 				// Load appropriate data based on display mode
 				switch displayMode {

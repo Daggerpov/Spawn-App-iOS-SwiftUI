@@ -38,6 +38,7 @@ struct ActivityTypeEditView: View {
 			mainContentView
 		}
 		.navigationBarHidden(true)
+		.ignoresSafeArea(.keyboard, edges: .bottom)  // Prevent keyboard from pushing header up
 		.sheet(isPresented: $showEmojiPicker) {
 			ElegantEmojiPickerView(selectedEmoji: $editedIcon, isPresented: $showEmojiPicker)
 		}
@@ -62,7 +63,7 @@ struct ActivityTypeEditView: View {
 			updateHasChanges()
 		}
 		.navigationDestination(isPresented: $navigateToFriendSelection) {
-			navigationDestinationView
+			makeNavigationDestination()
 		}
 		.alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
 			Button("OK") {
@@ -252,16 +253,25 @@ struct ActivityTypeEditView: View {
 		.padding(.bottom, 40)
 	}
 
-	private var navigationDestinationView: some View {
+	@ViewBuilder
+	private func makeNavigationDestination() -> some View {
+		// Create the activity type DTO once when building the view
+		let activityType = createUpdatedActivityType()
+		// Capture viewModel explicitly to avoid issues with @State capture
+		let vm = viewModel
 		ActivityTypeFriendSelectionView(
-			activityTypeDTO: createUpdatedActivityType(),
+			activityTypeDTO: activityType,
 			onComplete: { finalActivityType in
+				// Reset navigation state FIRST to prevent re-rendering loops
+				// This stops the parent view from re-creating this destination view
+				navigateToFriendSelection = false
+
 				// Save the activity type with selected friends using direct API call
 				Task {
-					await viewModel.createActivityType(finalActivityType)
+					await vm.createActivityType(finalActivityType)
 
-					// Dismiss both views
-					Task { @MainActor in
+					// Dismiss the edit view after successful creation
+					await MainActor.run {
 						dismiss()
 					}
 				}

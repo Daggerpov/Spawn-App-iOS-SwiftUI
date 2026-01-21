@@ -86,6 +86,7 @@ struct FeedbackView: View {
 		}
 		.background(universalBackgroundColor)
 		.navigationBarHidden(true)
+		.ignoresSafeArea(.keyboard, edges: .bottom)  // Prevent keyboard from pushing header up
 	}
 
 	private var headerView: some View {

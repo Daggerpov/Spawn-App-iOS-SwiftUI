@@ -50,7 +50,7 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 			return []
 		}
 		let userFriends = friends[userId] ?? []
-		print("📦 [FRIENDSHIP-CACHE] getCurrentUserFriends returned \(userFriends.count) friends for user \(userId)")
+		// Note: Removed verbose logging here as this method is called frequently during view updates
 		return userFriends
 	}
 

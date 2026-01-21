@@ -132,6 +132,7 @@ struct EditProfileView: View {
 			}
 			.background(universalBackgroundColor)
 			.navigationBarHidden(true)
+			.ignoresSafeArea(.keyboard, edges: .bottom)  // Prevent keyboard from pushing header up
 			.sheet(isPresented: $showImagePicker) {
 				SwiftUIImagePicker(selectedImage: $selectedImage)
 					.ignoresSafeArea()

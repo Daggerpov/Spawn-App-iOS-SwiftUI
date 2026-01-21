@@ -14,6 +14,12 @@ struct WithTabBar<Content>: View where Content: View {
 
 	var body: some View {
 		GeometryReader { proxy in
+			let safeWidth =
+				proxy.size.width.isNaN || proxy.size.width <= 0 ? UIScreen.main.bounds.width : proxy.size.width
+			let safeHeight =
+				proxy.size.height.isNaN || proxy.size.height <= 0 ? UIScreen.main.bounds.height : proxy.size.height
+			let safeBottomInset = proxy.safeAreaInsets.bottom.isNaN ? 0 : proxy.safeAreaInsets.bottom
+
 			ZStack {
 				// Background that extends to cover entire screen including tab bar area
 				universalBackgroundColor
@@ -21,7 +27,7 @@ struct WithTabBar<Content>: View where Content: View {
 
 				VStack(spacing: 0) {
 					content(selection)
-						.frame(width: proxy.size.width, height: proxy.size.height - tabBarSpacing)
+						.frame(width: safeWidth, height: safeHeight - tabBarSpacing)
 
 					// Spacer for TabBar
 					Color.clear
@@ -29,10 +35,11 @@ struct WithTabBar<Content>: View where Content: View {
 				}
 				.overlay(alignment: .bottom) {
 					TabBar(selection: $selection)
-						.padding(.bottom, max(40, proxy.safeAreaInsets.bottom + 16))
+						.padding(.bottom, max(40, safeBottomInset + 16))
 				}
 			}
 		}
+		.ignoresSafeArea(.keyboard)  // Prevent keyboard from affecting the entire layout including tab bar
 	}
 }
 

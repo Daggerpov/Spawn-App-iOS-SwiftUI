@@ -66,6 +66,7 @@ struct ManagePeopleView: View {
 					Color.clear
 				}
 			}
+			.ignoresSafeArea(.keyboard, edges: .bottom)  // Prevent keyboard from pushing header up
 		}
 		.navigationBarHidden(true)
 		.task {
