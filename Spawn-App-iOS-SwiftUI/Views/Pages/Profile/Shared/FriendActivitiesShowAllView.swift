@@ -23,8 +23,6 @@ struct FriendActivitiesShowAllView: View {
 				VStack(spacing: 0) {
 					// Header
 					headerView
-						.padding(.horizontal, 16)
-						.padding(.top, 16)
 
 					ScrollView {
 						VStack(spacing: 32) {
@@ -75,28 +73,25 @@ struct FriendActivitiesShowAllView: View {
 	// MARK: - Header View
 	private var headerView: some View {
 		HStack {
-			// Back button
-			Button(action: {
+			UnifiedBackButton {
 				presentationMode.wrappedValue.dismiss()
-			}) {
-				Image(systemName: "chevron.left")
-					.font(.onestSemiBold(size: 18))
-					.foregroundColor(universalAccentColor)
 			}
 
 			Spacer()
 
-			// Title
 			Text("Activities by \(FormatterService.shared.formatFirstName(user: user))")
 				.font(.onestSemiBold(size: 18))
 				.foregroundColor(universalAccentColor)
 
 			Spacer()
 
-			// Invisible spacer to balance the back button
-			Color.clear
-				.frame(width: 24, height: 24)
+			// Invisible chevron to balance the back button
+			Image(systemName: "chevron.left")
+				.font(.system(size: 20, weight: .semibold))
+				.foregroundColor(.clear)
 		}
+		.padding(.horizontal, 25)
+		.padding(.vertical, 12)
 	}
 
 	// MARK: - Activity Cards Section

@@ -110,26 +110,27 @@ struct ManagePeopleView: View {
 
 	// MARK: - Header View
 	private var headerView: some View {
-		HStack(spacing: 32) {
-			// Back button
-			Button(action: {
+		HStack {
+			UnifiedBackButton {
 				dismiss()
-			}) {
-				Image(systemName: "chevron.left")
-					.font(.system(size: 20, weight: .semibold))
-					.foregroundColor(universalAccentColor)
 			}
 
-			// Title
+			Spacer()
+
 			Text("Manage People - \(activityTitle)")
 				.font(.onestSemiBold(size: 20))
 				.foregroundColor(universalAccentColor)
 				.lineLimit(1)
 
-			// Spacer to balance the layout
 			Spacer()
+
+			// Invisible chevron to balance the back button
+			Image(systemName: "chevron.left")
+				.font(.system(size: 20, weight: .semibold))
+				.foregroundColor(.clear)
 		}
-		.padding(.horizontal, 24)
+		.padding(.horizontal, 25)
+		.padding(.vertical, 12)
 	}
 
 	// MARK: - Search Bar View
