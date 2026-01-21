@@ -5,6 +5,7 @@ struct TabBar: View {
 	@State private var symbolTrigger: Bool = false
 	@Namespace private var tabItemNameSpace
 	var tutorialViewModel = TutorialViewModel.shared
+	var tabNavigationManager = TabNavigationManager.shared
 
 	init(selection: Binding<Tabs>) {
 		self._selection = selection
@@ -20,6 +21,12 @@ struct TabBar: View {
 				notificationGenerator.notificationOccurred(.warning)
 				return
 			}
+		}
+
+		// If user taps the already selected tab, pop to root
+		if selection == tab {
+			tabNavigationManager.popToRoot(for: tab)
+			return
 		}
 
 		withAnimation(.bouncy(duration: 0.3, extraBounce: 0.15)) {

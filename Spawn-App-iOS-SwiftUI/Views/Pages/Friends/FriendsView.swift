@@ -18,6 +18,9 @@ struct FriendsView: View {
 	@Binding var shouldShowDeepLinkedProfile: Bool
 	@State private var isFetchingDeepLinkedProfile = false
 
+	// Use shared navigation manager for pop-to-root functionality
+	var tabNavigationManager = TabNavigationManager.shared
+
 	init(
 		user: BaseUserDTO,
 		viewModel: FriendsTabViewModel,
@@ -44,6 +47,7 @@ struct FriendsView: View {
 				.background(universalBackgroundColor)
 				.navigationBarHidden(true)
 			}
+			.id(tabNavigationManager.friendsNavigationId)
 		}
 		.task {
 			// CRITICAL FIX: Use MainActor task to respect navigation lifecycle
