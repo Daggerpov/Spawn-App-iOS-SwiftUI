@@ -341,11 +341,11 @@ struct UserProfileView: View {
 								.bold()
 								.foregroundColor(.white)
 						} else {
-							Image(systemName: "person.badge.plus")
-								.foregroundColor(.black)
+							Image(systemName: "person.badge.clock")
+								.foregroundColor(Color.gray)
 							Text("Request Sent")
 								.bold()
-								.foregroundColor(.black)
+								.foregroundColor(Color.gray)
 						}
 					}
 					.font(.onestMedium(size: 16))
@@ -365,7 +365,7 @@ struct UserProfileView: View {
 						RoundedRectangle(cornerRadius: 12)
 							.stroke(
 								profileViewModel.friendshipStatus == .requestSent
-									? Color(red: 0.15, green: 0.14, blue: 0.14)
+									? Color.gray
 									: Color.clear,
 								lineWidth: 1
 							)

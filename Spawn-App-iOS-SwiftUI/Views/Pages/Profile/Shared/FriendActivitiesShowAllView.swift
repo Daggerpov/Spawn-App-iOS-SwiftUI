@@ -8,9 +8,6 @@ struct FriendActivitiesShowAllView: View {
 	@Environment(\.presentationMode) var presentationMode
 	@Environment(\.colorScheme) private var colorScheme
 
-	// Add navigation state for full calendar view
-	@State private var navigateToCalendar: Bool = false
-
 	@ObservedObject private var locationManager = LocationManager.shared
 
 	var body: some View {
@@ -25,24 +22,22 @@ struct FriendActivitiesShowAllView: View {
 					headerView
 
 					ScrollView {
-						VStack(spacing: 32) {
-							// Activity Cards Section
-							activityCardsSection
+						VStack(spacing: 12) {
+							// Upcoming Activities Section
+							upcomingActivitiesSection
 
-							// Calendar Section
-							calendarSection
+							// Past Activities Section
+							pastActivitiesSection
 						}
 						.padding(.horizontal, 16)
-						.padding(.bottom, 16)  // Standard bottom padding
+						.padding(.top, 16)
+						.padding(.bottom, 100)  // Account for tab bar
 					}
 				}
 			}
 			.navigationBarHidden(true)
 			.sheet(isPresented: $showActivityDetails) {
 				activityDetailsView
-			}
-			.navigationDestination(isPresented: $navigateToCalendar) {
-				friendCalendarFullScreenView
 			}
 		}
 		.onAppear {
@@ -52,75 +47,60 @@ struct FriendActivitiesShowAllView: View {
 		}
 	}
 
-	// MARK: - Calendar Full Screen View
-	private var friendCalendarFullScreenView: some View {
-		ActivityCalendarView(
-			profileViewModel: profileViewModel,
-			userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
-			calendarOwnerName: FormatterService.shared.formatFirstName(user: user),
-			onDismiss: {
-				// Reset navigation state when calendar view is dismissed
-				navigateToCalendar = false
-			},
-			onDayActivitiesSelected: { activities in
-				// Handle day activities selection for friend's calendar
-				// For now, just log it - could be implemented later if needed
-				print("Day activities selected: \(activities.count) activities")
-			}
-		)
-	}
-
 	// MARK: - Header View
 	private var headerView: some View {
 		HStack {
-			UnifiedBackButton {
+			// Back button
+			Button(action: {
 				presentationMode.wrappedValue.dismiss()
+			}) {
+				Image(systemName: "chevron.left")
+					.font(.system(size: 20, weight: .semibold))
+					.foregroundColor(universalAccentColor)
 			}
 
 			Spacer()
 
 			Text("Activities by \(FormatterService.shared.formatFirstName(user: user))")
-				.font(.onestSemiBold(size: 18))
+				.font(.onestMedium(size: 20))
 				.foregroundColor(universalAccentColor)
 
 			Spacer()
 
-			// Invisible chevron to balance the back button
+			// Invisible placeholder to balance the back button
 			Image(systemName: "chevron.left")
 				.font(.system(size: 20, weight: .semibold))
 				.foregroundColor(.clear)
 		}
-		.padding(.horizontal, 25)
+		.padding(.horizontal, 24)
 		.padding(.vertical, 12)
 	}
 
-	// MARK: - Activity Cards Section
-	private var activityCardsSection: some View {
-		VStack(spacing: 12) {
-			// Use real activity data from the friend's profile
+	// MARK: - Upcoming Activities Section
+	private var upcomingActivitiesSection: some View {
+		VStack(alignment: .leading, spacing: 12) {
+			// Section header
+			HStack {
+				Text("Upcoming Activities")
+					.font(.onestSemiBold(size: 16))
+					.foregroundColor(universalAccentColor)
+				Spacer()
+			}
+
 			if profileViewModel.isLoadingUserActivities {
 				ProgressView()
 					.frame(maxWidth: .infinity, minHeight: 100)
-			} else if sortedActivities.isEmpty {
-				VStack(spacing: 8) {
-					Text("No activities found")
-						.font(.onestMedium(size: 16))
-						.foregroundColor(figmaBlack300)
-
-					Text("This user hasn't created any activities yet.")
-						.font(.onestRegular(size: 14))
-						.foregroundColor(figmaBlack300)
-						.multilineTextAlignment(.center)
-				}
-				.padding()
+			} else if upcomingActivities.isEmpty {
+				emptyStateView(message: "No upcoming activities")
 			} else {
+				// Show all upcoming activities with full activity card style
 				VStack(spacing: 12) {
-					ForEach(Array(sortedActivities.prefix(2).enumerated()), id: \.1.id) { index, activity in
+					ForEach(upcomingActivities) { activity in
 						let activityColor = getActivityColor(for: activity.id)
 
 						ActivityCardView(
 							userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
-							activity: activity,  // ProfileActivityDTO IS a FullFeedActivityDTO
+							activity: activity,
 							color: activityColor,
 							locationManager: locationManager,
 							callback: { selectedActivity, color in
@@ -134,77 +114,74 @@ struct FriendActivitiesShowAllView: View {
 		}
 	}
 
-	// MARK: - Calendar Section
-	private var calendarSection: some View {
-		VStack(spacing: 16) {
-			// Days of the week header
-			HStack(spacing: 0) {
-				ForEach(["S", "M", "T", "W", "T", "F", "S"], id: \.self) { day in
-					Text(day)
-						.font(.onestMedium(size: 13))
-						.foregroundColor(figmaBlack300)
-						.frame(maxWidth: .infinity)
-				}
+	// MARK: - Past Activities Section
+	private var pastActivitiesSection: some View {
+		VStack(alignment: .leading, spacing: 12) {
+			// Section header
+			HStack {
+				Text("Past Activities")
+					.font(.onestSemiBold(size: 16))
+					.foregroundColor(universalAccentColor)
+				Spacer()
 			}
 
-			if profileViewModel.isLoadingCalendar {
+			if profileViewModel.isLoadingUserActivities {
 				ProgressView()
-					.frame(maxWidth: .infinity, minHeight: 150)
+					.frame(maxWidth: .infinity, minHeight: 100)
+			} else if pastActivities.isEmpty {
+				emptyStateView(message: "No past activities")
 			} else {
-				// Calendar grid - EXACTLY 5 rows using real friend data
-				VStack(spacing: 8) {
-					ForEach(0..<5, id: \.self) { row in
-						HStack(spacing: 8) {
-							ForEach(0..<7, id: \.self) { col in
-								if let activity = profileViewModel.calendarActivities[row][col] {
-									// Day cell with real activity data
-									FriendCalendarDaySquare(activity: activity)
-										.onTapGesture {
-											// Navigate to full calendar view instead of just showing activity details
-											navigateToFullCalendar()
-										}
-								} else {
-									// Empty day cell
-									RoundedRectangle(cornerRadius: 6.6)
-										.fill(figmaCalendarDayIcon)
-										.frame(width: 46, height: 46)
-										.shadow(color: Color.black.opacity(0.1), radius: 6.6, x: 0, y: 1.6)
-										.onTapGesture {
-											// Navigate to full calendar view on empty day tap
-											navigateToFullCalendar()
-										}
-								}
+				// Show all past activities with compact card style
+				VStack(spacing: 12) {
+					ForEach(pastActivities) { activity in
+						let activityColor = getActivityColor(for: activity.id)
+
+						CompactActivityCard(
+							activity: activity,
+							color: activityColor,
+							onTap: {
+								profileViewModel.selectedActivity = activity
+								showActivityDetails = true
 							}
-						}
+						)
 					}
 				}
 			}
 		}
 	}
 
+	// MARK: - Empty State View
+	private func emptyStateView(message: String) -> some View {
+		VStack(spacing: 8) {
+			Text(message)
+				.font(.onestMedium(size: 16))
+				.foregroundColor(figmaBlack300)
+		}
+		.padding()
+		.frame(maxWidth: .infinity)
+	}
+
 	// MARK: - Helper Properties
-	private var sortedActivities: [ProfileActivityDTO] {
-		let upcomingActivities = profileViewModel.profileActivities
+	private var upcomingActivities: [ProfileActivityDTO] {
+		profileViewModel.profileActivities
 			.filter { !$0.isPastActivity }
-
-		let sortedUpcoming = upcomingActivities.sorted { activity1, activity2 in
-			guard let start1 = activity1.startTime, let start2 = activity2.startTime else {
-				return false
+			.sorted { activity1, activity2 in
+				guard let start1 = activity1.startTime, let start2 = activity2.startTime else {
+					return false
+				}
+				return start1 < start2
 			}
-			return start1 < start2
-		}
+	}
 
-		let pastActivities = profileViewModel.profileActivities
+	private var pastActivities: [ProfileActivityDTO] {
+		profileViewModel.profileActivities
 			.filter { $0.isPastActivity }
-
-		let sortedPast = pastActivities.sorted { activity1, activity2 in
-			guard let start1 = activity1.startTime, let start2 = activity2.startTime else {
-				return false
+			.sorted { activity1, activity2 in
+				guard let start1 = activity1.startTime, let start2 = activity2.startTime else {
+					return false
+				}
+				return start1 > start2  // Most recent first
 			}
-			return start1 > start2
-		}
-
-		return sortedUpcoming + sortedPast
 	}
 
 	private var activityDetailsView: some View {
@@ -225,104 +202,127 @@ struct FriendActivitiesShowAllView: View {
 
 	// MARK: - Helper Methods
 	private func fetchFriendData() async {
-		await MainActor.run {
-			// isLoading = true // This line was removed as per the edit hint
-		}
-
-		await MainActor.run {
-			// isLoading = false // This line was removed as per the edit hint
-		}
-	}
-
-	private func navigateToFullCalendar() {
-		Task {
-			// Fetch all calendar activities for the friend before navigating
-			await profileViewModel.fetchAllCalendarActivities(friendUserId: user.id)
-			await MainActor.run {
-				navigateToCalendar = true
-			}
-		}
-	}
-
-	// TODO: investigate why this isn't being used
-	private func handleActivitySelection(_ activity: CalendarActivityDTO) {
-		guard let activityId = activity.activityId else { return }
-
-		print("🔄 Fetching activity details for activity: \(activityId)")
-
-		Task {
-			if (await profileViewModel.fetchActivityDetails(activityId: activityId)) != nil {
-				await MainActor.run {
-					showActivityDetails = true
-				}
-			} else {
-				print("❌ Failed to fetch activity details for: \(activityId)")
-			}
-		}
+		// Data is already loaded from the parent view
 	}
 }
 
-// MARK: - Friend Calendar Day Square Component
-struct FriendCalendarDaySquare: View {
-	let activity: CalendarActivityDTO
-
-	private var dayNumber: String {
-		String(Calendar.current.component(.day, from: activity.dateAsDate))
-	}
+// MARK: - Compact Activity Card Component (for Past Activities)
+struct CompactActivityCard: View {
+	let activity: ProfileActivityDTO
+	let color: Color
+	let onTap: () -> Void
 
 	var body: some View {
-		RoundedRectangle(cornerRadius: 6.62)
-			.fill(activityColor)
-			.frame(width: 46.33, height: 46.33)
-			.shadow(
-				color: Color.black.opacity(0.1),
-				radius: 6.62,
-				x: 0,
-				y: 1.65
-			)
-			.overlay(
-				Group {
-					if let icon = activity.icon, !icon.isEmpty {
-						Text(icon)
-							.font(.onestMedium(size: 26.47))
-							.foregroundColor(.black)
-					} else {
-						Text("⭐️")
-							.font(.onestMedium(size: 26.47))
-							.foregroundColor(.black)
-					}
+		Button(action: onTap) {
+			HStack(spacing: 10) {
+				// Left side - Activity info
+				VStack(alignment: .leading, spacing: 6) {
+					Text(activity.title ?? "Activity")
+						.font(.onestSemiBold(size: 17))
+						.foregroundColor(.white)
+						.lineLimit(1)
+
+					Text(subtitleText)
+						.font(.onestMedium(size: 13))
+						.foregroundColor(.white.opacity(0.8))
+						.lineLimit(1)
 				}
+
+				Spacer()
+
+				// Right side - Participant avatars
+				participantAvatars
+			}
+			.padding(.horizontal, 16)
+			.padding(.vertical, 13)
+			.background(
+				RoundedRectangle(cornerRadius: 12)
+					.fill(color)
+					.shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
 			)
-			.overlay(
-				// Date number badge (positioned in top-right corner)
-				VStack {
-					HStack {
-						Spacer()
-						Text(dayNumber)
-							.font(.onestMedium(size: 8))
-							.foregroundColor(.black)
-							.padding(2)
-							.background(Color.white.opacity(0.9))
-							.clipShape(Circle())
-					}
-					.padding(.top, 2)
-					.padding(.trailing, 2)
-					Spacer()
-				}
-			)
+		}
+		.buttonStyle(PlainButtonStyle())
 	}
 
-	private var activityColor: Color {
-		// First check if activity has a custom color hex code
-		if let colorHexCode = activity.colorHexCode, !colorHexCode.isEmpty {
-			return Color(hex: colorHexCode)
+	private var subtitleText: String {
+		var parts: [String] = []
+
+		// Location
+		if let location = activity.location?.name {
+			parts.append(location)
 		}
 
-		// Fallback to activity color based on ID
-		guard let activityId = activity.activityId else {
-			return figmaCalendarDayIcon  // Default gray color matching Figma
+		// Date
+		if let startTime = activity.startTime {
+			let formatter = DateFormatter()
+			formatter.dateFormat = "MMMM d"
+			parts.append(formatter.string(from: startTime))
 		}
-		return getActivityColor(for: activityId)
+
+		return parts.joined(separator: " • ")
+	}
+
+	private var participantAvatars: some View {
+		let participants = activity.participantUsers ?? []
+		let displayCount = min(participants.count, 2)
+		let extraCount = participants.count - displayCount
+
+		return HStack(spacing: -8) {
+			// Show first 2 participant avatars
+			ForEach(0..<displayCount, id: \.self) { index in
+				let participant = participants[index]
+				avatarView(for: participant)
+			}
+
+			// Show +N count if there are more participants
+			if extraCount > 0 {
+				ZStack {
+					Circle()
+						.fill(Color.white)
+						.frame(width: 34, height: 34)
+
+					Text("+\(extraCount)")
+						.font(.system(size: 12, weight: .bold))
+						.foregroundColor(color)
+				}
+			}
+		}
+	}
+
+	@ViewBuilder
+	private func avatarView(for user: BaseUserDTO) -> some View {
+		if let profilePicture = user.profilePicture, !profilePicture.isEmpty {
+			if MockAPIService.isMocking {
+				Image(profilePicture)
+					.resizable()
+					.aspectRatio(contentMode: .fill)
+					.frame(width: 34, height: 34)
+					.clipShape(Circle())
+					.overlay(Circle().stroke(Color.white, lineWidth: 2))
+			} else {
+				AsyncImage(url: URL(string: profilePicture)) { phase in
+					switch phase {
+					case .success(let image):
+						image
+							.resizable()
+							.aspectRatio(contentMode: .fill)
+							.frame(width: 34, height: 34)
+							.clipShape(Circle())
+							.overlay(Circle().stroke(Color.white, lineWidth: 2))
+					default:
+						Circle()
+							.fill(Color.gray.opacity(0.3))
+							.frame(width: 34, height: 34)
+							.overlay(Circle().stroke(Color.white, lineWidth: 2))
+					}
+				}
+			}
+		} else {
+			Circle()
+				.fill(Color.gray.opacity(0.3))
+				.frame(width: 34, height: 34)
+				.overlay(Circle().stroke(Color.white, lineWidth: 2))
+		}
 	}
 }
 
