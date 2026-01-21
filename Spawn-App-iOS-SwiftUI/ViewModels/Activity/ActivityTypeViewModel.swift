@@ -20,6 +20,10 @@ final class ActivityTypeViewModel {
 	// Keep cancellables for Combine cache subscriptions
 	private var cancellables = Set<AnyCancellable>()
 
+	// Debug: Track instance for memory debugging
+	private let instanceId = UUID()
+	private static var instanceCount = 0
+
 	// MARK: - Helper Methods
 
 	/// Sets loading state
@@ -41,6 +45,11 @@ final class ActivityTypeViewModel {
 		self.userId = userId
 		self.dataService = dataService ?? DataService.shared
 
+		Self.instanceCount += 1
+		print(
+			"🟢 INIT ActivityTypeViewModel [instance: \(instanceId.uuidString.prefix(8))] - Total instances: \(Self.instanceCount)"
+		)
+
 		// Subscribe to cache updates for reactive updates (acceptable pattern per DataService guide)
 		AppCache.shared.activityTypesPublisher
 			.receive(on: DispatchQueue.main)
@@ -51,6 +60,13 @@ final class ActivityTypeViewModel {
 				}
 			}
 			.store(in: &cancellables)
+	}
+
+	deinit {
+		Self.instanceCount -= 1
+		print(
+			"🔴 DEINIT ActivityTypeViewModel [instance: \(instanceId.uuidString.prefix(8))] - Remaining instances: \(Self.instanceCount)"
+		)
 	}
 
 	// MARK: - Backend API Methods

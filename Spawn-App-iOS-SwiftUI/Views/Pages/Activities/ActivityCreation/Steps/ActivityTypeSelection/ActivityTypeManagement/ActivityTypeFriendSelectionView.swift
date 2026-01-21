@@ -1,5 +1,43 @@
 import SwiftUI
 
+// MARK: - Memory Debug (shared reference)
+private enum FriendSelectionMemoryDebug {
+	static func logMemory(context: String) {
+		var info = mach_task_basic_info()
+		var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+		let result = withUnsafeMutablePointer(to: &info) {
+			$0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+				task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+			}
+		}
+		if result == KERN_SUCCESS {
+			let usedMB = Double(info.resident_size) / 1024.0 / 1024.0
+			print("🧠 MEMORY [\(context)]: \(String(format: "%.2f", usedMB)) MB")
+		}
+	}
+
+	static let instanceCounter = InstanceCounter()
+
+	final class InstanceCounter: @unchecked Sendable {
+		private let lock = NSLock()
+		private var counts: [String: Int] = [:]
+
+		func increment(_ name: String) -> Int {
+			lock.lock()
+			defer { lock.unlock() }
+			counts[name, default: 0] += 1
+			return counts[name]!
+		}
+
+		func decrement(_ name: String) -> Int {
+			lock.lock()
+			defer { lock.unlock() }
+			counts[name, default: 1] -= 1
+			return counts[name]!
+		}
+	}
+}
+
 struct ActivityTypeFriendSelectionView: View {
 	@Environment(\.dismiss) private var dismiss
 	@EnvironmentObject var appCache: AppCache
@@ -10,7 +48,23 @@ struct ActivityTypeFriendSelectionView: View {
 	let activityTypeDTO: ActivityTypeDTO
 	let onComplete: (ActivityTypeDTO) -> Void
 
+	// Debug tracking
+	private let viewInstanceId = UUID()
+
+	init(activityTypeDTO: ActivityTypeDTO, onComplete: @escaping (ActivityTypeDTO) -> Void) {
+		self.activityTypeDTO = activityTypeDTO
+		self.onComplete = onComplete
+
+		let count = FriendSelectionMemoryDebug.instanceCounter.increment("ActivityTypeFriendSelectionView")
+		print(
+			"🟢 INIT ActivityTypeFriendSelectionView [instance: \(viewInstanceId.uuidString.prefix(8))] - Total instances: \(count)"
+		)
+		FriendSelectionMemoryDebug.logMemory(context: "ActivityTypeFriendSelectionView.init")
+	}
+
 	var body: some View {
+		let _ = print("🔄 BODY ActivityTypeFriendSelectionView [instance: \(viewInstanceId.uuidString.prefix(8))]")
+		let _ = FriendSelectionMemoryDebug.logMemory(context: "ActivityTypeFriendSelectionView.body")
 		ZStack {
 			// Background - now adaptive
 			universalBackgroundColor
@@ -73,6 +127,14 @@ struct ActivityTypeFriendSelectionView: View {
 				}
 				.disabled(isLoading)
 			}
+		}
+		.onAppear {
+			print("👁️ APPEAR ActivityTypeFriendSelectionView [instance: \(viewInstanceId.uuidString.prefix(8))]")
+			FriendSelectionMemoryDebug.logMemory(context: "ActivityTypeFriendSelectionView.onAppear")
+		}
+		.onDisappear {
+			print("👁️‍🗨️ DISAPPEAR ActivityTypeFriendSelectionView [instance: \(viewInstanceId.uuidString.prefix(8))]")
+			FriendSelectionMemoryDebug.logMemory(context: "ActivityTypeFriendSelectionView.onDisappear")
 		}
 	}
 

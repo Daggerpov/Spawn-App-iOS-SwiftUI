@@ -320,22 +320,35 @@ struct ActivityTypeEditView: View {
 
 	@ViewBuilder
 	private func makeNavigationDestination() -> some View {
+		let callId = UUID().uuidString.prefix(8)
+		let _ = print(
+			"🏗️ makeNavigationDestination CALLED [view: \(viewInstanceId.uuidString.prefix(8)), call: \(callId)]")
+		let _ = MemoryDebug.logMemory(context: "makeNavigationDestination")
+
 		// Create the activity type DTO once when building the view
 		let activityType = createUpdatedActivityType()
 		// Capture viewModel explicitly to avoid issues with @State capture
 		let vm = viewModel
 		// Capture dismiss action to avoid retaining self in the closure
 		let dismissAction = dismiss
+
+		let _ = print("🏗️ Creating ActivityTypeFriendSelectionView [call: \(callId)]")
+
 		ActivityTypeFriendSelectionView(
 			activityTypeDTO: activityType,
 			onComplete: { finalActivityType in
+				print("✅ onComplete CALLED [call: \(callId)]")
+				MemoryDebug.logMemory(context: "onComplete called")
 				// Save the activity type with selected friends using direct API call
 				Task {
+					print("📡 Starting createActivityType task [call: \(callId)]")
 					await vm.createActivityType(finalActivityType)
+					print("📡 Finished createActivityType task [call: \(callId)]")
 					// Dismiss the edit view after successful creation
 					// Note: ActivityTypeFriendSelectionView handles its own dismiss,
 					// this dismisses the parent ActivityTypeEditView sheet
 					await MainActor.run {
+						print("🚪 Calling dismissAction [call: \(callId)]")
 						dismissAction()
 					}
 				}
