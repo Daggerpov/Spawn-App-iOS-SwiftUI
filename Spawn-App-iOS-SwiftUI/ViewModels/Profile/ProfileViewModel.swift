@@ -8,7 +8,7 @@ final class ProfileViewModel {
 	var userInterests: [String] = []
 	var originalUserInterests: [String] = []  // Backup for cancel functionality
 	var userSocialMedia: UserSocialMediaDTO?
-	var userProfileInfo: UserProfileInfoDTO?
+	var userProfileInfo: BaseUserDTO?
 	var isLoadingStats: Bool = false
 	var isLoadingInterests: Bool = false
 	var isLoadingSocialMedia: Bool = false
@@ -237,7 +237,7 @@ final class ProfileViewModel {
 		self.isLoadingProfileInfo = true
 
 		// Use centralized DataType configuration
-		let result: DataResult<UserProfileInfoDTO> = await dataService.read(
+		let result: DataResult<BaseUserDTO> = await dataService.read(
 			.profileInfo(userId: userId, requestingUserId: nil))
 
 		switch result {
