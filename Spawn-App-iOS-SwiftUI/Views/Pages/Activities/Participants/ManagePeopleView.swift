@@ -101,7 +101,10 @@ struct ManagePeopleView: View {
 		.onDisappear {
 			// Only update the activity creation view model if we're in activity creation mode
 			if activityTypeDTO == nil, let friendsVM = friendsViewModel {
-				let selectedFriendObjects = friendsVM.friends.filter { selectedFriends.contains($0.id) }
+				// Convert FullFriendUserDTO to MinimalFriendDTO to reduce memory usage
+				let selectedFriendObjects = friendsVM.friends
+					.filter { selectedFriends.contains($0.id) }
+					.map { MinimalFriendDTO.from($0) }
 				activityCreationViewModel.selectedFriends = selectedFriendObjects
 			}
 			// For activity type management, changes are saved immediately on selection
@@ -329,10 +332,10 @@ struct ManagePeopleView: View {
 		guard let friendsVM = friendsViewModel, let activityTypeVM = activityTypeViewModel else { return }
 		isLoading = true
 
-		// Create updated associated friends list
+		// Create updated associated friends list using MinimalFriendDTO for memory efficiency
 		let updatedAssociatedFriends = friendsVM.friends
 			.filter { selectedFriends.contains($0.id) }
-			.map { $0.asBaseUser }
+			.map { MinimalFriendDTO.from($0) }
 
 		// Create updated activity type DTO
 		let updatedActivityTypeDTO = ActivityTypeDTO(

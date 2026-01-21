@@ -36,8 +36,13 @@ enum DataType {
 
 	// MARK: - Friends
 
-	/// All friends for a user
+	/// All friends for a user (full DTOs with bio, email, etc.)
 	case friends(userId: UUID)
+
+	/// Minimal friends for a user (optimized for friend selection lists)
+	/// Only includes: id, username, name, profilePicture
+	/// Use this for activity creation and activity type management to reduce memory usage
+	case minimalFriends(userId: UUID)
 
 	/// Recommended friends for a user
 	case recommendedFriends(userId: UUID)
@@ -126,6 +131,8 @@ enum DataType {
 		// Friends
 		case .friends(let userId):
 			return "users/friends/\(userId)"
+		case .minimalFriends(let userId):
+			return "users/friends-minimal/\(userId)"
 		case .recommendedFriends(let userId):
 			return "users/recommended-friends/\(userId)"
 		case .friendRequests(let userId):
@@ -196,6 +203,8 @@ enum DataType {
 		// Friends
 		case .friends(let userId):
 			return "friends-\(userId)"
+		case .minimalFriends(let userId):
+			return "minimalFriends-\(userId)"
 		case .recommendedFriends(let userId):
 			return "recommendedFriends-\(userId)"
 		case .friendRequests(let userId):
@@ -332,6 +341,8 @@ enum DataType {
 			return "Activity Chats"
 		case .friends:
 			return "Friends"
+		case .minimalFriends:
+			return "Minimal Friends"
 		case .recommendedFriends:
 			return "Recommended Friends"
 		case .friendRequests:
@@ -522,6 +533,13 @@ extension DataType {
 			return UserDictionaryCacheConfig<[FullFriendUserDTO]>(
 				dictionary: { $0.friends },
 				updater: { appCache in appCache.updateFriendsForUser },
+				userId: userId
+			)
+
+		case .minimalFriends(let userId):
+			return UserDictionaryCacheConfig<[MinimalFriendDTO]>(
+				dictionary: { $0.minimalFriends },
+				updater: { appCache in appCache.updateMinimalFriendsForUser },
 				userId: userId
 			)
 

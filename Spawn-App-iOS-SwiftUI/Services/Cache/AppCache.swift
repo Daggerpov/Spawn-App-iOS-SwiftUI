@@ -61,6 +61,11 @@ final class AppCache: ObservableObject {
 		friendshipCacheService.friends
 	}
 
+	/// Minimal friends for selection lists (reduced memory usage)
+	var minimalFriends: [UUID: [MinimalFriendDTO]] {
+		friendshipCacheService.minimalFriends
+	}
+
 	var recommendedFriends: [UUID: [RecommendedFriendUserDTO]] {
 		friendshipCacheService.recommendedFriends
 	}
@@ -76,6 +81,10 @@ final class AppCache: ObservableObject {
 	// Expose publishers for SwiftUI subscriptions
 	var friendsPublisher: Published<[UUID: [FullFriendUserDTO]]>.Publisher {
 		friendshipCacheService.$friends
+	}
+
+	var minimalFriendsPublisher: Published<[UUID: [MinimalFriendDTO]]>.Publisher {
+		friendshipCacheService.$minimalFriends
 	}
 
 	var recommendedFriendsPublisher: Published<[UUID: [RecommendedFriendUserDTO]]>.Publisher {
@@ -304,6 +313,20 @@ final class AppCache: ObservableObject {
 
 	func clearFriendsForUser(_ userId: UUID) {
 		friendshipCacheService.clearFriendsForUser(userId)
+	}
+
+	// MARK: - Minimal Friends (Optimized for friend selection lists)
+
+	func getCurrentUserMinimalFriends() -> [MinimalFriendDTO] {
+		return friendshipCacheService.getCurrentUserMinimalFriends()
+	}
+
+	func updateMinimalFriendsForUser(_ newMinimalFriends: [MinimalFriendDTO], userId: UUID) {
+		friendshipCacheService.updateMinimalFriendsForUser(newMinimalFriends, userId: userId)
+	}
+
+	func clearMinimalFriendsForUser(_ userId: UUID) {
+		friendshipCacheService.clearMinimalFriendsForUser(userId)
 	}
 
 	func getCurrentUserActivities() -> [FullFeedActivityDTO] {

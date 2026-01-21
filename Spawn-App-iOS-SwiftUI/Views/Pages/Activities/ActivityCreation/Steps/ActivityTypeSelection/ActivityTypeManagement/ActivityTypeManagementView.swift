@@ -8,7 +8,7 @@ struct ActivityTypeManagementView: View {
 	@State private var showingManagePeople = false
 	@State private var showingEditView = false
 	@State private var navigateToProfile = false
-	@State private var selectedUserForProfile: BaseUserDTO?
+	@State private var selectedUserForProfile: MinimalFriendDTO?
 
 	// Store background refresh task so we can cancel it on disappear
 	@State private var backgroundRefreshTask: Task<Void, Never>?
@@ -289,7 +289,7 @@ struct ActivityTypeManagementView: View {
 		}
 	}
 
-	private func peopleRowView(friend: BaseUserDTO) -> some View {
+	private func peopleRowView(friend: MinimalFriendDTO) -> some View {
 		PeopleRowView(friend: friend, activityType: displayActivityType) { user in
 			selectedUserForProfile = user
 			navigateToProfile = true
