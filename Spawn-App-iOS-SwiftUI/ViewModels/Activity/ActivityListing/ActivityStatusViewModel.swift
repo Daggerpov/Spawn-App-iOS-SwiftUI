@@ -17,6 +17,8 @@ final class ActivityStatusViewModel {
 	@ObservationIgnored private nonisolated(unsafe) var timer: Timer?
 	private let activityStartTime: Date
 	private let activityDuration: TimeInterval  // in seconds
+	private let isExpired: Bool
+	private let hasEndTime: Bool
 	private var refresh: Double = -1
 	private var previousRefresh: Double?
 
@@ -28,9 +30,13 @@ final class ActivityStatusViewModel {
 		}
 		if let activityEnd: Date = activity.endTime {
 			self.activityDuration = activityEnd.timeIntervalSince(activityStartTime)
+			self.hasEndTime = true
 		} else {
 			self.activityDuration = TimeInterval.greatestFiniteMagnitude
+			self.hasEndTime = false
 		}
+		// Use the server-provided isExpired flag as the source of truth
+		self.isExpired = activity.isExpired ?? false
 		updateStatus()
 		startTimer()
 	}
@@ -52,13 +58,34 @@ final class ActivityStatusViewModel {
 	}
 
 	private func updateStatus() {
+		// Check if activity is marked as expired by the server first
+		// This is the source of truth for expiration status
+		if isExpired {
+			status = .past
+			refresh = -1
+			return
+		}
+
 		let now = Date()
 		let timeUntilStart: TimeInterval = activityStartTime.timeIntervalSince(now)
 		let timeAfterStart: TimeInterval = now.timeIntervalSince(activityStartTime)
-		let todayComponents = Calendar.current.dateComponents([.day], from: now)
+		let calendar = Calendar.current
+		let todayComponents = calendar.dateComponents([.day, .hour], from: now)
 		let today = todayComponents.day ?? 1
 		let hourOfToday = todayComponents.hour ?? 1
-		let activityDay = Calendar.current.dateComponents([.day], from: activityStartTime).day ?? 1
+		let activityDay = calendar.component(.day, from: activityStartTime)
+
+		// For activities without an end time that started on a different day, treat as past
+		// This handles indefinite activities from previous days
+		if !hasEndTime && timeAfterStart > 0 {
+			let activityDate = calendar.startOfDay(for: activityStartTime)
+			let todayDate = calendar.startOfDay(for: now)
+			if activityDate < todayDate {
+				status = .past
+				refresh = -1
+				return
+			}
+		}
 
 		if timeAfterStart >= 0 && timeAfterStart <= activityDuration {
 			// Activity is currently happening

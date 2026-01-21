@@ -66,6 +66,7 @@ struct ManagePeopleView: View {
 					Color.clear
 				}
 			}
+			.ignoresSafeArea(.keyboard, edges: .bottom)  // Prevent keyboard from pushing header up
 		}
 		.navigationBarHidden(true)
 		.task {
@@ -100,7 +101,10 @@ struct ManagePeopleView: View {
 		.onDisappear {
 			// Only update the activity creation view model if we're in activity creation mode
 			if activityTypeDTO == nil, let friendsVM = friendsViewModel {
-				let selectedFriendObjects = friendsVM.friends.filter { selectedFriends.contains($0.id) }
+				// Convert FullFriendUserDTO to MinimalFriendDTO to reduce memory usage
+				let selectedFriendObjects = friendsVM.friends
+					.filter { selectedFriends.contains($0.id) }
+					.map { MinimalFriendDTO.from($0) }
 				activityCreationViewModel.selectedFriends = selectedFriendObjects
 			}
 			// For activity type management, changes are saved immediately on selection
@@ -109,26 +113,27 @@ struct ManagePeopleView: View {
 
 	// MARK: - Header View
 	private var headerView: some View {
-		HStack(spacing: 32) {
-			// Back button
-			Button(action: {
+		HStack {
+			UnifiedBackButton {
 				dismiss()
-			}) {
-				Image(systemName: "chevron.left")
-					.font(.system(size: 20, weight: .semibold))
-					.foregroundColor(universalAccentColor)
 			}
 
-			// Title
+			Spacer()
+
 			Text("Manage People - \(activityTitle)")
 				.font(.onestSemiBold(size: 20))
 				.foregroundColor(universalAccentColor)
 				.lineLimit(1)
 
-			// Spacer to balance the layout
 			Spacer()
+
+			// Invisible chevron to balance the back button
+			Image(systemName: "chevron.left")
+				.font(.system(size: 20, weight: .semibold))
+				.foregroundColor(.clear)
 		}
-		.padding(.horizontal, 24)
+		.padding(.horizontal, 25)
+		.padding(.vertical, 12)
 	}
 
 	// MARK: - Search Bar View
@@ -327,10 +332,10 @@ struct ManagePeopleView: View {
 		guard let friendsVM = friendsViewModel, let activityTypeVM = activityTypeViewModel else { return }
 		isLoading = true
 
-		// Create updated associated friends list
+		// Create updated associated friends list using MinimalFriendDTO for memory efficiency
 		let updatedAssociatedFriends = friendsVM.friends
 			.filter { selectedFriends.contains($0.id) }
-			.map { $0.asBaseUser }
+			.map { MinimalFriendDTO.from($0) }
 
 		// Create updated activity type DTO
 		let updatedActivityTypeDTO = ActivityTypeDTO(

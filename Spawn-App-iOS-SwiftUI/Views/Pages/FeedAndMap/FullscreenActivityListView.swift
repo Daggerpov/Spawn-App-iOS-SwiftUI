@@ -14,22 +14,30 @@ struct FullscreenActivityListView: View {
 	@Environment(\.dismiss) private var dismiss
 
 	var body: some View {
-		VStack {
+		VStack(spacing: 0) {
+			// Header
 			HStack {
-				Button(action: {
+				UnifiedBackButton {
 					dismiss()
-				}) {
-					Image(systemName: "chevron.left")
-						.foregroundColor(universalAccentColor)
 				}
-				.padding(.leading)
-				Text("All Activities")
-					.font(.onestSemiBold(size: 16))
-					.foregroundColor(figmaBlack400)
+
 				Spacer()
+
+				Text("All Activities")
+					.font(.onestSemiBold(size: 20))
+					.foregroundColor(universalAccentColor)
+
+				Spacer()
+
+				// Invisible chevron to balance the back button
+				Image(systemName: "chevron.left")
+					.font(.system(size: 20, weight: .semibold))
+					.foregroundColor(.clear)
 			}
+			.padding(.horizontal, 25)
+			.padding(.vertical, 12)
+
 			ActivityListView(viewModel: viewModel, user: user, callback: callback)
 		}
-		.padding(.top)
 	}
 }

@@ -2,7 +2,7 @@ import SwiftUI
 
 // Content view that contains the actual menu items for ActivityTypeFriendMenuView
 struct MenuContent: View {
-	let friend: BaseUserDTO
+	let friend: MinimalFriendDTO
 	let activityType: ActivityTypeDTO
 	let navigateToProfile: () -> Void
 	let removeFromType: () -> Void

@@ -15,7 +15,6 @@ struct ActivityCreationView: View {
 	@State private var currentStep: ActivityCreationStep
 	@State private var selectedDuration: ActivityDuration = .indefinite
 	@State private var showLocationPicker = false
-	@State private var showShareSheet = false
 
 	// Time selection state - now initialized with calculated default values
 	@State private var selectedHour: Int
@@ -153,9 +152,8 @@ struct ActivityCreationView: View {
 			}
 			// If we're starting fresh (no pre-selected type), ensure absolutely clean state
 			else if currentStep == .activityType && viewModel.selectedActivityType == nil {
-				// First try force reset
-				ActivityCreationViewModel.forceReset()
-				// Then full reinitialization to be absolutely sure
+				// Only call reInitialize() once - it handles all reset logic including friends loading
+				// Note: forceReset() was removed as it redundantly triggers onChange and friend loading
 				ActivityCreationViewModel.reInitialize()
 			}
 		}
@@ -168,7 +166,6 @@ struct ActivityCreationView: View {
 				activityTitle = ""
 				selectedDuration = .indefinite
 				showLocationPicker = false
-				showShareSheet = false
 
 				// Reset time to next interval
 				let nextInterval = Self.calculateNextFifteenMinuteInterval()
@@ -201,7 +198,6 @@ struct ActivityCreationView: View {
 				}
 				selectedDuration = .indefinite
 				showLocationPicker = false
-				showShareSheet = false
 
 				// Reset time to next interval
 				let nextInterval = Self.calculateNextFifteenMinuteInterval()
@@ -215,6 +211,9 @@ struct ActivityCreationView: View {
 			if newActivityType != nil {
 				viewModel.updateActivityType()
 			}
+
+			// Filter friends based on the selected activity type
+			viewModel.onActivityTypeChanged()
 
 			// If we're at activityType step and an activity type gets selected, skip to dateTime
 			if currentStep == .activityType && newActivityType != nil {
@@ -303,6 +302,8 @@ struct ActivityCreationView: View {
 						selectedTab = TabType.home
 					} else {
 						// Normal flow from activities tab - go to activity type selection
+						// Clear the selected activity type so the user can re-select the same one
+						viewModel.selectedActivityType = nil
 						currentStep = currentStep.previous()
 					}
 				}
@@ -355,7 +356,6 @@ struct ActivityCreationView: View {
 			)
 		case .confirmation:
 			ActivityConfirmationView(
-				showShareSheet: $showShareSheet,
 				onClose: {
 					// Handle tutorial completion
 					if case .activityCreation = tutorialViewModel.tutorialState {
@@ -454,27 +454,32 @@ enum ActivityDuration: CaseIterable {
 		let hardcodedActivityTypes = [
 			ActivityTypeDTO(
 				id: UUID(), title: "Chill", icon: "🛋️",
-				associatedFriends: [BaseUserDTO.danielLee, BaseUserDTO.danielAgapov], orderNum: 0, isPinned: false),
+				associatedFriends: [MinimalFriendDTO.danielLee, MinimalFriendDTO.danielAgapov], orderNum: 0,
+				isPinned: false),
 			ActivityTypeDTO(
 				id: UUID(), title: "Food & Drink", icon: "🍽️",
-				associatedFriends: [BaseUserDTO.danielLee, BaseUserDTO.haley, BaseUserDTO.danielAgapov], orderNum: 1,
+				associatedFriends: [MinimalFriendDTO.danielLee, MinimalFriendDTO.haley, MinimalFriendDTO.danielAgapov],
+				orderNum: 1,
 				isPinned: true),
 			ActivityTypeDTO(
 				id: UUID(), title: "Active", icon: "🏃",
-				associatedFriends: [BaseUserDTO.haley, BaseUserDTO.danielLee, BaseUserDTO.danielAgapov], orderNum: 2,
+				associatedFriends: [MinimalFriendDTO.haley, MinimalFriendDTO.danielLee, MinimalFriendDTO.danielAgapov],
+				orderNum: 2,
 				isPinned: false),
 			ActivityTypeDTO(
-				id: UUID(), title: "Study", icon: "📚", associatedFriends: BaseUserDTO.mockUsers, orderNum: 3,
+				id: UUID(), title: "Study", icon: "📚", associatedFriends: MinimalFriendDTO.mockUsers, orderNum: 3,
 				isPinned: false),
 			ActivityTypeDTO(
 				id: UUID(), title: "Grind", icon: "💼",
-				associatedFriends: [BaseUserDTO.danielLee, BaseUserDTO.danielAgapov], orderNum: 4, isPinned: false),
+				associatedFriends: [MinimalFriendDTO.danielLee, MinimalFriendDTO.danielAgapov], orderNum: 4,
+				isPinned: false),
 			ActivityTypeDTO(
-				id: UUID(), title: "Gaming", icon: "🎮", associatedFriends: [BaseUserDTO.danielLee, BaseUserDTO.haley],
+				id: UUID(), title: "Gaming", icon: "🎮",
+				associatedFriends: [MinimalFriendDTO.danielLee, MinimalFriendDTO.haley],
 				orderNum: 5, isPinned: false),
 			ActivityTypeDTO(
 				id: UUID(), title: "Music", icon: "🎵",
-				associatedFriends: [BaseUserDTO.haley, BaseUserDTO.danielAgapov], orderNum: 6, isPinned: true),
+				associatedFriends: [MinimalFriendDTO.haley, MinimalFriendDTO.danielAgapov], orderNum: 6, isPinned: true),
 		]
 
 		// Set activity types for the preview user (danielAgapov)

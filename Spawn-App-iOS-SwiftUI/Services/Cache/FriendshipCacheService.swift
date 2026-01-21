@@ -16,6 +16,7 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 
 	// MARK: - Cached Data
 	@Published var friends: [UUID: [FullFriendUserDTO]] = [:]
+	@Published var minimalFriends: [UUID: [MinimalFriendDTO]] = [:]  // Lightweight friend data for selection lists
 	@Published var recommendedFriends: [UUID: [RecommendedFriendUserDTO]] = [:]
 	@Published var friendRequests: [UUID: [FetchFriendRequestDTO]] = [:]
 	@Published var sentFriendRequests: [UUID: [FetchSentFriendRequestDTO]] = [:]
@@ -24,6 +25,7 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 	// MARK: - Constants
 	private enum CacheKeys {
 		static let friends = "friends"
+		static let minimalFriends = "minimalFriends"
 		static let recommendedFriends = "recommendedFriends"
 		static let friendRequests = "friendRequests"
 		static let sentFriendRequests = "sentFriendRequests"
@@ -50,7 +52,7 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 			return []
 		}
 		let userFriends = friends[userId] ?? []
-		print("📦 [FRIENDSHIP-CACHE] getCurrentUserFriends returned \(userFriends.count) friends for user \(userId)")
+		// Note: Removed verbose logging here as this method is called frequently during view updates
 		return userFriends
 	}
 
@@ -89,7 +91,61 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 		}
 	}
 
-	/// Refresh friends from the backend
+	// MARK: - Minimal Friends Methods (Optimized for friend selection lists)
+
+	/// Get minimal friends for the current user (lightweight data for selection lists)
+	func getCurrentUserMinimalFriends() -> [MinimalFriendDTO] {
+		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+			return []
+		}
+		return minimalFriends[userId] ?? []
+	}
+
+	/// Update minimal friends for a specific user
+	func updateMinimalFriendsForUser(_ newMinimalFriends: [MinimalFriendDTO], userId: UUID) {
+		minimalFriends[userId] = newMinimalFriends
+		setLastCheckedForUser(userId, cacheType: CacheKeys.minimalFriends, date: Date())
+		saveToDisk()
+
+		// Preload profile pictures for minimal friends
+		if !newMinimalFriends.isEmpty {
+			Task {
+				await preloadProfilePicturesForMinimalFriends(for: [userId: newMinimalFriends])
+			}
+		}
+	}
+
+	/// Clear minimal friends for a specific user
+	func clearMinimalFriendsForUser(_ userId: UUID) {
+		minimalFriends.removeValue(forKey: userId)
+		saveToDisk()
+	}
+
+	/// Preload profile pictures for minimal friends
+	private func preloadProfilePicturesForMinimalFriends(for minimalFriendsDict: [UUID: [MinimalFriendDTO]]) async {
+		let profilePictureCache = ProfilePictureCache.shared
+
+		// Use withTaskGroup to preload all profile pictures in parallel
+		await withTaskGroup(of: Void.self) { group in
+			for (_, friendsList) in minimalFriendsDict {
+				for friend in friendsList {
+					guard let profilePictureUrl = friend.profilePicture,
+						!profilePictureUrl.isEmpty
+					else { continue }
+
+					group.addTask {
+						_ = await profilePictureCache.getCachedImageWithRefresh(
+							for: friend.id,
+							from: profilePictureUrl,
+							maxAge: 6 * 60 * 60  // 6 hours
+						)
+					}
+				}
+			}
+		}
+	}
+
+	/// Refresh minimal friends from the backend
 	func refreshFriends() async {
 		let startTime = Date()
 

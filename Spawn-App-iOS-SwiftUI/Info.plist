@@ -33,6 +33,10 @@
 	<string>Spawn uses your location to show nearby activities on the map and as an initial location for new activities you create and share with friends.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Spawn needs access to your contacts to help you find friends who are already using the app.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>comgooglemaps</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

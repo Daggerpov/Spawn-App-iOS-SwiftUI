@@ -384,10 +384,6 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 					let userId = urlComponents[usersIndex + 1]
 					let username = getUsernameFromMockUsers(userId)
 
-					// Return profile info with dateCreated set to a reasonable time in the past
-					// For mock users, let's say they were created 6 months ago
-					let sixMonthsAgo = Calendar.current.date(byAdding: .month, value: -6, to: Date()) ?? Date()
-
 					// Find the corresponding mock user
 					let mockUsers = [
 						BaseUserDTO.danielAgapov,
@@ -396,27 +392,12 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 					]
 
 					if let mockUser = mockUsers.first(where: { $0.username == username }) {
-						return UserProfileInfoDTO(
-							userId: mockUser.id,
-							name: mockUser.name ?? "",
-							username: mockUser.username ?? "",
-							bio: mockUser.bio,
-							profilePicture: mockUser.profilePicture,
-							dateCreated: sixMonthsAgo
-						) as! T
+						return mockUser as! T
 					}
 				}
 
 				// Fallback for current user or unknown user
-				let sixMonthsAgo = Calendar.current.date(byAdding: .month, value: -6, to: Date()) ?? Date()
-				return UserProfileInfoDTO(
-					userId: UUID(),
-					name: "Daniel Agapov",
-					username: "daggerpov",
-					bio: "Spawn Creator",
-					profilePicture: "Daniel_Agapov_pfp",
-					dateCreated: sixMonthsAgo
-				) as! T
+				return BaseUserDTO.danielAgapov as! T
 			}
 
 			// Fetch user social media

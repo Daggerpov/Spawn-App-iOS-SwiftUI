@@ -38,6 +38,9 @@ struct MyProfileView: View {
 	// Add environment object for navigation
 	@Environment(\.presentationMode) var presentationMode
 
+	// Use shared navigation manager for pop-to-root functionality
+	var tabNavigationManager = TabNavigationManager.shared
+
 	init(user: BaseUserDTO, profileViewModel: ProfileViewModel) {
 		self.user = user
 		self.profileViewModel = profileViewModel
@@ -177,6 +180,7 @@ struct MyProfileView: View {
 				)
 				.background(universalBackgroundColor)
 		}
+		.id(tabNavigationManager.profileNavigationId)
 	}
 
 	private var profileWithOverlay: some View {

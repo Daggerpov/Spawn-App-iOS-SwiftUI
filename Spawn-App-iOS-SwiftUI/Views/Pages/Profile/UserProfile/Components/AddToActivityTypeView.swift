@@ -348,30 +348,29 @@ final class AddToActivityTypeViewModel: ObservableObject {
 
 		for activityType in activityTypes {
 			if selectedActivityTypeIds.contains(activityType.id) {
-				// Convert Nameable to BaseUserDTO
-				let userDTO: BaseUserDTO
-				if let baseUser = userToAdd as? BaseUserDTO {
-					userDTO = baseUser
+				// Convert Nameable to MinimalFriendDTO
+				let minimalFriend: MinimalFriendDTO
+				if let existingMinimal = userToAdd as? MinimalFriendDTO {
+					minimalFriend = existingMinimal
+				} else if let baseUser = userToAdd as? BaseUserDTO {
+					minimalFriend = MinimalFriendDTO.from(baseUser)
 				} else {
-					// Create a BaseUserDTO from the Nameable properties
-					// For users that aren't BaseUserDTO, we'll use default values for missing properties
-					userDTO = BaseUserDTO(
+					// Create a MinimalFriendDTO from the Nameable properties
+					minimalFriend = MinimalFriendDTO(
 						id: userToAdd.id,
 						username: userToAdd.username,
-						profilePicture: userToAdd.profilePicture,
 						name: userToAdd.name,
-						bio: nil,  // Default value since it's not part of Nameable
-						email: ""  // Default value since it's not part of Nameable
+						profilePicture: userToAdd.profilePicture
 					)
 				}
 
 				// Add user to associated friends if not already present
-				if !activityType.associatedFriends.contains(where: { $0.id == userDTO.id }) {
+				if !activityType.associatedFriends.contains(where: { $0.id == minimalFriend.id }) {
 					let updatedActivityType = ActivityTypeDTO(
 						id: activityType.id,
 						title: activityType.title,
 						icon: activityType.icon,
-						associatedFriends: activityType.associatedFriends + [userDTO],
+						associatedFriends: activityType.associatedFriends + [minimalFriend],
 						orderNum: activityType.orderNum,
 						isPinned: activityType.isPinned
 					)

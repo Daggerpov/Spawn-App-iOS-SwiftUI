@@ -100,10 +100,8 @@ struct ContentView: View {
 						)
 						.disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
 					case .profile:
-						NavigationStack {
-							MyProfileView(user: user, profileViewModel: profileVM)
-						}
-						.disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
+						MyProfileView(user: user, profileViewModel: profileVM)
+							.disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
 					}
 				}
 			} else {

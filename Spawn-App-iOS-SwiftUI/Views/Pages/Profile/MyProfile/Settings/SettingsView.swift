@@ -8,28 +8,25 @@ struct SettingsView: View {
 		VStack(spacing: 0) {
 			// Header
 			HStack {
-				Button(action: {
+				UnifiedBackButton {
 					presentationMode.wrappedValue.dismiss()
-				}) {
-					Image(systemName: "chevron.left")
-						.foregroundColor(universalAccentColor)
-						.font(.title3)
 				}
 
 				Spacer()
 
 				Text("Settings & Preferences")
-					.font(.headline)
+					.font(.onestSemiBold(size: 20))
 					.foregroundColor(universalAccentColor)
 
 				Spacer()
 
-				// Empty view for balance
-				Color.clear.frame(width: 24, height: 24)
+				// Invisible chevron to balance the back button
+				Image(systemName: "chevron.left")
+					.font(.system(size: 20, weight: .semibold))
+					.foregroundColor(.clear)
 			}
-			.padding(.horizontal)
-			.padding(.top, 8)
-			.padding(.bottom, 16)
+			.padding(.horizontal, 25)
+			.padding(.vertical, 12)
 
 			// Settings sections
 			ScrollView {

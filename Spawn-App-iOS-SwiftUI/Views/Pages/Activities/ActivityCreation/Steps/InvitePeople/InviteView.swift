@@ -216,7 +216,7 @@ struct InviteView: View {
 								FriendListRow(
 									friend: friend,
 									isSelected: activityCreationViewModel.selectedFriends
-										.contains(friend)
+										.contains(where: { $0.id == friend.id })
 								)
 								.onTapGesture {
 									toggleFriendSelection(friend)
@@ -234,12 +234,12 @@ struct InviteView: View {
 	}
 
 	private func toggleFriendSelection(_ friend: FullFriendUserDTO) {
-		if activityCreationViewModel.selectedFriends.contains(friend) {
+		if activityCreationViewModel.selectedFriends.contains(where: { $0.id == friend.id }) {
 			activityCreationViewModel.selectedFriends.removeAll {
 				$0.id == friend.id
 			}
 		} else {
-			activityCreationViewModel.selectedFriends.append(friend)
+			activityCreationViewModel.selectedFriends.append(MinimalFriendDTO.from(friend))
 		}
 	}
 }

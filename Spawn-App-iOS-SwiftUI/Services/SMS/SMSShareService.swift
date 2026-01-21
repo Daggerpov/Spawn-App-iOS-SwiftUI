@@ -51,7 +51,7 @@ final class SMSShareService: NSObject, ObservableObject {
 		let creatorFirstName = FormatterService.shared.formatFirstName(user: activity.creatorUser)
 		let activityTitle = activity.title ?? "an activity"
 		let locationName = activity.location?.name ?? "a location"
-		let timeUntil = FormatterService.shared.timeUntil(activity.startTime)
+		let timeUntil = FormatterService.shared.timeUntil(activity.startTime, endDate: activity.endTime)
 
 		// Main invitation message (removed "Reply '1'..." sentence)
 		let invitationMessage =

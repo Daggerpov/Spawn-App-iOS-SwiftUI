@@ -21,7 +21,8 @@ final class ActivityCreationViewModel {
 	var selectedDuration: ActivityDuration = .indefinite
 	var selectedLocation: LocationDTO?
 
-	var selectedFriends: [FullFriendUserDTO] = []
+	/// Selected friends for activity invitation (uses MinimalFriendDTO to reduce memory usage)
+	var selectedFriends: [MinimalFriendDTO] = []
 
 	// MARK: - Constants
 	private enum TimeConstants {
@@ -40,6 +41,9 @@ final class ActivityCreationViewModel {
 
 	// Loading state
 	var isCreatingActivity: Bool = false
+
+	// Guard to prevent redundant friend loading
+	private var isLoadingFriends: Bool = false
 
 	// Edit state
 	var isEditingExistingActivity: Bool = false
@@ -127,6 +131,28 @@ final class ActivityCreationViewModel {
 		// Instead of creating a new instance, reset the existing one and set the type
 		shared.resetToDefaults()
 		shared.selectedActivityType = activityTypeDTO
+
+		// If activity type is selected, filter friends to only those in the activity type
+		if let activityType = activityTypeDTO {
+			shared.filterFriendsToActivityType(activityType)
+		}
+	}
+
+	/// Filter selectedFriends to only include friends from the activity type's associatedFriends
+	private func filterFriendsToActivityType(_ activityType: ActivityTypeDTO) {
+		let activityTypeFriendIds = Set(activityType.associatedFriends.map { $0.id })
+		selectedFriends = selectedFriends.filter { activityTypeFriendIds.contains($0.id) }
+	}
+
+	/// Called when user selects/changes an activity type via the UI
+	/// Filters friends to only those in the activity type, or reloads all friends if deselected
+	func onActivityTypeChanged() {
+		if let activityType = selectedActivityType {
+			filterFriendsToActivityType(activityType)
+		} else {
+			// If activity type was deselected, reload all friends
+			loadAllFriendsAsSelected()
+		}
 	}
 
 	// Method to initialize with existing activity data for editing
@@ -204,6 +230,7 @@ final class ActivityCreationViewModel {
 		isFormValid = false
 		isCreatingActivity = false
 		isEditingExistingActivity = false
+		isLoadingFriends = false
 
 		// Reset change tracking properties
 		originalTitle = nil
@@ -260,8 +287,14 @@ final class ActivityCreationViewModel {
 		}
 	}
 
-	// Load all friends using DataService
+	// Load all friends using DataService (uses minimal DTOs to reduce memory usage)
 	private func loadAllFriends() async {
+		// Guard against redundant loading - prevents infinite loops
+		guard !isLoadingFriends else {
+			print("🔍 DEBUG: loadAllFriends() skipped - already loading")
+			return
+		}
+
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
 			await MainActor.run {
 				selectedFriends = []
@@ -269,16 +302,27 @@ final class ActivityCreationViewModel {
 			return
 		}
 
-		// Use DataService with cache-first policy
-		let result: DataResult<[FullFriendUserDTO]> = await dataService.read(
-			.friends(userId: userId),
-			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		isLoadingFriends = true
+		defer { isLoadingFriends = false }
+
+		// Use DataService with cache-first policy but NO background refresh
+		// Background refresh can cause feedback loops when combined with observation
+		// Using minimalFriends endpoint to reduce memory usage
+		let result: DataResult<[MinimalFriendDTO]> = await dataService.read(
+			.minimalFriends(userId: userId),
+			cachePolicy: .cacheFirst(backgroundRefresh: false)
 		)
 
 		switch result {
 		case .success(let friends, _):
 			await MainActor.run {
-				selectedFriends = friends
+				// If an activity type is already selected, filter friends to only those in the activity type
+				if let activityType = selectedActivityType {
+					let activityTypeFriendIds = Set(activityType.associatedFriends.map { $0.id })
+					selectedFriends = friends.filter { activityTypeFriendIds.contains($0.id) }
+				} else {
+					selectedFriends = friends
+				}
 			}
 
 		case .failure(let error):
@@ -305,15 +349,13 @@ final class ActivityCreationViewModel {
 		}
 	}
 
-	/// Convert BaseUserDTO to FullFriendUserDTO
-	private static func convertToFriendDTO(_ user: BaseUserDTO) -> FullFriendUserDTO {
-		return FullFriendUserDTO(
+	/// Convert BaseUserDTO to MinimalFriendDTO (drops bio and email to save memory)
+	private static func convertToFriendDTO(_ user: BaseUserDTO) -> MinimalFriendDTO {
+		return MinimalFriendDTO(
 			id: user.id,
 			username: user.username,
-			profilePicture: user.profilePicture,
 			name: user.name,
-			bio: user.bio,
-			email: user.email
+			profilePicture: user.profilePicture
 		)
 	}
 
@@ -322,8 +364,8 @@ final class ActivityCreationViewModel {
 		from activity: FullFeedActivityDTO,
 		participants: [BaseUserDTO]?,
 		invitedUsers: [BaseUserDTO]?
-	) -> [FullFriendUserDTO] {
-		var friends: [FullFriendUserDTO] = []
+	) -> [MinimalFriendDTO] {
+		var friends: [MinimalFriendDTO] = []
 		let creatorId = activity.creatorUser.id
 
 		// Add participants (excluding creator)
@@ -355,12 +397,12 @@ final class ActivityCreationViewModel {
 	}
 
 	/// Check if a friend is selected
-	func isFriendSelected(_ friend: FullFriendUserDTO) -> Bool {
+	func isFriendSelected(_ friend: MinimalFriendDTO) -> Bool {
 		return selectedFriends.contains(where: { $0.id == friend.id })
 	}
 
 	/// Add a friend to the selected friends list
-	func addFriend(_ friend: FullFriendUserDTO) {
+	func addFriend(_ friend: MinimalFriendDTO) {
 		updateSelectedFriends { [weak self] in
 			guard let self = self, !self.isFriendSelected(friend) else { return }
 			self.selectedFriends.append(friend)
@@ -368,14 +410,14 @@ final class ActivityCreationViewModel {
 	}
 
 	/// Remove a friend from the selected friends list
-	func removeFriend(_ friend: FullFriendUserDTO) {
+	func removeFriend(_ friend: MinimalFriendDTO) {
 		updateSelectedFriends { [weak self] in
 			self?.selectedFriends.removeAll { $0.id == friend.id }
 		}
 	}
 
 	/// Toggle a friend's selection
-	func toggleFriendSelection(_ friend: FullFriendUserDTO) {
+	func toggleFriendSelection(_ friend: MinimalFriendDTO) {
 		updateSelectedFriends { [weak self] in
 			guard let self = self else { return }
 			if self.isFriendSelected(friend) {

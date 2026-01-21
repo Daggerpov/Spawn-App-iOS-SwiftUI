@@ -6,6 +6,7 @@ import MapKit
 //  Created by Shane on 5/18/25.
 //
 import SwiftUI
+import UIKit
 
 struct ActivityCardPopupView: View {
 	@State private var viewModel: ActivityInfoViewModel
@@ -34,6 +35,9 @@ struct ActivityCardPopupView: View {
 	@State private var showReportDialog: Bool = false
 	@State private var showingChatroom = false  // Add this state for navigation
 	@State private var showingParticipants = false  // Add this state for participants navigation
+
+	// State for maps selection
+	@State private var showMapsSelection: Bool = false
 
 	init(
 		activity: FullFeedActivityDTO,
@@ -152,6 +156,15 @@ struct ActivityCardPopupView: View {
 			.presentationDetents([.medium, .large])
 			.presentationDragIndicator(.visible)
 		}
+		.confirmationDialog("Get Directions", isPresented: $showMapsSelection, titleVisibility: .visible) {
+			Button("Apple Maps") {
+				openInAppleMaps()
+			}
+			Button("Google Maps") {
+				openInGoogleMaps()
+			}
+			Button("Cancel", role: .cancel) {}
+		}
 		.onReceive(NotificationCenter.default.publisher(for: .showChatroom)) {
 			_ in
 			withAnimation(.easeInOut(duration: 0.3)) {
@@ -198,6 +211,55 @@ struct ActivityCardPopupView: View {
 			print("Activity reported successfully")
 		} catch {
 			print("Error reporting activity: \(error)")
+		}
+	}
+
+	private func openInAppleMaps() {
+		guard let location = activity.location else { return }
+
+		let coordinate = CLLocationCoordinate2D(
+			latitude: location.latitude,
+			longitude: location.longitude
+		)
+		let destinationMapItem = MKMapItem(
+			placemark: MKPlacemark(coordinate: coordinate)
+		)
+		destinationMapItem.name = location.name
+
+		let sourceMapItem = MKMapItem.forCurrentLocation()
+
+		MKMapItem.openMaps(
+			with: [sourceMapItem, destinationMapItem],
+			launchOptions: [
+				MKLaunchOptionsDirectionsModeKey:
+					MKLaunchOptionsDirectionsModeDefault,
+				MKLaunchOptionsShowsTrafficKey: true,
+			]
+		)
+	}
+
+	private func openInGoogleMaps() {
+		guard let location = activity.location else { return }
+
+		let destinationLatitude = location.latitude
+		let destinationLongitude = location.longitude
+
+		// Try to open Google Maps app first, fall back to browser
+		let googleMapsURL = URL(
+			string:
+				"comgooglemaps://?daddr=\(destinationLatitude),\(destinationLongitude)&directionsmode=driving"
+		)
+		let googleMapsWebURL = URL(
+			string:
+				"https://www.google.com/maps/dir/?api=1&destination=\(destinationLatitude),\(destinationLongitude)&travelmode=driving"
+		)
+
+		if let googleMapsURL = googleMapsURL,
+			UIApplication.shared.canOpenURL(googleMapsURL)
+		{
+			UIApplication.shared.open(googleMapsURL)
+		} else if let googleMapsWebURL = googleMapsWebURL {
+			UIApplication.shared.open(googleMapsWebURL)
 		}
 	}
 
@@ -391,27 +453,7 @@ struct ActivityCardPopupView: View {
 		.simultaneousGesture(
 			TapGesture()
 				.onEnded { _ in
-					guard let location = activity.location else { return }
-
-					let coordinate = CLLocationCoordinate2D(
-						latitude: location.latitude,
-						longitude: location.longitude
-					)
-					let destinationMapItem = MKMapItem(
-						placemark: MKPlacemark(coordinate: coordinate)
-					)
-					destinationMapItem.name = location.name
-
-					let sourceMapItem = MKMapItem.forCurrentLocation()
-
-					MKMapItem.openMaps(
-						with: [sourceMapItem, destinationMapItem],
-						launchOptions: [
-							MKLaunchOptionsDirectionsModeKey:
-								MKLaunchOptionsDirectionsModeDefault,
-							MKLaunchOptionsShowsTrafficKey: true,
-						]
-					)
+					showMapsSelection = true
 				}
 		)
 		.allowsHitTesting(true)
@@ -425,7 +467,7 @@ extension ActivityCardPopupView {
 				.font(.onestSemiBold(size: 32))
 				.foregroundColor(.white)
 			Text(
-				FormatterService.shared.timeUntil(activity.startTime) + " • "
+				FormatterService.shared.timeUntil(activity.startTime, endDate: activity.endTime) + " • "
 					+ viewModel.getDisplayString(activityInfoType: .time)
 			)
 			.font(.onestSemiBold(size: 15))
@@ -485,21 +527,7 @@ extension ActivityCardPopupView {
 			Spacer()
 
 			Button(action: {
-				// Create source map item from user's current location
-				let sourceMapItem = MKMapItem.forCurrentLocation()
-
-				// Create destination map item from activity location
-				let destinationMapItem = mapViewModel.mapItem
-
-				// Open Maps with directions from current location to activity location
-				MKMapItem.openMaps(
-					with: [sourceMapItem, destinationMapItem],
-					launchOptions: [
-						MKLaunchOptionsDirectionsModeKey:
-							MKLaunchOptionsDirectionsModeDefault,
-						MKLaunchOptionsShowsTrafficKey: true,
-					]
-				)
+				showMapsSelection = true
 			}) {
 				HStack {
 					Image(
@@ -562,21 +590,7 @@ extension ActivityCardPopupView {
 
 			// View in Maps button
 			Button(action: {
-				// Create source map item from user's current location
-				let sourceMapItem = MKMapItem.forCurrentLocation()
-
-				// Create destination map item from activity location
-				let destinationMapItem = mapViewModel.mapItem
-
-				// Open Maps with directions from current location to activity location
-				MKMapItem.openMaps(
-					with: [sourceMapItem, destinationMapItem],
-					launchOptions: [
-						MKLaunchOptionsDirectionsModeKey:
-							MKLaunchOptionsDirectionsModeDefault,
-						MKLaunchOptionsShowsTrafficKey: true,
-					]
-				)
+				showMapsSelection = true
 			}) {
 				HStack(spacing: 6) {
 					Image(systemName: "map")
@@ -628,21 +642,7 @@ extension ActivityCardPopupView {
 			Spacer()
 
 			Button(action: {
-				// Create source map item from user's current location
-				let sourceMapItem = MKMapItem.forCurrentLocation()
-
-				// Create destination map item from activity location
-				let destinationMapItem = mapViewModel.mapItem
-
-				// Open Maps with directions from current location to activity location
-				MKMapItem.openMaps(
-					with: [sourceMapItem, destinationMapItem],
-					launchOptions: [
-						MKLaunchOptionsDirectionsModeKey:
-							MKLaunchOptionsDirectionsModeDefault,
-						MKLaunchOptionsShowsTrafficKey: true,
-					]
-				)
+				showMapsSelection = true
 			}) {
 				HStack(spacing: 6) {
 					Image(systemName: "arrow.trianglehead.turn.up.right.diamond")

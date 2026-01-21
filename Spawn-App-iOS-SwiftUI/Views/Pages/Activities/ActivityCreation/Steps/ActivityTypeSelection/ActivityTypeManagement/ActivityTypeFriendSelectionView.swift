@@ -241,10 +241,10 @@ struct ActivityTypeFriendSelectionView: View {
 	private func saveActivityType() {
 		isLoading = true
 
-		// Convert selected friend IDs to BaseUserDTO objects
-		let selectedFriendObjects = appCache.getCurrentUserFriends().compactMap { friend in
+		// Convert selected friend IDs to MinimalFriendDTO objects
+		let selectedFriendObjects: [MinimalFriendDTO] = appCache.getCurrentUserFriends().compactMap { friend in
 			if selectedFriends.contains(friend.id) {
-				return BaseUserDTO.from(friendUser: friend)
+				return MinimalFriendDTO.from(friend)
 			}
 			return nil
 		}
@@ -259,13 +259,11 @@ struct ActivityTypeFriendSelectionView: View {
 			isPinned: activityTypeDTO.isPinned
 		)
 
-		// Simulate API call
-		Task { @MainActor in
-			try? await Task.sleep(for: .seconds(1.0))
-			isLoading = false
-			onComplete(updatedActivityType)
-			dismiss()
-		}
+		// Call onComplete which handles the API call and dismissal
+		// Don't call dismiss() here - the parent's onComplete handler
+		// will dismiss the entire sheet after saving
+		isLoading = false
+		onComplete(updatedActivityType)
 	}
 }
 

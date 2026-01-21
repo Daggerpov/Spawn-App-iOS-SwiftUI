@@ -48,31 +48,27 @@ struct FriendSearchView: View {
 
 	var body: some View {
 		VStack(spacing: 0) {
-			// Header (simplified to match TagDetailView)
+			// Header
 			HStack {
-				Button(action: {
+				UnifiedBackButton {
 					dismiss()
-				}) {
-					Image(systemName: "chevron.left")
-						.font(.title3)
 				}
 
 				Spacer()
 
 				Text(titleText)
-					.font(.title3)
-					.fontWeight(.semibold)
+					.font(.onestSemiBold(size: 20))
+					.foregroundColor(universalAccentColor)
 
 				Spacer()
 
-				// Empty view to balance the back button
+				// Invisible chevron to balance the back button
 				Image(systemName: "chevron.left")
-					.font(.title3)
+					.font(.system(size: 20, weight: .semibold))
 					.foregroundColor(.clear)
 			}
-			.foregroundColor(universalAccentColor)
-			.padding(.vertical, 25)
 			.padding(.horizontal, 25)
+			.padding(.vertical, 12)
 
 			// Search bar
 			if displayMode == .search || displayMode == .allFriends {
@@ -107,6 +103,7 @@ struct FriendSearchView: View {
 				.padding(.vertical, 16)
 			}
 			.navigationBarHidden(true)
+			.ignoresSafeArea(.keyboard, edges: .bottom)  // Prevent keyboard from pushing header up
 			.task {
 				// Load appropriate data based on display mode
 				switch displayMode {

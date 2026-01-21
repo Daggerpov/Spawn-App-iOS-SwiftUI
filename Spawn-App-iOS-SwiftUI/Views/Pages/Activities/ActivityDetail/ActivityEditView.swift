@@ -25,123 +25,128 @@ struct ActivityEditView: View {
 
 	var body: some View {
 		NavigationView {
-			VStack(spacing: 40) {
-				Spacer()
+			VStack(spacing: 0) {
+				// Header with back button
+				headerView
 
-				VStack(spacing: 30) {
-					// Icon picker area
-					ZStack {
-						// Main circular background
-						Circle()
-							.fill(Color(red: 0.86, green: 0.84, blue: 0.84))
-							.frame(width: 128, height: 128)
+				VStack(spacing: 40) {
+					Spacer()
 
-						// Icon display - make it clickable
-						Button(action: {
-							showEmojiPicker = true
-						}) {
-							Text(editedIcon)
-								.font(.system(size: 40))
-						}
+					VStack(spacing: 30) {
+						// Icon picker area
+						ZStack {
+							// Main circular background
+							Circle()
+								.fill(Color(red: 0.86, green: 0.84, blue: 0.84))
+								.frame(width: 128, height: 128)
 
-						// Edit button overlay - positioned at bottom right
-						VStack {
-							Spacer()
-							HStack {
+							// Icon display - make it clickable
+							Button(action: {
+								showEmojiPicker = true
+							}) {
+								Text(editedIcon)
+									.font(.system(size: 40))
+							}
+
+							// Edit button overlay - positioned at bottom right
+							VStack {
 								Spacer()
-								Button(action: {
-									showEmojiPicker = true
-								}) {
-									ZStack {
-										Circle()
-											.fill(Color(red: 0.52, green: 0.49, blue: 0.49))
-											.frame(width: 36, height: 36)
+								HStack {
+									Spacer()
+									Button(action: {
+										showEmojiPicker = true
+									}) {
+										ZStack {
+											Circle()
+												.fill(Color(red: 0.52, green: 0.49, blue: 0.49))
+												.frame(width: 36, height: 36)
 
-										Image(systemName: "pencil")
-											.font(.system(size: 14))
-											.foregroundColor(.white)
+											Image(systemName: "pencil")
+												.font(.system(size: 14))
+												.foregroundColor(.white)
+										}
 									}
+									.offset(x: 15, y: 15)
 								}
-								.offset(x: 15, y: 15)
 							}
 						}
+						.frame(width: 128, height: 128)
+
+						// Title text field
+						TextField("Activity Title", text: $editedTitle)
+							.font(.onestMedium(size: 32))
+							.foregroundColor(adaptiveTextColor)
+							.multilineTextAlignment(.center)
+							.focused($isTitleFieldFocused)
+							.textFieldStyle(PlainTextFieldStyle())
+							.frame(maxWidth: 250)
 					}
-					.frame(width: 128, height: 128)
-
-					// Title text field
-					TextField("Activity Title", text: $editedTitle)
-						.font(.onestMedium(size: 32))
-						.foregroundColor(adaptiveTextColor)
-						.multilineTextAlignment(.center)
-						.focused($isTitleFieldFocused)
-						.textFieldStyle(PlainTextFieldStyle())
-						.frame(maxWidth: 250)
-				}
-				.padding(40)
-				.frame(width: 290, height: 290)
-				.background(adaptiveBackgroundColor)
-				.cornerRadius(30)
-				.offset(x: 0, y: -50)
-
-				Spacer()
-
-				// Action buttons
-				VStack(spacing: 16) {
-					// Save button
-					Button(action: saveChanges) {
-						HStack {
-							if viewModel.isLoading {
-								ProgressView()
-									.progressViewStyle(CircularProgressViewStyle(tint: .white))
-									.scaleEffect(0.8)
-								Text("Saving...")
-							} else if showSuccessMessage {
-								Image(systemName: "checkmark")
-									.foregroundColor(.white)
-								Text("Saved!")
-							} else {
-								Text("Save")
-							}
-						}
-						.font(.onestSemiBold(size: 20))
-						.foregroundColor(.white)
-						.frame(maxWidth: .infinity)
-						.padding(.vertical, 16)
-						.background(
-							showSuccessMessage
-								? Color.green
-								: (hasChanges && !viewModel.isLoading) ? figmaBlue : figmaBlue.opacity(0.5)
-						)
-						.cornerRadius(16)
-					}
-					.frame(width: 290, height: 56)
-					.disabled(!hasChanges || viewModel.isLoading)
-
-					// Cancel button
-					Button(action: {
-						if hasChanges {
-							showSaveConfirmation = true
-						} else {
-							dismiss()
-						}
-					}) {
-						Text("Cancel")
-							.font(.onestSemiBold(size: 20))
-							.foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
-							.frame(maxWidth: .infinity)
-							.padding(.vertical, 16)
-							.background(Color.clear)
-							.cornerRadius(16)
-							.overlay(
-								RoundedRectangle(cornerRadius: 16)
-									.stroke(Color(red: 0.82, green: 0.80, blue: 0.80), lineWidth: 0.5)
-							)
-					}
-					.frame(width: 290, height: 56)
-					.disabled(viewModel.isLoading)
+					.padding(40)
+					.frame(width: 290, height: 290)
+					.background(adaptiveBackgroundColor)
+					.cornerRadius(30)
+					.offset(x: 0, y: -50)
 
 					Spacer()
-						.frame(height: 50)
+
+					// Action buttons
+					VStack(spacing: 16) {
+						// Save button
+						Button(action: saveChanges) {
+							HStack {
+								if viewModel.isLoading {
+									ProgressView()
+										.progressViewStyle(CircularProgressViewStyle(tint: .white))
+										.scaleEffect(0.8)
+									Text("Saving...")
+								} else if showSuccessMessage {
+									Image(systemName: "checkmark")
+										.foregroundColor(.white)
+									Text("Saved!")
+								} else {
+									Text("Save")
+								}
+							}
+							.font(.onestSemiBold(size: 20))
+							.foregroundColor(.white)
+							.frame(maxWidth: .infinity)
+							.padding(.vertical, 16)
+							.background(
+								showSuccessMessage
+									? Color.green
+									: (hasChanges && !viewModel.isLoading) ? figmaBlue : figmaBlue.opacity(0.5)
+							)
+							.cornerRadius(16)
+						}
+						.frame(width: 290, height: 56)
+						.disabled(!hasChanges || viewModel.isLoading)
+
+						// Cancel button
+						Button(action: {
+							if hasChanges {
+								showSaveConfirmation = true
+							} else {
+								dismiss()
+							}
+						}) {
+							Text("Cancel")
+								.font(.onestSemiBold(size: 20))
+								.foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+								.frame(maxWidth: .infinity)
+								.padding(.vertical, 16)
+								.background(Color.clear)
+								.cornerRadius(16)
+								.overlay(
+									RoundedRectangle(cornerRadius: 16)
+										.stroke(Color(red: 0.82, green: 0.80, blue: 0.80), lineWidth: 0.5)
+								)
+						}
+						.frame(width: 290, height: 56)
+						.disabled(viewModel.isLoading)
+
+						Spacer()
+							.frame(height: 50)
+					}
 				}
 			}
 			.navigationBarHidden(true)
@@ -193,6 +198,35 @@ struct ActivityEditView: View {
 				Text("You have unsaved changes.")
 			}
 		}
+	}
+
+	// MARK: - Header View
+
+	private var headerView: some View {
+		HStack {
+			UnifiedBackButton {
+				if hasChanges {
+					showSaveConfirmation = true
+				} else {
+					dismiss()
+				}
+			}
+
+			Spacer()
+
+			Text("Edit Activity")
+				.font(.onestSemiBold(size: 20))
+				.foregroundColor(adaptiveTextColor)
+
+			Spacer()
+
+			// Invisible chevron to balance the back button
+			Image(systemName: "chevron.left")
+				.font(.system(size: 20, weight: .semibold))
+				.foregroundColor(.clear)
+		}
+		.padding(.horizontal, 25)
+		.padding(.vertical, 12)
 	}
 
 	// MARK: - Private Methods

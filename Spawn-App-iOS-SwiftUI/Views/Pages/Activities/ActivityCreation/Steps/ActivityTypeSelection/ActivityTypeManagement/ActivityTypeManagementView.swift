@@ -8,7 +8,7 @@ struct ActivityTypeManagementView: View {
 	@State private var showingManagePeople = false
 	@State private var showingEditView = false
 	@State private var navigateToProfile = false
-	@State private var selectedUserForProfile: BaseUserDTO?
+	@State private var selectedUserForProfile: MinimalFriendDTO?
 
 	// Store background refresh task so we can cancel it on disappear
 	@State private var backgroundRefreshTask: Task<Void, Never>?
@@ -62,12 +62,10 @@ struct ActivityTypeManagementView: View {
 	var body: some View {
 		ZStack {
 			VStack(spacing: 0) {
-				// Header - following app's standard pattern
+				// Header
 				HStack {
-					Button(action: { dismiss() }) {
-						Image(systemName: "chevron.left")
-							.font(.title3)
-							.foregroundColor(universalAccentColor)
+					UnifiedBackButton {
+						dismiss()
 					}
 
 					Spacer()
@@ -80,11 +78,11 @@ struct ActivityTypeManagementView: View {
 
 					Button(action: { showingOptions = true }) {
 						Image(systemName: "ellipsis")
-							.font(.title3)
+							.font(.system(size: 20, weight: .semibold))
 							.foregroundColor(universalAccentColor)
 					}
 				}
-				.padding(.horizontal)
+				.padding(.horizontal, 25)
 				.padding(.vertical, 12)
 
 				ScrollView {
@@ -291,7 +289,7 @@ struct ActivityTypeManagementView: View {
 		}
 	}
 
-	private func peopleRowView(friend: BaseUserDTO) -> some View {
+	private func peopleRowView(friend: MinimalFriendDTO) -> some View {
 		PeopleRowView(friend: friend, activityType: displayActivityType) { user in
 			selectedUserForProfile = user
 			navigateToProfile = true

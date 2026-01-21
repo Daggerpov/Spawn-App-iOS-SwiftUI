@@ -77,7 +77,7 @@ struct InviteFriendsView: View {
 				// After fetching friends, automatically select them all if not already selected
 				await MainActor.run {
 					if activityCreationViewModel.selectedFriends.isEmpty {
-						activityCreationViewModel.selectedFriends = friendsVM.friends
+						activityCreationViewModel.selectedFriends = friendsVM.friends.map { MinimalFriendDTO.from($0) }
 					}
 				}
 			} else {
@@ -86,7 +86,7 @@ struct InviteFriendsView: View {
 
 				// Automatically select all friends if not already selected
 				if activityCreationViewModel.selectedFriends.isEmpty {
-					activityCreationViewModel.selectedFriends = friendsVM.friends
+					activityCreationViewModel.selectedFriends = friendsVM.friends.map { MinimalFriendDTO.from($0) }
 				}
 			}
 		}
@@ -168,7 +168,7 @@ struct InviteFriendsView: View {
 								FriendListRow(
 									friend: friend,
 									isSelected: activityCreationViewModel.selectedFriends
-										.contains(friend)
+										.contains(where: { $0.id == friend.id })
 								)
 							}
 							.buttonStyle(PlainButtonStyle())
@@ -184,12 +184,12 @@ struct InviteFriendsView: View {
 	}
 
 	private func toggleFriendSelection(_ friend: FullFriendUserDTO) {
-		if activityCreationViewModel.selectedFriends.contains(friend) {
+		if activityCreationViewModel.selectedFriends.contains(where: { $0.id == friend.id }) {
 			activityCreationViewModel.selectedFriends.removeAll {
 				$0.id == friend.id
 			}
 		} else {
-			activityCreationViewModel.selectedFriends.append(friend)
+			activityCreationViewModel.selectedFriends.append(MinimalFriendDTO.from(friend))
 		}
 	}
 }
@@ -211,7 +211,7 @@ struct IndividualFriendView: View {
 		Button(action: {
 			isSelected.toggle()
 			if isSelected {
-				activityCreationViewModel.selectedFriends.append(friend)  // Add to selected friends
+				activityCreationViewModel.selectedFriends.append(MinimalFriendDTO.from(friend))  // Add to selected friends
 			} else {
 				activityCreationViewModel.selectedFriends.removeAll {
 					$0.id == friend.id
@@ -260,7 +260,7 @@ struct IndividualFriendView: View {
 		}
 		.onAppear {
 			// Initialize selection state based on current selected friends
-			isSelected = activityCreationViewModel.selectedFriends.contains(friend)
+			isSelected = activityCreationViewModel.selectedFriends.contains(where: { $0.id == friend.id })
 		}
 	}
 }

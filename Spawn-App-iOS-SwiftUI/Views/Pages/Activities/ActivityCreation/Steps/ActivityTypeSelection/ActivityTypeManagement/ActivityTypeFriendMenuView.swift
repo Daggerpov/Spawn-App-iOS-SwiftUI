@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - ActivityTypeFriendMenuView
 struct ActivityTypeFriendMenuView: View {
-	let friend: BaseUserDTO
+	let friend: MinimalFriendDTO
 	let activityType: ActivityTypeDTO
 	let navigateToProfile: () -> Void
 	@Environment(\.dismiss) private var dismiss

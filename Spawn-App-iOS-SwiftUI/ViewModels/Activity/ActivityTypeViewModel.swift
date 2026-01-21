@@ -8,6 +8,27 @@
 @preconcurrency import Combine
 import Foundation
 
+// Thread-safe counter for debugging ViewModel instances
+private final class ViewModelInstanceCounter: @unchecked Sendable {
+	static let shared = ViewModelInstanceCounter()
+	private let lock = NSLock()
+	private var count = 0
+
+	func increment() -> Int {
+		lock.lock()
+		defer { lock.unlock() }
+		count += 1
+		return count
+	}
+
+	func decrement() -> Int {
+		lock.lock()
+		defer { lock.unlock() }
+		count -= 1
+		return count
+	}
+}
+
 @Observable
 @MainActor
 final class ActivityTypeViewModel {
@@ -19,6 +40,10 @@ final class ActivityTypeViewModel {
 	private var dataService: DataService
 	// Keep cancellables for Combine cache subscriptions
 	private var cancellables = Set<AnyCancellable>()
+
+	// Debug: Track instance for memory debugging
+	// Using nonisolated(unsafe) to allow access from deinit
+	private let instanceId = UUID()
 
 	// MARK: - Helper Methods
 
@@ -41,6 +66,11 @@ final class ActivityTypeViewModel {
 		self.userId = userId
 		self.dataService = dataService ?? DataService.shared
 
+		let count = ViewModelInstanceCounter.shared.increment()
+		print(
+			"🟢 INIT ActivityTypeViewModel [instance: \(instanceId.uuidString.prefix(8))] - Total instances: \(count)"
+		)
+
 		// Subscribe to cache updates for reactive updates (acceptable pattern per DataService guide)
 		AppCache.shared.activityTypesPublisher
 			.receive(on: DispatchQueue.main)
@@ -51,6 +81,13 @@ final class ActivityTypeViewModel {
 				}
 			}
 			.store(in: &cancellables)
+	}
+
+	deinit {
+		let count = ViewModelInstanceCounter.shared.decrement()
+		print(
+			"🔴 DEINIT ActivityTypeViewModel [instance: \(instanceId.uuidString.prefix(8))] - Remaining instances: \(count)"
+		)
 	}
 
 	// MARK: - Backend API Methods

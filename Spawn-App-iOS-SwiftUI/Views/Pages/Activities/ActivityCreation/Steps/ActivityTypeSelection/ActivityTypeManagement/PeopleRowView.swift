@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct PeopleRowView: View {
-	let friend: BaseUserDTO
+	let friend: MinimalFriendDTO
 	let activityType: ActivityTypeDTO
-	let onProfileTap: (BaseUserDTO) -> Void
+	let onProfileTap: (MinimalFriendDTO) -> Void
 	@State private var showingPersonOptions = false
 	@Environment(\.colorScheme) private var colorScheme
 
