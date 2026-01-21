@@ -1,52 +1,16 @@
 import SwiftUI
 
-// MARK: - Memory Debugging Helper
-private enum MemoryDebug {
-	static let instanceCounter = InstanceCounter()
+// MARK: - Lazy View Wrapper
+// Prevents eager evaluation of navigation destinations, avoiding re-render loops
+private struct LazyView<Content: View>: View {
+	private let build: () -> Content
 
-	final class InstanceCounter: @unchecked Sendable {
-		private let lock = NSLock()
-		private var counts: [String: Int] = [:]
-
-		func increment(_ name: String) -> Int {
-			lock.lock()
-			defer { lock.unlock() }
-			counts[name, default: 0] += 1
-			return counts[name]!
-		}
-
-		func decrement(_ name: String) -> Int {
-			lock.lock()
-			defer { lock.unlock() }
-			counts[name, default: 1] -= 1
-			return counts[name]!
-		}
-
-		func current(_ name: String) -> Int {
-			lock.lock()
-			defer { lock.unlock() }
-			return counts[name, default: 0]
-		}
+	init(_ build: @autoclosure @escaping () -> Content) {
+		self.build = build
 	}
 
-	static func logMemory(context: String) {
-		let memoryUsage = getMemoryUsage()
-		print("🧠 MEMORY [\(context)]: \(memoryUsage) MB")
-	}
-
-	static func getMemoryUsage() -> String {
-		var info = mach_task_basic_info()
-		var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
-		let result = withUnsafeMutablePointer(to: &info) {
-			$0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-				task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
-			}
-		}
-		if result == KERN_SUCCESS {
-			let usedMB = Double(info.resident_size) / 1024.0 / 1024.0
-			return String(format: "%.2f", usedMB)
-		}
-		return "N/A"
+	var body: some View {
+		build()
 	}
 }
 
@@ -65,9 +29,6 @@ struct ActivityTypeEditView: View {
 
 	@State private var viewModel: ActivityTypeViewModel
 
-	// Debug: Track view instance
-	private let viewInstanceId = UUID()
-
 	// Track if this is a new activity type (no associated friends yet)
 	private var isNewActivityType: Bool {
 		activityTypeDTO.associatedFriends.isEmpty && activityTypeDTO.title.isEmpty
@@ -80,12 +41,6 @@ struct ActivityTypeEditView: View {
 		// Initialize the view model with userId
 		let userId = UserAuthViewModel.shared.spawnUser?.id ?? UUID()
 		self._viewModel = State(wrappedValue: ActivityTypeViewModel(userId: userId))
-
-		let count = MemoryDebug.instanceCounter.increment("ActivityTypeEditView")
-		print(
-			"🟢 INIT ActivityTypeEditView [instance: \(viewInstanceId.uuidString.prefix(8))] - Total instances: \(count)"
-		)
-		MemoryDebug.logMemory(context: "ActivityTypeEditView.init")
 	}
 
 	var body: some View {
@@ -98,40 +53,30 @@ struct ActivityTypeEditView: View {
 		.sheet(isPresented: $showEmojiPicker) {
 			ElegantEmojiPickerView(selectedEmoji: $editedIcon, isPresented: $showEmojiPicker)
 		}
-
-		.onChange(of: hasChanges) { _, newValue in
-			print("DEBUG: hasChanges updated to: \(newValue)")
-		}
-		.onChange(of: navigateToFriendSelection) { oldValue, newValue in
-			print(
-				"🔄 NAVIGATION STATE CHANGED [instance: \(viewInstanceId.uuidString.prefix(8))]: navigateToFriendSelection \(oldValue) -> \(newValue)"
-			)
-			MemoryDebug.logMemory(context: "navigateToFriendSelection changed to \(newValue)")
-		}
 		.onAppear {
-			print("👁️ APPEAR ActivityTypeEditView [instance: \(viewInstanceId.uuidString.prefix(8))]")
-			MemoryDebug.logMemory(context: "ActivityTypeEditView.onAppear")
 			setupInitialState()
-		}
-		.onDisappear {
-			print("👁️‍🗨️ DISAPPEAR ActivityTypeEditView [instance: \(viewInstanceId.uuidString.prefix(8))]")
-			MemoryDebug.logMemory(context: "ActivityTypeEditView.onDisappear")
 		}
 		.task {
 			// Auto-focus the title field when the view appears
 			try? await Task.sleep(for: .seconds(0.1))
 			isTitleFieldFocused = true
 		}
-		.onChange(of: editedTitle) { _, newValue in
-			print("DEBUG: editedTitle changed to: \(newValue)")
+		.onChange(of: editedTitle) { _, _ in
 			updateHasChanges()
 		}
-		.onChange(of: editedIcon) { _, newValue in
-			print("DEBUG: editedIcon changed to: \(newValue)")
+		.onChange(of: editedIcon) { _, _ in
 			updateHasChanges()
 		}
 		.navigationDestination(isPresented: $navigateToFriendSelection) {
-			makeNavigationDestination()
+			// Use LazyView to prevent re-evaluation on every parent re-render
+			// This breaks the cycle where AppCache updates cause infinite view recreation
+			LazyView(
+				ActivityTypeFriendSelectionView(
+					activityTypeDTO: createUpdatedActivityType(),
+					onComplete: handleFriendSelectionComplete
+				)
+				.environmentObject(AppCache.shared)
+			)
 		}
 		.alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
 			Button("OK") {
@@ -212,12 +157,6 @@ struct ActivityTypeEditView: View {
 				Text(editedIcon)
 					.font(.system(size: 40))
 					.id("emoji-\(editedIcon)")
-					.onAppear {
-						print("DEBUG: Icon display onAppear - editedIcon: \(editedIcon)")
-					}
-					.onChange(of: editedIcon) { _, newValue in
-						print("DEBUG: Icon display onChange - editedIcon: \(newValue)")
-					}
 			}
 
 			// Edit button overlay - positioned at bottom right
@@ -271,32 +210,20 @@ struct ActivityTypeEditView: View {
 				foregroundColor: .white,
 				isEnabled: isButtonEnabled
 			) {
-				print(
-					"DEBUG: Save button tapped - isNewActivityType: \(isNewActivityType), hasChanges: \(hasChanges), isButtonEnabled: \(isButtonEnabled)"
-				)
 				// Only proceed if validation passes
 				guard !(isNewActivityType && editedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) else {
-					print("DEBUG: Save button - validation failed, empty title")
 					return
 				}
 
 				if isNewActivityType {
-					print("DEBUG: Save button - navigating to next step")
 					// For new activity types, navigate to friend selection
 					navigateToNextStep()
 				} else {
-					print("DEBUG: Save button - saving changes")
 					// For existing activity types, save changes
 					saveChanges()
 				}
 			}
 			.frame(width: 290)
-			.onAppear {
-				print("DEBUG: Save button appeared - isButtonEnabled: \(isButtonEnabled)")
-			}
-			.onChange(of: isButtonEnabled) { _, newValue in
-				print("DEBUG: Save button enabled state changed to: \(newValue)")
-			}
 
 			// Cancel button
 			Enhanced3DButton(
@@ -318,43 +245,15 @@ struct ActivityTypeEditView: View {
 		.padding(.bottom, 40)
 	}
 
-	@ViewBuilder
-	private func makeNavigationDestination() -> some View {
-		let callId = UUID().uuidString.prefix(8)
-		let _ = print(
-			"🏗️ makeNavigationDestination CALLED [view: \(viewInstanceId.uuidString.prefix(8)), call: \(callId)]")
-		let _ = MemoryDebug.logMemory(context: "makeNavigationDestination")
-
-		// Create the activity type DTO once when building the view
-		let activityType = createUpdatedActivityType()
-		// Capture viewModel explicitly to avoid issues with @State capture
-		let vm = viewModel
-		// Capture dismiss action to avoid retaining self in the closure
-		let dismissAction = dismiss
-
-		let _ = print("🏗️ Creating ActivityTypeFriendSelectionView [call: \(callId)]")
-
-		ActivityTypeFriendSelectionView(
-			activityTypeDTO: activityType,
-			onComplete: { finalActivityType in
-				print("✅ onComplete CALLED [call: \(callId)]")
-				MemoryDebug.logMemory(context: "onComplete called")
-				// Save the activity type with selected friends using direct API call
-				Task {
-					print("📡 Starting createActivityType task [call: \(callId)]")
-					await vm.createActivityType(finalActivityType)
-					print("📡 Finished createActivityType task [call: \(callId)]")
-					// Dismiss the edit view after successful creation
-					// Note: ActivityTypeFriendSelectionView handles its own dismiss,
-					// this dismisses the parent ActivityTypeEditView sheet
-					await MainActor.run {
-						print("🚪 Calling dismissAction [call: \(callId)]")
-						dismissAction()
-					}
-				}
+	/// Handles the completion of friend selection - saves the activity type and dismisses
+	private func handleFriendSelectionComplete(_ finalActivityType: ActivityTypeDTO) {
+		Task {
+			await viewModel.createActivityType(finalActivityType)
+			// Dismiss the edit view after successful creation
+			await MainActor.run {
+				dismiss()
 			}
-		)
-		.environmentObject(AppCache.shared)
+		}
 	}
 
 	private var loadingOverlay: some View {
@@ -380,22 +279,10 @@ struct ActivityTypeEditView: View {
 		editedTitle = activityTypeDTO.title
 		editedIcon = activityTypeDTO.icon
 		hasChanges = false
-		print("DEBUG: setupInitialState() - editedTitle: '\(editedTitle)'")
-		print("DEBUG: setupInitialState() - editedIcon: '\(editedIcon)'")
-		print("DEBUG: setupInitialState() - activityTypeDTO.title: '\(activityTypeDTO.title)'")
-		print("DEBUG: setupInitialState() - activityTypeDTO.icon: '\(activityTypeDTO.icon)'")
 	}
 
 	private func updateHasChanges() {
-		let oldHasChanges = hasChanges
 		hasChanges = (editedTitle != activityTypeDTO.title) || (editedIcon != activityTypeDTO.icon)
-		print(
-			"DEBUG: updateHasChanges() - editedTitle: '\(editedTitle)' vs activityTypeDTO.title: '\(activityTypeDTO.title)'"
-		)
-		print(
-			"DEBUG: updateHasChanges() - editedIcon: '\(editedIcon)' vs activityTypeDTO.icon: '\(activityTypeDTO.icon)'"
-		)
-		print("DEBUG: updateHasChanges() - hasChanges changed from \(oldHasChanges) to \(hasChanges)")
 	}
 
 	private func navigateToNextStep() {
@@ -420,17 +307,10 @@ struct ActivityTypeEditView: View {
 
 	private func saveChanges() {
 		let updatedActivityType = createUpdatedActivityType()
-		print(
-			"DEBUG: saveChanges() called with updatedActivityType: title='\(updatedActivityType.title)', icon='\(updatedActivityType.icon)'"
-		)
 		Task {
-			print("DEBUG: About to call viewModel.updateActivityType")
 			await viewModel.updateActivityType(updatedActivityType)
-			print("DEBUG: Finished calling viewModel.updateActivityType")
-
 			// Dismiss after saving
-			Task { @MainActor in
-				print("DEBUG: Dismissing view after save")
+			await MainActor.run {
 				dismiss()
 			}
 		}
