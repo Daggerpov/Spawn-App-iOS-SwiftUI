@@ -216,6 +216,9 @@ struct ActivityCreationView: View {
 				viewModel.updateActivityType()
 			}
 
+			// Filter friends based on the selected activity type
+			viewModel.onActivityTypeChanged()
+
 			// If we're at activityType step and an activity type gets selected, skip to dateTime
 			if currentStep == .activityType && newActivityType != nil {
 				currentStep = .dateTime

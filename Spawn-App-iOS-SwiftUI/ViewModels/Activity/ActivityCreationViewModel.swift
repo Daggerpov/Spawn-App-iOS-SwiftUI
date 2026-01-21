@@ -127,6 +127,28 @@ final class ActivityCreationViewModel {
 		// Instead of creating a new instance, reset the existing one and set the type
 		shared.resetToDefaults()
 		shared.selectedActivityType = activityTypeDTO
+
+		// If activity type is selected, filter friends to only those in the activity type
+		if let activityType = activityTypeDTO {
+			shared.filterFriendsToActivityType(activityType)
+		}
+	}
+
+	/// Filter selectedFriends to only include friends from the activity type's associatedFriends
+	private func filterFriendsToActivityType(_ activityType: ActivityTypeDTO) {
+		let activityTypeFriendIds = Set(activityType.associatedFriends.map { $0.id })
+		selectedFriends = selectedFriends.filter { activityTypeFriendIds.contains($0.id) }
+	}
+
+	/// Called when user selects/changes an activity type via the UI
+	/// Filters friends to only those in the activity type, or reloads all friends if deselected
+	func onActivityTypeChanged() {
+		if let activityType = selectedActivityType {
+			filterFriendsToActivityType(activityType)
+		} else {
+			// If activity type was deselected, reload all friends
+			loadAllFriendsAsSelected()
+		}
 	}
 
 	// Method to initialize with existing activity data for editing
@@ -278,7 +300,13 @@ final class ActivityCreationViewModel {
 		switch result {
 		case .success(let friends, _):
 			await MainActor.run {
-				selectedFriends = friends
+				// If an activity type is already selected, filter friends to only those in the activity type
+				if let activityType = selectedActivityType {
+					let activityTypeFriendIds = Set(activityType.associatedFriends.map { $0.id })
+					selectedFriends = friends.filter { activityTypeFriendIds.contains($0.id) }
+				} else {
+					selectedFriends = friends
+				}
 			}
 
 		case .failure(let error):
