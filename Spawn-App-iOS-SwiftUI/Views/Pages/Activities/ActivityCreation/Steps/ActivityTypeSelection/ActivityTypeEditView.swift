@@ -1,5 +1,55 @@
 import SwiftUI
 
+// MARK: - Memory Debugging Helper
+private enum MemoryDebug {
+	static let instanceCounter = InstanceCounter()
+
+	final class InstanceCounter: @unchecked Sendable {
+		private let lock = NSLock()
+		private var counts: [String: Int] = [:]
+
+		func increment(_ name: String) -> Int {
+			lock.lock()
+			defer { lock.unlock() }
+			counts[name, default: 0] += 1
+			return counts[name]!
+		}
+
+		func decrement(_ name: String) -> Int {
+			lock.lock()
+			defer { lock.unlock() }
+			counts[name, default: 1] -= 1
+			return counts[name]!
+		}
+
+		func current(_ name: String) -> Int {
+			lock.lock()
+			defer { lock.unlock() }
+			return counts[name, default: 0]
+		}
+	}
+
+	static func logMemory(context: String) {
+		let memoryUsage = getMemoryUsage()
+		print("🧠 MEMORY [\(context)]: \(memoryUsage) MB")
+	}
+
+	static func getMemoryUsage() -> String {
+		var info = mach_task_basic_info()
+		var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+		let result = withUnsafeMutablePointer(to: &info) {
+			$0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+				task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+			}
+		}
+		if result == KERN_SUCCESS {
+			let usedMB = Double(info.resident_size) / 1024.0 / 1024.0
+			return String(format: "%.2f", usedMB)
+		}
+		return "N/A"
+	}
+}
+
 struct ActivityTypeEditView: View {
 	let activityTypeDTO: ActivityTypeDTO
 	let onBack: (() -> Void)?
@@ -15,13 +65,13 @@ struct ActivityTypeEditView: View {
 
 	@State private var viewModel: ActivityTypeViewModel
 
+	// Debug: Track view instance
+	private let viewInstanceId = UUID()
+
 	// Track if this is a new activity type (no associated friends yet)
 	private var isNewActivityType: Bool {
 		activityTypeDTO.associatedFriends.isEmpty && activityTypeDTO.title.isEmpty
 	}
-
-	// Debounced save timer
-	@State private var saveTimer: Timer?
 
 	init(activityTypeDTO: ActivityTypeDTO, onBack: (() -> Void)? = nil) {
 		self.activityTypeDTO = activityTypeDTO
@@ -30,6 +80,12 @@ struct ActivityTypeEditView: View {
 		// Initialize the view model with userId
 		let userId = UserAuthViewModel.shared.spawnUser?.id ?? UUID()
 		self._viewModel = State(wrappedValue: ActivityTypeViewModel(userId: userId))
+
+		let count = MemoryDebug.instanceCounter.increment("ActivityTypeEditView")
+		print(
+			"🟢 INIT ActivityTypeEditView [instance: \(viewInstanceId.uuidString.prefix(8))] - Total instances: \(count)"
+		)
+		MemoryDebug.logMemory(context: "ActivityTypeEditView.init")
 	}
 
 	var body: some View {
@@ -46,8 +102,20 @@ struct ActivityTypeEditView: View {
 		.onChange(of: hasChanges) { _, newValue in
 			print("DEBUG: hasChanges updated to: \(newValue)")
 		}
+		.onChange(of: navigateToFriendSelection) { oldValue, newValue in
+			print(
+				"🔄 NAVIGATION STATE CHANGED [instance: \(viewInstanceId.uuidString.prefix(8))]: navigateToFriendSelection \(oldValue) -> \(newValue)"
+			)
+			MemoryDebug.logMemory(context: "navigateToFriendSelection changed to \(newValue)")
+		}
 		.onAppear {
+			print("👁️ APPEAR ActivityTypeEditView [instance: \(viewInstanceId.uuidString.prefix(8))]")
+			MemoryDebug.logMemory(context: "ActivityTypeEditView.onAppear")
 			setupInitialState()
+		}
+		.onDisappear {
+			print("👁️‍🗨️ DISAPPEAR ActivityTypeEditView [instance: \(viewInstanceId.uuidString.prefix(8))]")
+			MemoryDebug.logMemory(context: "ActivityTypeEditView.onDisappear")
 		}
 		.task {
 			// Auto-focus the title field when the view appears
@@ -256,20 +324,19 @@ struct ActivityTypeEditView: View {
 		let activityType = createUpdatedActivityType()
 		// Capture viewModel explicitly to avoid issues with @State capture
 		let vm = viewModel
+		// Capture dismiss action to avoid retaining self in the closure
+		let dismissAction = dismiss
 		ActivityTypeFriendSelectionView(
 			activityTypeDTO: activityType,
 			onComplete: { finalActivityType in
-				// Reset navigation state FIRST to prevent re-rendering loops
-				// This stops the parent view from re-creating this destination view
-				navigateToFriendSelection = false
-
 				// Save the activity type with selected friends using direct API call
 				Task {
 					await vm.createActivityType(finalActivityType)
-
 					// Dismiss the edit view after successful creation
+					// Note: ActivityTypeFriendSelectionView handles its own dismiss,
+					// this dismisses the parent ActivityTypeEditView sheet
 					await MainActor.run {
-						dismiss()
+						dismissAction()
 					}
 				}
 			}
