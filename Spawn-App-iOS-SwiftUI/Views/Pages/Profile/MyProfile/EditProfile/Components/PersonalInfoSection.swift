@@ -15,20 +15,22 @@ struct PersonalInfoSection: View {
 
 				TextField("Full Name", text: $name)
 					.font(.subheadline)
-					.padding()
 					.foregroundColor(universalAccentColor)
-					.cornerRadius(10)
+					.padding(.horizontal, 16)
+					.padding(.vertical, 14)
+					.background(
+						RoundedRectangle(cornerRadius: universalNewRectangleCornerRadius)
+							.fill(Color.clear)
+					)
 					.overlay(
-						RoundedRectangle(
-							cornerRadius: universalNewRectangleCornerRadius
-						)
-						.stroke(universalAccentColor, lineWidth: 1)
+						RoundedRectangle(cornerRadius: universalNewRectangleCornerRadius)
+							.stroke(universalAccentColor, lineWidth: 1)
 					)
 					.placeholder(when: name.isEmpty) {
 						Text("Full Name")
-							.foregroundColor(universalAccentColor.opacity(0.7))
+							.foregroundColor(universalAccentColor.opacity(0.5))
 							.font(.subheadline)
-							.padding(.leading)
+							.padding(.leading, 16)
 					}
 			}
 
@@ -38,26 +40,29 @@ struct PersonalInfoSection: View {
 					.font(.subheadline)
 					.foregroundColor(.gray)
 
-				HStack {
+				HStack(spacing: 4) {
 					Text("@")
 						.foregroundColor(.gray)
+						.font(.subheadline)
 
 					TextField("username", text: $username)
 						.foregroundColor(universalAccentColor)
 						.font(.subheadline)
 						.placeholder(when: username.isEmpty) {
 							Text("username")
-								.foregroundColor(universalAccentColor.opacity(0.7))
+								.foregroundColor(universalAccentColor.opacity(0.5))
 								.font(.subheadline)
 						}
 				}
-				.padding()
-				.cornerRadius(10)
+				.padding(.horizontal, 16)
+				.padding(.vertical, 14)
+				.background(
+					RoundedRectangle(cornerRadius: universalNewRectangleCornerRadius)
+						.fill(Color.clear)
+				)
 				.overlay(
-					RoundedRectangle(
-						cornerRadius: universalNewRectangleCornerRadius
-					)
-					.stroke(universalAccentColor, lineWidth: 1)
+					RoundedRectangle(cornerRadius: universalNewRectangleCornerRadius)
+						.stroke(universalAccentColor, lineWidth: 1)
 				)
 			}
 		}

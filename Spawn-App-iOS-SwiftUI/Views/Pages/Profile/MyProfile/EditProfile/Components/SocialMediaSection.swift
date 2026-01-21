@@ -8,14 +8,13 @@ struct SocialMediaSection: View {
 	var body: some View {
 		VStack(alignment: .leading, spacing: 16) {
 			Text("Social Media")
-				.font(.headline)
+				.font(.system(size: 18, weight: .semibold))
 				.foregroundColor(universalAccentColor)
-				.padding(.bottom, 4)
 
 			// Instagram
 			SocialMediaField(
 				icon: "instagram",
-				placeholder: "username (without @)",
+				placeholder: "username",
 				text: $instagramLink
 			)
 

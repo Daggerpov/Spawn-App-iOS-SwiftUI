@@ -62,7 +62,6 @@ struct ProfileActionButtonsView: View {
 						y: editButtonPressed ? 2 : 4
 					)
 				}
-				.navigationBarBackButtonHidden(true)
 				.animation(.easeInOut(duration: 0.15), value: editButtonScale)
 				.animation(.easeInOut(duration: 0.15), value: editButtonPressed)
 				.onLongPressGesture(

@@ -13,34 +13,33 @@ struct InterestsSection: View {
 	var body: some View {
 		VStack(alignment: .leading, spacing: 12) {
 			Text("Interests + Hobbies (Max \(maxInterests))")
-				.font(.custom("Onest", size: 16).weight(.medium))
-				.foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
+				.font(.subheadline)
+				.foregroundColor(.gray)
 
 			// Text field with placeholder overlay
 			ZStack(alignment: .leading) {
 				// Background
-				RoundedRectangle(cornerRadius: 8)
-					.fill(Color(red: 0.86, green: 0.84, blue: 0.84))
-					.frame(height: 48)
+				RoundedRectangle(cornerRadius: universalNewRectangleCornerRadius)
+					.fill(Color(hex: colorsGray200))
 
 				// Placeholder text
 				if newInterest.isEmpty {
 					Text("Type and press enter to add...")
-						.font(.custom("Onest", size: 16))
-						.foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
+						.font(.subheadline)
+						.foregroundColor(Color(hex: colorsGray500))
 						.padding(.leading, 16)
 				}
 
 				// Text field
 				TextField("", text: $newInterest)
-					.font(.custom("Onest", size: 16))
-					.foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+					.font(.subheadline)
+					.foregroundColor(Color(hex: colorsGray900))
 					.padding(.horizontal, 16)
+					.padding(.vertical, 14)
 					.focused($isTextFieldFocused)
 					.onSubmit {
 						addInterest()
 					}
-					.frame(height: 48)
 			}
 
 			// Existing interests as chips
