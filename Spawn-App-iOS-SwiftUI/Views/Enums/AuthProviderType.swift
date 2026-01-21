@@ -19,4 +19,16 @@ enum AuthProviderType {
 		}
 	}
 
+	init?(rawValue: String) {
+		switch rawValue.lowercased() {
+		case "google":
+			self = .google
+		case "apple":
+			self = .apple
+		case "email":
+			self = .email
+		default:
+			return nil
+		}
+	}
 }

@@ -20,7 +20,16 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 	// DataService for generic operations
 	private var dataService: DataService = DataService.shared
 
-	@Published var authProvider: AuthProviderType? = nil  // Track the auth provider
+	@Published var authProvider: AuthProviderType? = nil {  // Track the auth provider
+		didSet {
+			// Persist the auth provider to UserDefaults when it changes
+			if let provider = authProvider {
+				UserDefaults.standard.set(provider.rawValue, forKey: "authProvider")
+			} else {
+				UserDefaults.standard.removeObject(forKey: "authProvider")
+			}
+		}
+	}
 	@Published var externalUserId: String?  // For both Google and Apple
 	@Published var idToken: String?  // ID token for authentication
 	@Published var isLoggedIn: Bool = false
@@ -171,6 +180,14 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 
 		// Load preview screens status from UserDefaults
 		self.hasSeenPreviewScreens = UserDefaults.standard.bool(forKey: "hasSeenPreviewScreens")
+
+		// Restore auth provider from UserDefaults
+		if let savedProviderRawValue = UserDefaults.standard.string(forKey: "authProvider"),
+			let savedProvider = AuthProviderType(rawValue: savedProviderRawValue)
+		{
+			self.authProvider = savedProvider
+			print("🔐 Restored auth provider from UserDefaults: \(savedProvider.rawValue)")
+		}
 
 		// Start minimum loading timer
 		Task {
