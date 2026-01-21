@@ -20,16 +20,7 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 	// DataService for generic operations
 	private var dataService: DataService = DataService.shared
 
-	@Published var authProvider: AuthProviderType? = nil {  // Track the auth provider
-		didSet {
-			// Persist the auth provider to UserDefaults when it changes
-			if let provider = authProvider {
-				UserDefaults.standard.set(provider.rawValue, forKey: "authProvider")
-			} else {
-				UserDefaults.standard.removeObject(forKey: "authProvider")
-			}
-		}
-	}
+	@Published var authProvider: AuthProviderType? = nil  // Track the auth provider - now sourced from server via BaseUserDTO.provider
 	@Published var externalUserId: String?  // For both Google and Apple
 	@Published var idToken: String?  // ID token for authentication
 	@Published var isLoggedIn: Bool = false
@@ -181,13 +172,8 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 		// Load preview screens status from UserDefaults
 		self.hasSeenPreviewScreens = UserDefaults.standard.bool(forKey: "hasSeenPreviewScreens")
 
-		// Restore auth provider from UserDefaults
-		if let savedProviderRawValue = UserDefaults.standard.string(forKey: "authProvider"),
-			let savedProvider = AuthProviderType(rawValue: savedProviderRawValue)
-		{
-			self.authProvider = savedProvider
-			print("🔐 Restored auth provider from UserDefaults: \(savedProvider.rawValue)")
-		}
+		// Auth provider is now sourced from server via BaseUserDTO.provider
+		// No longer restored from UserDefaults - will be set when user data is fetched
 
 		// Start minimum loading timer
 		Task {
@@ -630,6 +616,9 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 				await MainActor.run {
 					self.spawnUser = authResponse.user
 					self.isLoggedIn = true
+
+					// Set auth provider from server-provided user data
+					self.setAuthProviderFromUser()
 
 					// Navigate based on user status from AuthResponseDTO
 					continueUserOnboarding(authResponse: authResponse)
@@ -1351,10 +1340,8 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 					// This matches the behavior of other authentication methods
 					self.isLoggedIn = true
 
-					// Restore or infer auth provider if not already set
-					if self.authProvider == nil {
-						self.restoreOrInferAuthProvider(isOAuthUser: authResponse.isOAuthUser)
-					}
+					// Set auth provider from server-provided user data
+					self.setAuthProviderFromUser()
 
 					// Check backend onboarding status and sync with local state
 					let backendOnboardingStatus = authResponse.user.hasCompletedOnboarding ?? false
@@ -1381,51 +1368,20 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
-	/// Restores auth provider from UserDefaults or infers it from available information
-	private func restoreOrInferAuthProvider(isOAuthUser: Bool?) {
-		// First try to restore from UserDefaults
-		if let savedProviderRawValue = UserDefaults.standard.string(forKey: "authProvider"),
-			let savedProvider = AuthProviderType(rawValue: savedProviderRawValue)
-		{
-			self.authProvider = savedProvider
-			print("🔐 Restored auth provider from UserDefaults: \(savedProvider.rawValue)")
-			return
-		}
-
-		// Check if the server returned the provider in the user data
+	/// Sets auth provider from server-provided user data (primary source of truth)
+	private func setAuthProviderFromUser() {
+		// Primary source: server-provided provider in BaseUserDTO
 		if let serverProvider = self.spawnUser?.provider,
 			let providerType = AuthProviderType(rawValue: serverProvider)
 		{
 			self.authProvider = providerType
-			print("🔐 Got auth provider from server user data: \(serverProvider)")
+			print("🔐 Set auth provider from server: \(serverProvider)")
 			return
 		}
 
-		// If not saved and not from server, try to infer from available information
-		// First check if Google SDK has a current user session (most reliable check for Google)
-		if GIDSignIn.sharedInstance.currentUser != nil {
-			self.authProvider = .google
-			print("🔐 Inferred auth provider from Google SDK: google")
-			return
-		}
-
-		// If isOAuthUser is explicitly true but not Google, assume Apple
-		if isOAuthUser == true {
-			self.authProvider = .apple
-			print("🔐 Inferred auth provider as Apple (OAuth user, not Google)")
-			return
-		}
-
-		// If isOAuthUser is explicitly false, it's email
-		if isOAuthUser == false {
-			self.authProvider = .email
-			print("🔐 Inferred auth provider as email (not OAuth user)")
-			return
-		}
-
-		// If isOAuthUser is nil (not returned by server), we can't determine for sure
-		// Leave authProvider as nil - will show "Unknown Provider" but at least it's honest
-		print("🔐 Could not determine auth provider - isOAuthUser not available from server")
+		// If server didn't provide provider, leave as nil
+		// This is an edge case that shouldn't happen with the updated backend
+		print("🔐 No provider returned from server - authProvider is nil")
 	}
 
 	// The username argument could be an email as well
@@ -1452,7 +1408,8 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 				await MainActor.run {
 					self.spawnUser = user
 					self.isLoggedIn = true
-					self.authProvider = .email  // Set auth provider for email/username login
+					// Set auth provider from server-provided user data
+					self.setAuthProviderFromUser()
 					self.errorMessage = nil  // Clear any previous errors on success
 					self.continueUserOnboarding(authResponse: authResponse)
 				}
@@ -1771,6 +1728,9 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 				self.email = authResponse.user.email
 				self.errorMessage = nil
 
+				// Set auth provider from server-provided user data
+				self.setAuthProviderFromUser()
+
 				// Clear auto sign-in state and alert on successful sign-in
 				self.isAutoSigningIn = false
 				self.authAlert = nil
@@ -1811,8 +1771,8 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 						// Success - set user and navigate based on status
 						self.spawnUser = authResponse.user
 						self.email = authResponse.user.email
-						// Set authProvider to email for email registration
-						self.authProvider = .email
+						// Set auth provider from server-provided user data
+						self.setAuthProviderFromUser()
 						self.errorMessage = nil
 
 						// Navigate based on user status
