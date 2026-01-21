@@ -81,28 +81,25 @@ struct ActivityTypeEditView: View {
 
 	private var headerView: some View {
 		HStack {
-			Button(action: {
+			UnifiedBackButton {
 				dismiss()
-			}) {
-				Image(systemName: "chevron.left")
-					.foregroundColor(universalAccentColor)
-					.font(.title3)
 			}
 
 			Spacer()
 
 			Text("New Activity Type")
-				.font(.headline)
+				.font(.onestSemiBold(size: 20))
 				.foregroundColor(universalAccentColor)
 
 			Spacer()
 
-			// Empty view for balance
-			Color.clear.frame(width: 24, height: 24)
+			// Invisible chevron to balance the back button
+			Image(systemName: "chevron.left")
+				.font(.system(size: 20, weight: .semibold))
+				.foregroundColor(.clear)
 		}
-		.padding(.horizontal)
-		.padding(.top, 8)
-		.padding(.bottom, 16)
+		.padding(.horizontal, 25)
+		.padding(.vertical, 12)
 	}
 
 	private var mainContentView: some View {

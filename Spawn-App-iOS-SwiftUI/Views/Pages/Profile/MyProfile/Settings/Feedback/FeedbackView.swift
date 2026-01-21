@@ -91,41 +91,25 @@ struct FeedbackView: View {
 
 	private var headerView: some View {
 		HStack {
-			Button(action: {
+			UnifiedBackButton {
 				dismiss()
-			}) {
-				Image(systemName: "chevron.left")
-					.foregroundColor(universalAccentColor)
-					.font(.title3)
-					.padding(.all, 8)
-					.background(
-						Circle()
-							.fill(universalAccentColor.opacity(0.1))
-							.opacity(0)
-					)
 			}
-			.buttonStyle(PlainButtonStyle())
-			.contentShape(Rectangle())
 
 			Spacer()
 
 			Text("Send Feedback")
-				.font(.headline)
+				.font(.onestSemiBold(size: 20))
 				.foregroundColor(universalAccentColor)
 
 			Spacer()
 
-			// Empty view for balance
-			Color.clear.frame(width: 32, height: 32)
+			// Invisible chevron to balance the back button
+			Image(systemName: "chevron.left")
+				.font(.system(size: 20, weight: .semibold))
+				.foregroundColor(.clear)
 		}
-		.padding(.horizontal)
-		.padding(.top, 8)
-		.padding(.bottom, 16)
-		.background(
-			Rectangle()
-				.fill(universalBackgroundColor)
-				.shadow(color: universalAccentColor.opacity(0.1), radius: 1, x: 0, y: 1)
-		)
+		.padding(.horizontal, 25)
+		.padding(.vertical, 12)
 	}
 
 	private func loadTransferable(from item: PhotosPickerItem?) {

@@ -62,12 +62,10 @@ struct ActivityTypeManagementView: View {
 	var body: some View {
 		ZStack {
 			VStack(spacing: 0) {
-				// Header - following app's standard pattern
+				// Header
 				HStack {
-					Button(action: { dismiss() }) {
-						Image(systemName: "chevron.left")
-							.font(.title3)
-							.foregroundColor(universalAccentColor)
+					UnifiedBackButton {
+						dismiss()
 					}
 
 					Spacer()
@@ -80,11 +78,11 @@ struct ActivityTypeManagementView: View {
 
 					Button(action: { showingOptions = true }) {
 						Image(systemName: "ellipsis")
-							.font(.title3)
+							.font(.system(size: 20, weight: .semibold))
 							.foregroundColor(universalAccentColor)
 					}
 				}
-				.padding(.horizontal)
+				.padding(.horizontal, 25)
 				.padding(.vertical, 12)
 
 				ScrollView {

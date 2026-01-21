@@ -68,23 +68,15 @@ struct UserInfoInputView: View {
 
 	private var backButtonView: some View {
 		HStack {
-			Button(action: {
+			UnifiedBackButton {
 				// Clear any error states when going back
 				userAuth.clearAllErrors()
 				userAuth.resetState()
-			}) {
-				HStack {
-					Image(systemName: "arrow.left")
-						.font(.system(size: 20, weight: .bold))
-					Text("Back")
-						.font(.system(size: 16, weight: .semibold))
-				}
-				.foregroundColor(.white)
-				.padding(.leading, 16)
 			}
 			Spacer()
 		}
-		.padding(.top, 8)
+		.padding(.horizontal, 25)
+		.padding(.vertical, 12)
 	}
 
 	private var titleView: some View {
