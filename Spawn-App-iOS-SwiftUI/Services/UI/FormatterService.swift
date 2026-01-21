@@ -288,17 +288,31 @@ final class FormatterService: Sendable {
 		return trimmed
 	}
 
-	func timeUntil(_ date: Date?) -> String {
-		guard let date = date else { return "" }
-		let interval = date.timeIntervalSinceNow
-		if interval <= 0 { return "Happening Now" }
-		let hours = Int(interval) / 3600
-		let minutes = (Int(interval) % 3600) / 60
-		if hours > 0 {
-			return "In \(hours) hour\(hours > 1 ? "s" : "")"
-		} else {
-			return "In \(minutes) min\(minutes > 1 ? "s" : "")"
+	func timeUntil(_ startDate: Date?, endDate: Date? = nil) -> String {
+		guard let startDate = startDate else { return "" }
+		let now = Date()
+		let intervalToStart = startDate.timeIntervalSince(now)
+
+		// Check if activity hasn't started yet
+		if intervalToStart > 0 {
+			let hours = Int(intervalToStart) / 3600
+			let minutes = (Int(intervalToStart) % 3600) / 60
+			if hours > 0 {
+				return "In \(hours) hour\(hours > 1 ? "s" : "")"
+			} else {
+				return "In \(minutes) min\(minutes > 1 ? "s" : "")"
+			}
 		}
+
+		// Activity has started - check if it has ended
+		if let endDate = endDate {
+			if now >= endDate {
+				return "Already Happened"
+			}
+		}
+
+		// Activity is currently happening (started but not ended)
+		return "Happening Now"
 	}
 
 	func distanceString(from userLocation: CLLocationCoordinate2D?, to activityLocation: LocationDTO?) -> String {

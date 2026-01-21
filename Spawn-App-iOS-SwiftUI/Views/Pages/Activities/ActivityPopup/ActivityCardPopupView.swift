@@ -425,7 +425,7 @@ extension ActivityCardPopupView {
 				.font(.onestSemiBold(size: 32))
 				.foregroundColor(.white)
 			Text(
-				FormatterService.shared.timeUntil(activity.startTime) + " • "
+				FormatterService.shared.timeUntil(activity.startTime, endDate: activity.endTime) + " • "
 					+ viewModel.getDisplayString(activityInfoType: .time)
 			)
 			.font(.onestSemiBold(size: 15))
