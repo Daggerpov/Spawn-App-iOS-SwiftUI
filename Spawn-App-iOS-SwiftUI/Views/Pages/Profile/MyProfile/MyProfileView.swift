@@ -204,7 +204,7 @@ struct MyProfileView: View {
 				// Settings button for current user profile
 				ToolbarItem(placement: .navigationBarTrailing) {
 					NavigationLink(destination: SettingsView()) {
-						Image(systemName: "gearshape")
+						Image(systemName: "line.3.horizontal")
 							.foregroundColor(universalAccentColor)
 					}
 				}
