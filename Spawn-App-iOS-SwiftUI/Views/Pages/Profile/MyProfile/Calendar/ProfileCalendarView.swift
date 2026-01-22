@@ -62,7 +62,7 @@ struct ProfileCalendarView: View {
 	}
 
 	var body: some View {
-		VStack(spacing: 8) {
+		VStack(spacing: 16) {
 			if showMonthHeader {
 				monthYearHeader
 			}
@@ -114,26 +114,20 @@ struct ProfileCalendarView: View {
 				.foregroundColor(.primary)
 			Spacer()
 		}
-		.padding(.horizontal, 4)
 	}
 
 	private var weekDaysHeader: some View {
-		HStack(spacing: 7) {
+		HStack(spacing: 6.618) {
 			ForEach(0..<weekDays.count, id: \.self) { index in
 				Text(weekDays[index])
 					.font(.onestMedium(size: 13))
-					.foregroundColor(weekDayLabelColor)
-					.frame(width: 46, height: 17)
+					.foregroundColor(universalAccentColor)
+					.frame(width: 46.33)
 			}
 		}
-		.padding(.horizontal, 4)
 	}
 
 	// MARK: - Theme-aware colors
-
-	private var weekDayLabelColor: Color {
-		colorScheme == .dark ? Color(hex: colorsGray400) : Color(hex: colorsGray500)
-	}
 
 	private var emptyDayCellColor: Color {
 		colorScheme == .dark ? Color(hex: colorsGray700) : Color(hex: colorsGray200)
@@ -155,16 +149,15 @@ struct ProfileCalendarView: View {
 	}
 
 	private var calendarGrid: some View {
-		VStack(spacing: 7) {
+		VStack(spacing: 6.618) {
 			ForEach(0..<5, id: \.self) { row in
 				calendarRow(row)
 			}
 		}
-		.padding(.horizontal, 4)
 	}
 
 	private func calendarRow(_ row: Int) -> some View {
-		HStack(spacing: 7) {
+		HStack(spacing: 6.618) {
 			ForEach(0..<7, id: \.self) { col in
 				calendarDayCell(row: row, col: col)
 			}
@@ -193,19 +186,34 @@ struct ProfileCalendarView: View {
 	}
 
 	private var emptyDayCell: some View {
-		RoundedRectangle(cornerRadius: 7)
-			.fill(emptyDayCellColor)
-			.frame(width: 46, height: 46)
-			.shadow(color: Color.black.opacity(colorScheme == .dark ? 0.3 : 0.1), radius: 4, x: 0, y: 1.65)
-			.onTapGesture {
-				handleDaySelection(activities: [])
-			}
+		ZStack {
+			RoundedRectangle(cornerRadius: 6.618)
+				.fill(emptyDayCellColor)
+				.frame(width: 46.33, height: 46.33)
+				.shadow(color: Color.black.opacity(0.1), radius: 6.618, x: 0, y: 1.655)
+
+			// Inner highlight effect per Figma
+			RoundedRectangle(cornerRadius: 6.618)
+				.fill(
+					LinearGradient(
+						colors: [Color.white.opacity(0.5), Color.clear],
+						startPoint: .top,
+						endPoint: .bottom
+					)
+				)
+				.frame(width: 46.33, height: 46.33)
+				.allowsHitTesting(false)
+		}
+		.onTapGesture {
+			handleDaySelection(activities: [])
+		}
 	}
 
 	private var outsideMonthCell: some View {
-		RoundedRectangle(cornerRadius: 7)
-			.fill(Color.clear)
-			.frame(width: 46, height: 46)
+		RoundedRectangle(cornerRadius: 6.618)
+			.stroke(style: StrokeStyle(lineWidth: 1.655, dash: [6, 6]))
+			.foregroundColor(universalAccentColor.opacity(0.1))
+			.frame(width: 46.33, height: 46.33)
 	}
 
 	private func handleDaySelection(activities: [CalendarActivityDTO]) {

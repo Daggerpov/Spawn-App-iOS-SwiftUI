@@ -97,7 +97,7 @@ extension UnifiedNavigationHeader {
 			showBackButton: true,
 			backButtonAction: { print("Back") }
 		) {
-			Image(systemName: "gearshape")
+			Image(systemName: "line.3.horizontal")
 				.foregroundColor(universalAccentColor)
 		}
 	}

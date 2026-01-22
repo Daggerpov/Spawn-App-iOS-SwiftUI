@@ -14,41 +14,60 @@ struct CalendarDayCell: View {
 		Color.black
 	}
 
-	private var shadowOpacity: Double {
-		colorScheme == .dark ? 0.3 : 0.1
-	}
 
 	var body: some View {
 		ZStack {
 			if activities.count == 1, !activities.isEmpty {
 				// Single activity - show its icon and color
 				let activity = activities[0]
-				RoundedRectangle(cornerRadius: 7)
+				RoundedRectangle(cornerRadius: 6.618)
 					.fill(activityColor(for: activity))
-					.frame(width: 46, height: 46)
-					.shadow(color: Color.black.opacity(shadowOpacity), radius: 7, x: 0, y: 1.65)
-					.overlay(
-						activityIcon(for: activity)
-							.font(.onestMedium(size: 26))
-							.foregroundColor(cellTextColor)
+					.frame(width: 46.33, height: 46.33)
+					.shadow(color: Color.black.opacity(0.1), radius: 6.618, x: 0, y: 1.655)
+
+				// Inner highlight effect per Figma
+				RoundedRectangle(cornerRadius: 6.618)
+					.fill(
+						LinearGradient(
+							colors: [Color.white.opacity(0.5), Color.clear],
+							startPoint: .top,
+							endPoint: .bottom
+						)
 					)
+					.frame(width: 46.33, height: 46.33)
+					.allowsHitTesting(false)
+
+				activityIcon(for: activity)
+					.font(.onestMedium(size: 26.47))
+					.foregroundColor(cellTextColor)
 			} else if activities.count > 1, !activities.isEmpty {
 				// Multiple activities - show primary activity color with count
 				let primaryActivity = activities[0]
-				RoundedRectangle(cornerRadius: 7)
+				RoundedRectangle(cornerRadius: 6.618)
 					.fill(activityColor(for: primaryActivity))
-					.frame(width: 46, height: 46)
-					.shadow(color: Color.black.opacity(shadowOpacity), radius: 7, x: 0, y: 1.65)
-					.overlay(
-						VStack(spacing: 0) {
-							activityIcon(for: primaryActivity)
-								.font(.onestMedium(size: 20))
-								.foregroundColor(cellTextColor)
-							Text("\(activities.count)")
-								.font(.onestMedium(size: 10))
-								.foregroundColor(cellTextColor)
-						}
+					.frame(width: 46.33, height: 46.33)
+					.shadow(color: Color.black.opacity(0.1), radius: 6.618, x: 0, y: 1.655)
+
+				// Inner highlight effect per Figma
+				RoundedRectangle(cornerRadius: 6.618)
+					.fill(
+						LinearGradient(
+							colors: [Color.white.opacity(0.5), Color.clear],
+							startPoint: .top,
+							endPoint: .bottom
+						)
 					)
+					.frame(width: 46.33, height: 46.33)
+					.allowsHitTesting(false)
+
+				VStack(spacing: 0) {
+					activityIcon(for: primaryActivity)
+						.font(.onestMedium(size: 20))
+						.foregroundColor(cellTextColor)
+					Text("\(activities.count)")
+						.font(.onestMedium(size: 10))
+						.foregroundColor(cellTextColor)
+				}
 			}
 		}
 	}
