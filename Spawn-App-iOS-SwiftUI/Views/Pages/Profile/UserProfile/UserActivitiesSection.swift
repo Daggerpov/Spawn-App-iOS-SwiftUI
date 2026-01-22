@@ -213,12 +213,12 @@ struct UserActivitiesSection: View {
 	// Empty day cell with appropriate styling per Figma
 	@ViewBuilder
 	private func emptyDayCell(row: Int, col: Int) -> some View {
-		let isDashedBorder = row == 0 && col < 5  // First row, first 5 days show dashed border per Figma
+		let isOutsideMonth = isDayOutsideCurrentMonth(row: row, col: col)
 
-		if isDashedBorder {
+		if isOutsideMonth {
 			RoundedRectangle(cornerRadius: 6.618)
-				.stroke(style: StrokeStyle(lineWidth: 1.655, dash: [4, 2]))
-				.foregroundColor(universalAccentColor.opacity(0.3))
+				.stroke(style: StrokeStyle(lineWidth: 1.655, dash: [6, 6]))
+				.foregroundColor(universalAccentColor.opacity(0.1))
 				.frame(width: 46.33, height: 46.33)
 		} else {
 			ZStack {
@@ -240,6 +240,39 @@ struct UserActivitiesSection: View {
 					.allowsHitTesting(false)
 			}
 		}
+	}
+	
+	// Helper function to determine if a cell is outside the current month
+	private func isDayOutsideCurrentMonth(row: Int, col: Int) -> Bool {
+		let calendar = Calendar.current
+		let now = Date()
+		let currentMonth = calendar.component(.month, from: now)
+		let currentYear = calendar.component(.year, from: now)
+		
+		// Calculate first day offset (0-6, where 0 = Sunday)
+		var components = DateComponents()
+		components.year = currentYear
+		components.month = currentMonth
+		components.day = 1
+		
+		guard let firstOfMonth = calendar.date(from: components) else {
+			return false
+		}
+		
+		let weekday = calendar.component(.weekday, from: firstOfMonth)
+		let firstDayOffset = weekday - 1  // Convert from 1-7 to 0-6
+		
+		// Calculate days in month
+		guard let range = calendar.range(of: .day, in: .month, for: firstOfMonth) else {
+			return false
+		}
+		let daysInMonth = range.count
+		
+		// Calculate day index (0-34)
+		let dayIndex = row * 7 + col
+		
+		// Day is outside month if it's before the first day or after the last day
+		return dayIndex < firstDayOffset || dayIndex >= firstDayOffset + daysInMonth
 	}
 
 	// "Add to see activities" section for non-friends

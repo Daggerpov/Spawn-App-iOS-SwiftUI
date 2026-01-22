@@ -55,12 +55,6 @@ struct ProfileActionButtonsView: View {
 							.stroke(universalSecondaryColor, lineWidth: 1.25)
 					)
 					.scaleEffect(editButtonScale)
-					.shadow(
-						color: Color.black.opacity(0.15),
-						radius: editButtonPressed ? 2 : 8,
-						x: 0,
-						y: editButtonPressed ? 2 : 4
-					)
 				}
 				.animation(.easeInOut(duration: 0.15), value: editButtonScale)
 				.animation(.easeInOut(duration: 0.15), value: editButtonPressed)
@@ -112,12 +106,6 @@ struct ProfileActionButtonsView: View {
 							.stroke(universalSecondaryColor, lineWidth: 1.25)
 					)
 					.scaleEffect(shareButtonScale)
-					.shadow(
-						color: Color.black.opacity(0.15),
-						radius: shareButtonPressed ? 2 : 8,
-						x: 0,
-						y: shareButtonPressed ? 2 : 4
-					)
 				}
 				.buttonStyle(PlainButtonStyle())
 				.animation(.easeInOut(duration: 0.15), value: shareButtonScale)
