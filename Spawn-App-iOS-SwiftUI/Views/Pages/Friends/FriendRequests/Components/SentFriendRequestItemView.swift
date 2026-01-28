@@ -14,7 +14,7 @@ struct SentFriendRequestItemView: View {
 	var body: some View {
 		HStack(spacing: 12) {
 			// Clickable profile section
-			NavigationLink(destination: UserProfileView(user: friendRequest.receiverUser)) {
+			NavigationLink(value: UserProfileNavigationValue(friendRequest.receiverUser)) {
 				HStack(spacing: 12) {
 					// Profile picture
 					Group {

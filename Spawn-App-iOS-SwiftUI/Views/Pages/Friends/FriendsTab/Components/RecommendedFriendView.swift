@@ -17,7 +17,7 @@ struct RecommendedFriendView: View {
 		HStack {
 			if MockAPIService.isMocking {
 				if let pfp = friend.profilePicture {
-					NavigationLink(destination: UserProfileView(user: friend)) {
+					NavigationLink(value: UserProfileNavigationValue(friend)) {
 						Image(pfp)
 							.resizable()
 							.scaledToFill()
@@ -26,7 +26,7 @@ struct RecommendedFriendView: View {
 					}
 				}
 			} else {
-				NavigationLink(destination: UserProfileView(user: friend)) {
+				NavigationLink(value: UserProfileNavigationValue(friend)) {
 					if let pfpUrl = friend.profilePicture {
 						CachedProfileImage(
 							userId: friend.id,
@@ -44,7 +44,7 @@ struct RecommendedFriendView: View {
 				.shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 2)
 			}
 
-			NavigationLink(destination: UserProfileView(user: friend)) {
+			NavigationLink(value: UserProfileNavigationValue(friend)) {
 				VStack(alignment: .leading, spacing: 4) {
 					Text(FormatterService.shared.formatName(user: friend))
 						.font(.onestSemiBold(size: 14))
