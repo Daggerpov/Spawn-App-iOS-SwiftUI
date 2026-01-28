@@ -162,11 +162,12 @@ struct ProfileInterestsView: View {
 
 	private var emptyInterestsView: some View {
 		Text("No interests added yet.")
+            .frame(maxWidth: .infinity)
 			.foregroundColor(.secondary)
 			.italic()
 			.font(.onestRegular(size: 14))
 			.padding(.horizontal, 16)
-			.padding(.bottom, 16)
+			.padding(.bottom, 25)
 	}
 
 	private func interestChip(interest: String) -> some View {
@@ -207,12 +208,6 @@ struct ProfileInterestsView: View {
 					.padding(.horizontal, 12)
 					.foregroundColor(Color.primary)
 					.lineLimit(1)
-					.background(Color.gray.opacity(0.1))
-					.clipShape(Capsule())
-					.overlay(
-						RoundedRectangle(cornerRadius: 20)
-							.stroke(Color.gray.opacity(0.3), lineWidth: 1)
-					)
 			}
 		}
 	}
