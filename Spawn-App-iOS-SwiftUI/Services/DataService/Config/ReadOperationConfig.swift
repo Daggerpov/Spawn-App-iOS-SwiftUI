@@ -53,15 +53,14 @@ enum DataType {
 	/// Sent friend requests from a user
 	case sentFriendRequests(userId: UUID)
 
-	/// Check if two users are friends
-	case isFriend(currentUserId: UUID, otherUserId: UUID)
-
 	// MARK: - Profile
 
 	/// User profile statistics
 	case profileStats(userId: UUID)
 
-	/// User profile information
+	/// User profile information with optional relationship status
+	/// When requestingUserId is provided, the returned DTO includes relationshipStatus
+	/// and pendingFriendRequestId relative to the requesting user
 	case profileInfo(userId: UUID, requestingUserId: UUID?)
 
 	/// User interests
@@ -139,8 +138,6 @@ enum DataType {
 			return "friend-requests/incoming/\(userId)"
 		case .sentFriendRequests(let userId):
 			return "friend-requests/sent/\(userId)"
-		case .isFriend(let currentUserId, let otherUserId):
-			return "users/\(currentUserId)/is-friend/\(otherUserId)"
 
 		// Profile
 		case .profileStats(let userId):
@@ -211,8 +208,6 @@ enum DataType {
 			return "friendRequests-\(userId)"
 		case .sentFriendRequests(let userId):
 			return "sentFriendRequests-\(userId)"
-		case .isFriend(let currentUserId, let otherUserId):
-			return "isFriend_\(currentUserId)_\(otherUserId)"
 
 		// Profile
 		case .profileStats(let userId):
@@ -349,8 +344,6 @@ enum DataType {
 			return "Friend Requests"
 		case .sentFriendRequests:
 			return "Sent Friend Requests"
-		case .isFriend:
-			return "Is Friend"
 		case .profileStats:
 			return "Profile Stats"
 		case .profileInfo:

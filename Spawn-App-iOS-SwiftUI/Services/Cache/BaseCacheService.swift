@@ -98,7 +98,7 @@ class BaseCacheService {
 	}
 
 	/// Generic refresh function to reduce code duplication
-    func genericRefresh<T: Decodable>(
+	func genericRefresh<T: Decodable>(
 		endpoint: String,
 		parameters: [String: String]? = nil,
 		updateCache: @escaping ([T]) -> Void

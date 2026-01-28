@@ -14,7 +14,6 @@ struct CalendarDayCell: View {
 		Color.black
 	}
 
-
 	var body: some View {
 		ZStack {
 			if activities.count == 1, !activities.isEmpty {

@@ -45,6 +45,9 @@ final class ActivityCreationViewModel {
 	// Guard to prevent redundant friend loading
 	private var isLoadingFriends: Bool = false
 
+	// Notification service for user feedback (errors and successes)
+	private let notificationService = InAppNotificationService.shared
+
 	// Edit state
 	var isEditingExistingActivity: Bool = false
 
@@ -590,6 +593,7 @@ final class ActivityCreationViewModel {
 
 		case .failure(let error):
 			print("🔍 DEBUG: Activity creation failed: \(error)")
+			notificationService.showError(error, resource: .activity, operation: .create)
 			await setCreationMessage("Failed to create activity. Please try again.")
 		}
 
@@ -631,6 +635,7 @@ final class ActivityCreationViewModel {
 
 		case .failure(let error):
 			print("Error updating activity: \(error)")
+			notificationService.showError(error, resource: .activity, operation: .update)
 			await setCreationMessage("Failed to update activity. Please try again.")
 		}
 

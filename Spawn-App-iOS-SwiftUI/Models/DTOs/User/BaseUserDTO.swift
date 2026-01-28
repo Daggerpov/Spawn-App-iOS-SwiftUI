@@ -29,6 +29,8 @@ struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable, Sendable {
 	var hasCompletedOnboarding: Bool?
 	var provider: String?  // Auth provider: "google", "apple", or "email"
 	var dateCreated: Date?
+	var relationshipStatus: UserRelationshipType?  // Relationship status relative to requesting user
+	var pendingFriendRequestId: UUID?  // ID of pending friend request if one exists
 
 	init(
 		id: UUID,
@@ -39,7 +41,9 @@ struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable, Sendable {
 		email: String? = nil,
 		hasCompletedOnboarding: Bool? = nil,
 		provider: String? = nil,
-		dateCreated: Date? = nil
+		dateCreated: Date? = nil,
+		relationshipStatus: UserRelationshipType? = nil,
+		pendingFriendRequestId: UUID? = nil
 	) {
 		self.id = id
 		self.username = username
@@ -50,6 +54,8 @@ struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable, Sendable {
 		self.hasCompletedOnboarding = hasCompletedOnboarding
 		self.provider = provider
 		self.dateCreated = dateCreated
+		self.relationshipStatus = relationshipStatus
+		self.pendingFriendRequestId = pendingFriendRequestId
 	}
 }
 

@@ -57,7 +57,7 @@ struct ProfileInterestsView: View {
 			HStack {
 				Text("Interests + Hobbies")
 					.font(.onestBold(size: 14))
-                    .foregroundColor(.black)
+					.foregroundColor(.black)
 					.padding(.vertical, 8)
 					.padding(.horizontal, 12)
 					.background(figmaBittersweetOrange)
@@ -142,7 +142,7 @@ struct ProfileInterestsView: View {
 			HStack {
 				Text("Interests + Hobbies")
 					.font(.onestBold(size: 14))
-                    .foregroundColor(Color(hex: colorsGray900))
+					.foregroundColor(Color(hex: colorsGray900))
 					.padding(.vertical, 8)
 					.padding(.horizontal, 12)
 					.background(figmaBittersweetOrange)
@@ -162,7 +162,7 @@ struct ProfileInterestsView: View {
 
 	private var emptyInterestsView: some View {
 		Text("No interests added yet.")
-            .frame(maxWidth: .infinity)
+			.frame(maxWidth: .infinity)
 			.foregroundColor(.secondary)
 			.italic()
 			.font(.onestRegular(size: 14))

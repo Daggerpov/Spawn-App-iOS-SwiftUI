@@ -142,9 +142,10 @@ struct UserActivitiesSection: View {
 				// Vertical stack of activity cards (max 2) - per Figma design
 				VStack(spacing: 12) {
 					ForEach(Array(sortedActivities.prefix(2))) { activity in
+						let fullFeedActivity = activity.toFullFeedActivityDTO()
 						ActivityCardView(
 							userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
-							activity: activity,
+							activity: fullFeedActivity,
 							color: getActivityColor(for: activity.id),
 							locationManager: locationManager,
 							callback: { selectedActivity, color in
@@ -163,7 +164,7 @@ struct UserActivitiesSection: View {
 		VStack(spacing: 16) {
 			// Days of the week header
 			HStack(spacing: 6.618) {
-				ForEach(["S", "M", "T", "W", "T", "F", "S"], id: \.self) { day in
+				ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { _, day in
 					Text(day)
 						.font(.onestMedium(size: 13))
 						.foregroundColor(universalAccentColor)
@@ -241,36 +242,36 @@ struct UserActivitiesSection: View {
 			}
 		}
 	}
-	
+
 	// Helper function to determine if a cell is outside the current month
 	private func isDayOutsideCurrentMonth(row: Int, col: Int) -> Bool {
 		let calendar = Calendar.current
 		let now = Date()
 		let currentMonth = calendar.component(.month, from: now)
 		let currentYear = calendar.component(.year, from: now)
-		
+
 		// Calculate first day offset (0-6, where 0 = Sunday)
 		var components = DateComponents()
 		components.year = currentYear
 		components.month = currentMonth
 		components.day = 1
-		
+
 		guard let firstOfMonth = calendar.date(from: components) else {
 			return false
 		}
-		
+
 		let weekday = calendar.component(.weekday, from: firstOfMonth)
 		let firstDayOffset = weekday - 1  // Convert from 1-7 to 0-6
-		
+
 		// Calculate days in month
 		guard let range = calendar.range(of: .day, in: .month, for: firstOfMonth) else {
 			return false
 		}
 		let daysInMonth = range.count
-		
+
 		// Calculate day index (0-34)
 		let dayIndex = row * 7 + col
-		
+
 		// Day is outside month if it's before the first day or after the last day
 		return dayIndex < firstDayOffset || dayIndex >= firstDayOffset + daysInMonth
 	}

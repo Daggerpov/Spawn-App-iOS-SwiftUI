@@ -14,6 +14,7 @@ final class ChatViewModel {
 	private let senderUserId: UUID
 	// Note: activity is still ObservableObject; will be migrated separately
 	private var activity: FullFeedActivityDTO
+	private let notificationService = InAppNotificationService.shared
 
 	var chats: [FullActivityChatMessageDTO] {
 		activity.chatMessages ?? []
@@ -85,6 +86,7 @@ final class ChatViewModel {
 
 		case .failure(let error):
 			print("Error sending message: \(error)")
+			notificationService.showError(error, resource: .message, operation: .send)
 			setErrorMessage(ErrorMessages.sendError)
 		}
 	}

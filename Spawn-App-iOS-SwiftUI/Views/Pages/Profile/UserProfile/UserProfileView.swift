@@ -78,26 +78,37 @@ struct UserProfileView: View {
 			// CRITICAL FIX: Load critical profile data on MainActor to block view appearance
 			// This prevents empty state flashes and ensures view renders with data
 
+			let currentUserId = userAuth.spawnUser?.id
+
+			// Handle the case where it's the user's own profile
+			if let currentUserId = currentUserId, currentUserId == user.id {
+				profileViewModel.friendshipStatus = .themself
+			}
+
+			// Check if user is a RecommendedFriendUserDTO with relationship status already
+			if let recommendedFriend = user as? RecommendedFriendUserDTO,
+				recommendedFriend.relationshipStatus != nil
+			{
+				// Use the relationship status from the DTO - no API call needed
+				profileViewModel.setFriendshipStatusFromRecommendedFriend(recommendedFriend)
+			}
+
+			// Check if user is a FullFriendUserDTO or MinimalFriendDTO - these are ONLY used for existing friends
+			// so we can immediately set the friendship status without an API call
+			if user is FullFriendUserDTO || user is MinimalFriendDTO {
+				profileViewModel.friendshipStatus = .friends
+			}
+
 			// Load critical data that's required for the view to render meaningfully
-			await profileViewModel.loadCriticalProfileData(userId: user.id)
+			// When requestingUserId is provided, profile info will include relationshipStatus
+			// (this eliminates the need for a separate checkFriendshipStatus API call)
+			await profileViewModel.loadCriticalProfileData(
+				userId: user.id,
+				requestingUserId: currentUserId
+			)
 
-			// Check friendship status if not viewing own profile (critical for UI)
-			if let currentUserId = userAuth.spawnUser?.id {
-				// Check if user is a RecommendedFriendUserDTO with relationship status
-				if let recommendedFriend = user as? RecommendedFriendUserDTO,
-					recommendedFriend.relationshipStatus != nil
-				{
-					// Use the relationship status from the DTO - no API call needed
-					profileViewModel.setFriendshipStatusFromRecommendedFriend(recommendedFriend)
-				} else {
-					// For other user types (BaseUserDTO, etc.), use the original API call
-					await profileViewModel.checkFriendshipStatus(
-						currentUserId: currentUserId,
-						profileUserId: user.id
-					)
-				}
-
-				// Fetch activities if they're friends OR if viewing own profile
+			// Fetch activities if they're friends OR if viewing own profile
+			if let currentUserId = currentUserId {
 				if profileViewModel.friendshipStatus == .friends || profileViewModel.friendshipStatus == .themself {
 					await profileViewModel.fetchProfileActivities(
 						profileUserId: user.id
@@ -425,7 +436,6 @@ struct UserProfileView: View {
 			.padding(.horizontal, 16)
 			.padding(.top, 20)
 			.padding(.bottom, 8)
-
 
 			// User Activities Section for other users (based on friendship status)
 			UserActivitiesSection(

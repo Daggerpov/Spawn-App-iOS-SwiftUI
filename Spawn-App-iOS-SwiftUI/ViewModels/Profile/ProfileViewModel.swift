@@ -40,6 +40,7 @@ final class ProfileViewModel {
 
 	private let dataService: DataService
 	private var cancellables = Set<AnyCancellable>()
+	private let notificationService = InAppNotificationService.shared
 
 	init(
 		userId: UUID? = nil,
@@ -181,7 +182,8 @@ final class ProfileViewModel {
 		case .failure(let error):
 			// Revert local state if API call fails
 			self.userInterests.removeAll { $0 == interest }
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = notificationService.handleError(
+				error, resource: .profile, operation: .update)
 			return false
 		}
 	}
@@ -222,11 +224,12 @@ final class ProfileViewModel {
 			self.userSocialMedia = updatedSocialMedia
 
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = notificationService.handleError(
+				error, resource: .profile, operation: .update)
 		}
 	}
 
-	func fetchUserProfileInfo(userId: UUID) async {
+	func fetchUserProfileInfo(userId: UUID, requestingUserId: UUID? = nil) async {
 		// Check if user is still authenticated before making API call
 		guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
 			print("Cannot fetch profile info: User is not logged in")
@@ -237,13 +240,20 @@ final class ProfileViewModel {
 		self.isLoadingProfileInfo = true
 
 		// Use centralized DataType configuration
+		// When requestingUserId is provided, the backend returns relationshipStatus and pendingFriendRequestId
 		let result: DataResult<BaseUserDTO> = await dataService.read(
-			.profileInfo(userId: userId, requestingUserId: nil))
+			.profileInfo(userId: userId, requestingUserId: requestingUserId))
 
 		switch result {
 		case .success(let profileInfo, _):
 			self.userProfileInfo = profileInfo
 			self.isLoadingProfileInfo = false
+
+			// If relationship status was returned in the DTO, use it to set friendship status
+			if let relationshipStatus = profileInfo.relationshipStatus {
+				setFriendshipStatusFromRelationshipType(
+					relationshipStatus, pendingRequestId: profileInfo.pendingFriendRequestId)
+			}
 
 		case .failure(let error):
 			self.errorMessage = ErrorFormattingService.shared.formatError(error)
@@ -251,13 +261,37 @@ final class ProfileViewModel {
 		}
 	}
 
+	/// Sets friendship status from a UserRelationshipType (from BaseUserDTO)
+	private func setFriendshipStatusFromRelationshipType(
+		_ relationshipType: UserRelationshipType, pendingRequestId: UUID?
+	) {
+		let status: FriendshipStatus
+		switch relationshipType {
+		case .friend:
+			status = .friends
+		case .recommendedFriend:
+			status = .none
+		case .incomingFriendRequest:
+			status = .requestReceived
+		case .outgoingFriendRequest:
+			status = .requestSent
+		}
+
+		self.friendshipStatus = status
+		self.pendingFriendRequestId = pendingRequestId
+		self.isLoadingFriendshipStatus = false
+	}
+
 	/// Loads critical profile data that's required for the view to render meaningfully
 	/// This should be called on MainActor to block view appearance until data is ready
-	func loadCriticalProfileData(userId: UUID) async {
+	/// - Parameters:
+	///   - userId: The profile user's ID
+	///   - requestingUserId: Optional - when provided, profile info will include relationship status
+	func loadCriticalProfileData(userId: UUID, requestingUserId: UUID? = nil) async {
 		// Fetch critical data in parallel for faster loading
 		// These are essential for the profile to be interactive
 		async let stats: () = fetchUserStats(userId: userId)
-		async let profileInfo: () = fetchUserProfileInfo(userId: userId)
+		async let profileInfo: () = fetchUserProfileInfo(userId: userId, requestingUserId: requestingUserId)
 		async let interests: () = fetchUserInterests(userId: userId)
 
 		// Wait for all critical data to be ready
@@ -271,12 +305,12 @@ final class ProfileViewModel {
 		await fetchUserSocialMedia(userId: userId)
 	}
 
-	func loadAllProfileData(userId: UUID) async {
+	func loadAllProfileData(userId: UUID, requestingUserId: UUID? = nil) async {
 		// Use async let to fetch all profile data in parallel for faster loading
 		async let stats: () = fetchUserStats(userId: userId)
 		async let interests: () = fetchUserInterests(userId: userId)
 		async let socialMedia: () = fetchUserSocialMedia(userId: userId)
-		async let profileInfo: () = fetchUserProfileInfo(userId: userId)
+		async let profileInfo: () = fetchUserProfileInfo(userId: userId, requestingUserId: requestingUserId)
 
 		// Wait for all fetches to complete
 		let _ = await (stats, interests, socialMedia, profileInfo)
@@ -740,77 +774,6 @@ final class ProfileViewModel {
 		self.pendingFriendRequestId = recommendedFriend.pendingFriendRequestId
 	}
 
-	func checkFriendshipStatus(currentUserId: UUID, profileUserId: UUID) async {
-		// Don't check if it's the current user's profile
-		if currentUserId == profileUserId {
-			self.friendshipStatus = .themself
-			return
-		}
-
-		self.isLoadingFriendshipStatus = true
-
-		// First check if users are friends using centralized config
-		let friendResult: DataResult<Bool> = await dataService.read(
-			.isFriend(currentUserId: currentUserId, otherUserId: profileUserId)
-		)
-
-		switch friendResult {
-		case .success(let isFriend, _):
-			if isFriend {
-				self.friendshipStatus = .friends
-				self.isLoadingFriendshipStatus = false
-				return
-			}
-
-			// If not friends, check for pending friend requests in parallel
-			async let incomingResult: DataResult<[FetchFriendRequestDTO]> = dataService.read(
-				.friendRequests(userId: currentUserId))
-			async let profileIncomingResult: DataResult<[FetchFriendRequestDTO]> = dataService.read(
-				.friendRequests(userId: profileUserId))
-
-			// Wait for both requests to complete
-			let (currentUserRequestsResult, profileUserRequestsResult) = await (incomingResult, profileIncomingResult)
-
-			var currentUserRequests: [FetchFriendRequestDTO] = []
-			var profileUserRequests: [FetchFriendRequestDTO] = []
-
-			if case .success(let requests, _) = currentUserRequestsResult {
-				currentUserRequests = requests
-			}
-
-			if case .success(let requests, _) = profileUserRequestsResult {
-				profileUserRequests = requests
-			}
-
-			// Check if any incoming request is from the profile user
-			let requestFromProfileUser = currentUserRequests.first { $0.senderUser.id == profileUserId }
-
-			if let requestFromProfileUser = requestFromProfileUser {
-				let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
-				self.friendshipStatus = .requestReceived
-				self.pendingFriendRequestId =
-					(requestFromProfileUser.id == zeroUUID) ? nil : requestFromProfileUser.id
-				self.isLoadingFriendshipStatus = false
-				return
-			}
-
-			// Check if any incoming request to profile user is from current user
-			let requestToProfileUser = profileUserRequests.first { $0.senderUser.id == currentUserId }
-
-			if requestToProfileUser != nil {
-				self.friendshipStatus = .requestSent
-			} else {
-				self.friendshipStatus = .none
-			}
-			self.isLoadingFriendshipStatus = false
-
-		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
-			self.friendshipStatus = .unknown
-			self.isLoadingFriendshipStatus = false
-		}
-	}
-
 	func sendFriendRequest(fromUserId: UUID, toUserId: UUID) async {
 		let requestDTO = CreateFriendRequestDTO(
 			id: UUID(),
@@ -829,8 +792,15 @@ final class ProfileViewModel {
 			let _: DataResult<[RecommendedFriendUserDTO]> = await dataService.read(
 				.recommendedFriends(userId: fromUserId), cachePolicy: .apiOnly)
 
+			// Show success notification
+			notificationService.showSuccess(
+				resource: .friendRequest,
+				operation: .send
+			)
+
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = notificationService.handleError(
+				error, resource: .friendRequest, operation: .send)
 		}
 	}
 
@@ -858,7 +828,8 @@ final class ProfileViewModel {
 			NotificationCenter.default.post(name: .friendsDidChange, object: nil)
 
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = notificationService.handleError(
+				error, resource: .friendRequest, operation: .accept)
 			// Revert the optimistic update on failure
 			self.friendshipStatus = .requestReceived
 			self.pendingFriendRequestId = requestId
@@ -882,7 +853,8 @@ final class ProfileViewModel {
 			break
 
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = notificationService.handleError(
+				error, resource: .friendRequest, operation: .reject)
 			// Revert the optimistic update on failure
 			self.friendshipStatus = .requestReceived
 			self.pendingFriendRequestId = requestId
@@ -962,7 +934,8 @@ final class ProfileViewModel {
 				.friends(userId: currentUserId), cachePolicy: .apiOnly)
 
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = notificationService.handleError(
+				error, resource: .friend, operation: .delete)
 		}
 	}
 
@@ -984,7 +957,8 @@ final class ProfileViewModel {
 		case .success:
 			self.errorMessage = nil
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = notificationService.handleError(
+				error, resource: .user, operation: .report)
 		}
 	}
 
@@ -1019,7 +993,8 @@ final class ProfileViewModel {
 			}
 
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = notificationService.handleError(
+				error, resource: .user, operation: .block)
 		}
 	}
 
@@ -1041,7 +1016,8 @@ final class ProfileViewModel {
 			}
 
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = notificationService.handleError(
+				error, resource: .user, operation: .unblock)
 		}
 	}
 

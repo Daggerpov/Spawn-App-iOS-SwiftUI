@@ -102,10 +102,13 @@ struct FeedView: View {
 			}
 			.refreshable {
 				// Pull to refresh - user-initiated refresh
-				// Use detached task to prevent cancellation when refresh gesture completes
-				await Task.detached {
+				// Start the API fetch in background and return quickly to prevent long spinner
+				// This matches the friends page behavior where the refresh animation is brief
+				Task.detached {
 					await viewModel.fetchAllData(forceRefresh: true)
-				}.value
+				}
+				// Brief delay to show visual feedback that refresh was triggered
+				try? await Task.sleep(for: .seconds(0.5))
 			}
 			.onChange(of: showingActivityDescriptionPopup) { _, isShowing in
 				if isShowing, let activity = activityInPopup, let color = colorInPopup {

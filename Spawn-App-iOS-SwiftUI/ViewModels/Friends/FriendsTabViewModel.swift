@@ -593,15 +593,28 @@ final class FriendsTabViewModel {
 			// Don't refresh recommended friends - let the view handle the removal animation
 			await fetchOutgoingFriendRequests()
 
-			// Ensure loading state is cleared
+			// Ensure loading state is cleared and show success notification
 			await MainActor.run {
 				isLoading = false
+
+				// Show success notification
+				InAppNotificationService.shared.showSuccess(
+					resource: .friendRequest,
+					operation: .send
+				)
 			}
 
 		case .failure(let error):
 			await MainActor.run {
 				friendRequestCreationMessage = ErrorFormattingService.shared.formatError(error)
 				isLoading = false
+
+				// Show error notification
+				InAppNotificationService.shared.showError(
+					error,
+					resource: .friendRequest,
+					operation: .send
+				)
 			}
 		}
 	}

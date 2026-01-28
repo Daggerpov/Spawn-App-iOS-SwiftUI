@@ -40,6 +40,7 @@ final class ActivityTypeViewModel {
 	private var dataService: DataService
 	// Keep cancellables for Combine cache subscriptions
 	private var cancellables = Set<AnyCancellable>()
+	private let notificationService = InAppNotificationService.shared
 
 	// Debug: Track instance for memory debugging
 	// Using nonisolated(unsafe) to allow access from deinit
@@ -127,7 +128,9 @@ final class ActivityTypeViewModel {
 			}
 
 		case .failure(let error):
-			setLoadingState(false, error: ErrorFormattingService.shared.formatError(error))
+			let formattedError = notificationService.handleError(
+				error, resource: .activityType, operation: .fetch)
+			setLoadingState(false, error: formattedError)
 			print("❌ ActivityTypeViewModel: Error fetching activity types - \(error)")
 		}
 	}
@@ -195,7 +198,8 @@ final class ActivityTypeViewModel {
 
 		case .failure(let error):
 			print("❌ Error deleting activity type: \(error)")
-			errorMessage = ErrorFormattingService.shared.formatError(error)
+			errorMessage = notificationService.handleError(
+				error, resource: .activityType, operation: .delete)
 		}
 	}
 
@@ -220,7 +224,8 @@ final class ActivityTypeViewModel {
 
 		case .failure(let error):
 			print("❌ Error creating activity type: \(error)")
-			errorMessage = ErrorFormattingService.shared.formatError(error)
+			errorMessage = notificationService.handleError(
+				error, resource: .activityType, operation: .create)
 		}
 	}
 
@@ -278,8 +283,13 @@ final class ActivityTypeViewModel {
 			if formattedError.contains("pinned activity types") {
 				print("⚠️ Server returned pinning limit error - this might be a server-side validation bug")
 				errorMessage = "You can only pin up to 4 activity types"
+				notificationService.showErrorMessage(
+					"You can only pin up to 4 activity types",
+					title: "Pin Limit Reached"
+				)
 			} else {
-				errorMessage = formattedError
+				errorMessage = notificationService.handleError(
+					error, resource: .activityType, operation: .update)
 			}
 
 			// Refresh from API to get correct state
