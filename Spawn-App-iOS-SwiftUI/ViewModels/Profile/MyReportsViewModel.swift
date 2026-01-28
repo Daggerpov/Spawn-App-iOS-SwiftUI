@@ -8,7 +8,7 @@ final class MyReportsViewModel {
 	var errorMessage: String?
 
 	private let reportingService: ReportingService
-	private let errorNotificationService = ErrorNotificationService.shared
+	private let notificationService = InAppNotificationService.shared
 
 	init(reportingService: ReportingService = ReportingService()) {
 		self.reportingService = reportingService
@@ -21,11 +21,11 @@ final class MyReportsViewModel {
 		do {
 			reports = try await reportingService.getReportsByUser(reporterId: userId)
 		} catch let error as APIError {
-			errorMessage = errorNotificationService.handleError(
+			errorMessage = notificationService.handleError(
 				error, resource: .report, operation: .fetch)
 			reports = []
 		} catch {
-			errorMessage = errorNotificationService.handleError(
+			errorMessage = notificationService.handleError(
 				error, resource: .report, operation: .fetch)
 			reports = []
 		}

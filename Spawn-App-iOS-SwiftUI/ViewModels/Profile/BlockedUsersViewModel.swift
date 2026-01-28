@@ -8,7 +8,7 @@ final class BlockedUsersViewModel {
 	var errorMessage: String?
 
 	private let reportingService: ReportingService
-	private let errorNotificationService = ErrorNotificationService.shared
+	private let notificationService = InAppNotificationService.shared
 
 	init(reportingService: ReportingService = ReportingService()) {
 		self.reportingService = reportingService
@@ -23,11 +23,11 @@ final class BlockedUsersViewModel {
 			let blockedUserDTOs: [BlockedUserDTO] = try await reportingService.getFullBlockedUsers(blockerId: userId)
 			blockedUsers = blockedUserDTOs
 		} catch let error as APIError {
-			errorMessage = errorNotificationService.handleError(
+			errorMessage = notificationService.handleError(
 				error, resource: .blockedUser, operation: .fetch)
 			blockedUsers = []
 		} catch {
-			errorMessage = errorNotificationService.handleError(
+			errorMessage = notificationService.handleError(
 				error, resource: .blockedUser, operation: .fetch)
 			blockedUsers = []
 		}
@@ -49,11 +49,11 @@ final class BlockedUsersViewModel {
 			errorMessage = nil
 		} catch let error as APIError {
 			print("❌ [BlockedUsersViewModel] APIError: \(error)")
-			errorMessage = errorNotificationService.handleError(
+			errorMessage = notificationService.handleError(
 				error, resource: .blockedUser, operation: .unblock)
 		} catch {
 			print("❌ [BlockedUsersViewModel] Error: \(error)")
-			errorMessage = errorNotificationService.handleError(
+			errorMessage = notificationService.handleError(
 				error, resource: .blockedUser, operation: .unblock)
 		}
 	}

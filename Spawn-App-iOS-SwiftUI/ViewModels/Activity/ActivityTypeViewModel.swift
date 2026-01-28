@@ -40,7 +40,7 @@ final class ActivityTypeViewModel {
 	private var dataService: DataService
 	// Keep cancellables for Combine cache subscriptions
 	private var cancellables = Set<AnyCancellable>()
-	private let errorNotificationService = ErrorNotificationService.shared
+	private let notificationService = InAppNotificationService.shared
 
 	// Debug: Track instance for memory debugging
 	// Using nonisolated(unsafe) to allow access from deinit
@@ -128,7 +128,7 @@ final class ActivityTypeViewModel {
 			}
 
 		case .failure(let error):
-			let formattedError = errorNotificationService.handleError(
+			let formattedError = notificationService.handleError(
 				error, resource: .activityType, operation: .fetch)
 			setLoadingState(false, error: formattedError)
 			print("❌ ActivityTypeViewModel: Error fetching activity types - \(error)")
@@ -198,7 +198,7 @@ final class ActivityTypeViewModel {
 
 		case .failure(let error):
 			print("❌ Error deleting activity type: \(error)")
-			errorMessage = errorNotificationService.handleError(
+			errorMessage = notificationService.handleError(
 				error, resource: .activityType, operation: .delete)
 		}
 	}
@@ -224,7 +224,7 @@ final class ActivityTypeViewModel {
 
 		case .failure(let error):
 			print("❌ Error creating activity type: \(error)")
-			errorMessage = errorNotificationService.handleError(
+			errorMessage = notificationService.handleError(
 				error, resource: .activityType, operation: .create)
 		}
 	}
@@ -283,12 +283,12 @@ final class ActivityTypeViewModel {
 			if formattedError.contains("pinned activity types") {
 				print("⚠️ Server returned pinning limit error - this might be a server-side validation bug")
 				errorMessage = "You can only pin up to 4 activity types"
-				errorNotificationService.showErrorMessage(
+				notificationService.showErrorMessage(
 					"You can only pin up to 4 activity types",
 					title: "Pin Limit Reached"
 				)
 			} else {
-				errorMessage = errorNotificationService.handleError(
+				errorMessage = notificationService.handleError(
 					error, resource: .activityType, operation: .update)
 			}
 

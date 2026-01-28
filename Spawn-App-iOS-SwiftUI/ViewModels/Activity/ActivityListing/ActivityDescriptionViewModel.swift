@@ -19,7 +19,7 @@ final class ActivityDescriptionViewModel {
 	var errorMessage: String?
 	var isLoading: Bool = false
 
-	private let errorNotificationService = ErrorNotificationService.shared
+	private let notificationService = InAppNotificationService.shared
 
 	// MARK: - Helper Methods
 
@@ -108,7 +108,7 @@ final class ActivityDescriptionViewModel {
 
 		case .failure(let error):
 			print("❌ Error saving activity changes: \(error)")
-			errorMessage = errorNotificationService.handleError(
+			errorMessage = notificationService.handleError(
 				error, resource: .activity, operation: .update)
 		}
 	}
@@ -150,7 +150,7 @@ final class ActivityDescriptionViewModel {
 				)
 			} else {
 				print("Error toggling participation: \(error)")
-				self.errorMessage = errorNotificationService.handleError(
+				self.errorMessage = notificationService.handleError(
 					error, resource: .activity, operation: .join)
 			}
 		}
@@ -186,7 +186,7 @@ final class ActivityDescriptionViewModel {
 
 		case .failure(let error):
 			print("Error sending message: \(error)")
-			creationMessage = errorNotificationService.handleError(
+			creationMessage = notificationService.handleError(
 				error, resource: .message, operation: .send)
 		}
 	}
@@ -234,7 +234,7 @@ final class ActivityDescriptionViewModel {
 			print("Activity reported successfully")
 
 		case .failure(let error):
-			errorMessage = errorNotificationService.handleError(
+			errorMessage = notificationService.handleError(
 				error, resource: .report, operation: .send)
 		}
 	}

@@ -12,7 +12,7 @@ import SwiftUI
 final class FeedbackViewModel {
 	// DataService for all data operations
 	private var dataService: DataService
-	private let errorNotificationService = ErrorNotificationService.shared
+	private let notificationService = InAppNotificationService.shared
 
 	// Observable properties that the view can observe
 	var isSubmitting = false
@@ -61,7 +61,7 @@ final class FeedbackViewModel {
 			successMessage = "Thank you for your feedback!"
 
 		case .failure(let error):
-			let formattedError = errorNotificationService.handleError(
+			let formattedError = notificationService.handleError(
 				error, resource: .feedback, operation: .send)
 			setError("Failed to submit feedback: \(formattedError)")
 		}
