@@ -48,6 +48,14 @@ struct UserProfileView: View {
 		)
 	}
 
+	/// Preview-only initializer that allows setting a specific friendship status
+	init(user: Nameable, previewFriendshipStatus: FriendshipStatus) {
+		self.user = user
+		let viewModel = ProfileViewModel(userId: user.id)
+		viewModel.friendshipStatus = previewFriendshipStatus
+		self._profileViewModel = State(wrappedValue: viewModel)
+	}
+
 	var body: some View {
 		ZStack {
 			profileContent
@@ -418,12 +426,6 @@ struct UserProfileView: View {
 			.padding(.top, 20)
 			.padding(.bottom, 8)
 
-			// User Stats (only show if friends)
-			if profileViewModel.friendshipStatus == .friends {
-				ProfileStatsView(
-					profileViewModel: profileViewModel
-				)
-			}
 
 			// User Activities Section for other users (based on friendship status)
 			UserActivitiesSection(
@@ -444,20 +446,15 @@ struct UserProfileView: View {
 					Image(systemName: "person.crop.circle.badge.checkmark")
 					Text("Friends")
 				}
-				.font(.caption)
-				.bold()
-				.foregroundColor(figmaGreen)
+				.font(.onestMedium(size: 16))
+				.foregroundColor(Color(hex: colorsGray900))
 				.padding(.horizontal, 16)
 				.padding(.vertical, 8)
 				.background(
-					RoundedRectangle(
-						cornerRadius: universalRectangleCornerRadius
-					)
-					.stroke(figmaGreen)
+					RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+						.fill(Color(hex: colorsGreen500))
 				)
-				.cornerRadius(universalRectangleCornerRadius)
 				.padding(.bottom, 10)
-				.background(universalBackgroundColor)
 			}
 		}
 	}
@@ -814,6 +811,11 @@ struct UserProfileSheetsModifier: ViewModifier {
 }
 
 @available(iOS 17, *)
-#Preview {
+#Preview("Friends") {
+	UserProfileView(user: BaseUserDTO.danielAgapov, previewFriendshipStatus: .friends)
+}
+
+@available(iOS 17, *)
+#Preview("Not Friends") {
 	UserProfileView(user: BaseUserDTO.danielAgapov)
 }
