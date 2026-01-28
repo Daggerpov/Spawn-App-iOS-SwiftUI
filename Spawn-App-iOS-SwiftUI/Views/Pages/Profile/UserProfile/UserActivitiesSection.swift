@@ -142,9 +142,10 @@ struct UserActivitiesSection: View {
 				// Vertical stack of activity cards (max 2) - per Figma design
 				VStack(spacing: 12) {
 					ForEach(Array(sortedActivities.prefix(2))) { activity in
+						let fullFeedActivity = activity.toFullFeedActivityDTO()
 						ActivityCardView(
 							userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
-							activity: activity,
+							activity: fullFeedActivity,
 							color: getActivityColor(for: activity.id),
 							locationManager: locationManager,
 							callback: { selectedActivity, color in
@@ -163,7 +164,7 @@ struct UserActivitiesSection: View {
 		VStack(spacing: 16) {
 			// Days of the week header
 			HStack(spacing: 6.618) {
-				ForEach(["S", "M", "T", "W", "T", "F", "S"], id: \.self) { day in
+				ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { _, day in
 					Text(day)
 						.font(.onestMedium(size: 13))
 						.foregroundColor(universalAccentColor)

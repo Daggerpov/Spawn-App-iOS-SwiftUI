@@ -379,9 +379,9 @@ final class APIService: IAPIService, @unchecked Sendable {
 		}
 		if !data.isEmpty {
 			do {
-				if let responseString = String(data: data, encoding: .utf8) {
-					print("🔄 DEBUG: Raw response data: \(responseString)")
-				}
+				//				if let responseString = String(data: data, encoding: .utf8) {
+				//					print("🔄 DEBUG: Raw response data: \(responseString)")
+				//				}
 				let decoder = APIService.makeDecoder()
 				let decodedData = try decoder.decode(U.self, from: data)
 				return decodedData

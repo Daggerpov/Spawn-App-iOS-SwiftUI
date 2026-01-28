@@ -97,10 +97,11 @@ struct FriendActivitiesShowAllView: View {
 				VStack(spacing: 12) {
 					ForEach(upcomingActivities) { activity in
 						let activityColor = getActivityColor(for: activity.id)
+						let fullFeedActivity = activity.toFullFeedActivityDTO()
 
 						ActivityCardView(
 							userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
-							activity: activity,
+							activity: fullFeedActivity,
 							color: activityColor,
 							locationManager: locationManager,
 							callback: { selectedActivity, color in
@@ -140,7 +141,7 @@ struct FriendActivitiesShowAllView: View {
 							activity: activity,
 							color: activityColor,
 							onTap: {
-								profileViewModel.selectedActivity = activity
+								profileViewModel.selectedActivity = activity.toFullFeedActivityDTO()
 								showActivityDetails = true
 							}
 						)
