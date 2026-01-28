@@ -51,7 +51,6 @@ struct FriendRequestsView: View {
 				AddToActivityTypeView(user: friend)
 			}
 		}
-		.userProfileNavigationDestination()
 	}
 
 	// MARK: - Header View

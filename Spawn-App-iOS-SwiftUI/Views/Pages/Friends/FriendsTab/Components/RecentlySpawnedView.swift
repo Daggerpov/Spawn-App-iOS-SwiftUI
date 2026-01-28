@@ -17,7 +17,7 @@ struct RecentlySpawnedView: View {
 		HStack {
 			if MockAPIService.isMocking {
 				if let pfp = recentUser.user.profilePicture {
-					NavigationLink(value: UserProfileNavigationValue(recentUser.user)) {
+					NavigationLink(destination: UserProfileView(user: recentUser.user)) {
 						Image(pfp)
 							.resizable()
 							.scaledToFill()
@@ -26,7 +26,7 @@ struct RecentlySpawnedView: View {
 					}
 				}
 			} else {
-				NavigationLink(value: UserProfileNavigationValue(recentUser.user)) {
+				NavigationLink(destination: UserProfileView(user: recentUser.user)) {
 					if let pfpUrl = recentUser.user.profilePicture {
 						CachedProfileImage(
 							userId: recentUser.user.id,
@@ -44,7 +44,7 @@ struct RecentlySpawnedView: View {
 				.shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 2)
 			}
 
-			NavigationLink(value: UserProfileNavigationValue(recentUser.user)) {
+			NavigationLink(destination: UserProfileView(user: recentUser.user)) {
 				VStack(alignment: .leading, spacing: 2) {
 					Text(FormatterService.shared.formatName(user: recentUser.user))
 						.font(.onestBold(size: 14))

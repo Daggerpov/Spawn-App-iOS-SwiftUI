@@ -46,7 +46,6 @@ struct FriendsView: View {
 				}
 				.background(universalBackgroundColor)
 				.navigationBarHidden(true)
-				.userProfileNavigationDestination()
 			}
 			.id(tabNavigationManager.friendsNavigationId)
 		}
