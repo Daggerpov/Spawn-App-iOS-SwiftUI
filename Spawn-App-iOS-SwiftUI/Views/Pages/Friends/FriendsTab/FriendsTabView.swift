@@ -118,10 +118,12 @@ struct FriendsTabView: View {
 			}
 			.refreshable {
 				// Pull to refresh functionality - user-initiated refresh
-				// Use detached task to prevent cancellation when refresh gesture completes
-				await Task.detached {
+				// Start the API fetch in background and return quickly to prevent long spinner
+				Task.detached {
 					await viewModel.fetchAllData(forceRefresh: true)
-				}.value
+				}
+				// Brief delay to show visual feedback that refresh was triggered
+				try? await Task.sleep(for: .seconds(0.5))
 			}
 			.sheet(isPresented: $showProfileMenu) {
 				if let selectedFriend = selectedFriend {
