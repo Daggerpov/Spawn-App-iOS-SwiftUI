@@ -8,6 +8,7 @@ final class BlockedUsersViewModel {
 	var errorMessage: String?
 
 	private let reportingService: ReportingService
+	private let errorNotificationService = ErrorNotificationService.shared
 
 	init(reportingService: ReportingService = ReportingService()) {
 		self.reportingService = reportingService
@@ -22,10 +23,12 @@ final class BlockedUsersViewModel {
 			let blockedUserDTOs: [BlockedUserDTO] = try await reportingService.getFullBlockedUsers(blockerId: userId)
 			blockedUsers = blockedUserDTOs
 		} catch let error as APIError {
-			errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+			errorMessage = errorNotificationService.handleError(
+				error, resource: .blockedUser, operation: .fetch)
 			blockedUsers = []
 		} catch {
-			errorMessage = ErrorFormattingService.shared.formatError(error)
+			errorMessage = errorNotificationService.handleError(
+				error, resource: .blockedUser, operation: .fetch)
 			blockedUsers = []
 		}
 
@@ -46,10 +49,12 @@ final class BlockedUsersViewModel {
 			errorMessage = nil
 		} catch let error as APIError {
 			print("❌ [BlockedUsersViewModel] APIError: \(error)")
-			errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+			errorMessage = errorNotificationService.handleError(
+				error, resource: .blockedUser, operation: .unblock)
 		} catch {
 			print("❌ [BlockedUsersViewModel] Error: \(error)")
-			errorMessage = ErrorFormattingService.shared.formatError(error)
+			errorMessage = errorNotificationService.handleError(
+				error, resource: .blockedUser, operation: .unblock)
 		}
 	}
 
@@ -57,9 +62,11 @@ final class BlockedUsersViewModel {
 		do {
 			return try await reportingService.isUserBlocked(blockerId: blockerId, blockedId: blockedId)
 		} catch let error as APIError {
+			// Don't show notification for this check - it's a background operation
 			errorMessage = ErrorFormattingService.shared.formatAPIError(error)
 			return false
 		} catch {
+			// Don't show notification for this check - it's a background operation
 			errorMessage = ErrorFormattingService.shared.formatError(error)
 			return false
 		}

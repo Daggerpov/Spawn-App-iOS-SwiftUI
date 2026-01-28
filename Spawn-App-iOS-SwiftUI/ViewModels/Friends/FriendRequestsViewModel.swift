@@ -17,6 +17,7 @@ final class FriendRequestsViewModel {
 
 	private let userId: UUID
 	private var dataService: DataService
+	private let errorNotificationService = ErrorNotificationService.shared
 
 	init(userId: UUID, dataService: DataService? = nil) {
 		self.userId = userId
@@ -62,7 +63,8 @@ final class FriendRequestsViewModel {
 			self.incomingFriendRequests = normalized
 
 		case .failure(let error):
-			errorMessage = ErrorFormattingService.shared.formatError(error)
+			errorMessage = errorNotificationService.handleError(
+				error, resource: .friendRequest, operation: .fetch)
 			self.incomingFriendRequests = []
 		}
 
@@ -73,7 +75,9 @@ final class FriendRequestsViewModel {
 			self.sentFriendRequests = normalized
 
 		case .failure(let error):
-			errorMessage = ErrorFormattingService.shared.formatError(error)
+			// Don't show duplicate notification for same fetch operation
+			errorMessage = errorNotificationService.handleError(
+				error, resource: .friendRequest, operation: .fetch, showNotification: false)
 			self.sentFriendRequests = []
 		}
 	}
@@ -129,7 +133,18 @@ final class FriendRequestsViewModel {
 			}
 
 		case .failure(let error):
-			errorMessage = ErrorFormattingService.shared.formatError(error)
+			// Determine the operation type for better error messages
+			let operation: OperationContext
+			switch action {
+			case .accept:
+				operation = .accept
+			case .decline:
+				operation = .reject
+			case .cancel:
+				operation = .delete
+			}
+			errorMessage = errorNotificationService.handleError(
+				error, resource: .friendRequest, operation: operation)
 			// For real API failures, revert the optimistic update by re-fetching
 			await fetchFriendRequests()
 		}

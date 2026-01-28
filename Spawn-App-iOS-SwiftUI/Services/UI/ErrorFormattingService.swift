@@ -149,4 +149,104 @@ final class ErrorFormattingService: Sendable {
 
 		return baseMessage
 	}
+
+	/// Formats error messages with resource and operation context
+	/// - Parameters:
+	///   - error: The error to format
+	///   - resource: The type of resource being operated on (e.g., "activity", "friend")
+	///   - operation: The operation that failed (e.g., "create", "update", "delete")
+	/// - Returns: A contextual user-friendly error message
+	func formatContextualError(_ error: Error, resource: String, operation: String) -> String {
+		// First, get the base error classification
+		if let apiError = error as? APIError {
+			return formatContextualAPIError(apiError, resource: resource, operation: operation)
+		}
+
+		return formatGenericContextualError(error.localizedDescription, resource: resource, operation: operation)
+	}
+
+	/// Formats API errors with resource and operation context
+	private func formatContextualAPIError(_ apiError: APIError, resource: String, operation: String) -> String {
+		switch apiError {
+		case .invalidStatusCode(let statusCode):
+			return formatContextualStatusCode(statusCode, resource: resource, operation: operation)
+		case .failedHTTPRequest:
+			return "We're having trouble connecting to our servers. Please check your connection and try again."
+		case .failedJSONParsing:
+			return "We received unexpected data. Please try again."
+		case .invalidData:
+			return "The \(resource) information couldn't be processed. Please try again."
+		case .URLError:
+			return "Unable to connect. Please check your internet connection."
+		case .unknownError(let error):
+			return formatGenericContextualError(error.localizedDescription, resource: resource, operation: operation)
+		case .failedTokenSaving:
+			return "There was an authentication issue. Please try signing in again."
+		case .cancelled:
+			return "Request was cancelled."
+		}
+	}
+
+	/// Formats HTTP status codes with resource and operation context
+	private func formatContextualStatusCode(_ statusCode: Int, resource: String, operation: String) -> String {
+		switch statusCode {
+		case 400:
+			return "Please check your \(resource) information and try again."
+		case 401:
+			return "Your session has expired. Please sign in again."
+		case 403:
+			return "You don't have permission to \(operation) this \(resource)."
+		case 404:
+			return "This \(resource) could not be found. It may have been removed."
+		case 409:
+			return formatConflictError(resource: resource, operation: operation)
+		case 429:
+			return "Too many attempts. Please wait a moment and try again."
+		case 500...599:
+			return "We're experiencing technical difficulties. Please try again shortly."
+		default:
+			return "We couldn't \(operation) the \(resource). Please try again."
+		}
+	}
+
+	/// Formats 409 Conflict errors based on context
+	private func formatConflictError(resource: String, operation: String) -> String {
+		let lowercasedResource = resource.lowercased()
+
+		if lowercasedResource.contains("friend") && operation == "send" {
+			return "A friend request already exists with this user."
+		} else if lowercasedResource.contains("activity") && operation == "join" {
+			return "You're already a participant in this activity."
+		} else if lowercasedResource.contains("tag") && operation == "create" {
+			return "A tag with this name already exists."
+		} else if lowercasedResource.contains("block") {
+			return "This user is already blocked."
+		} else if lowercasedResource.contains("profile") || lowercasedResource.contains("user") {
+			return "This username or information is already in use."
+		}
+
+		return "This \(resource) already exists or conflicts with another."
+	}
+
+	/// Formats generic errors with resource and operation context
+	private func formatGenericContextualError(_ rawMessage: String, resource: String, operation: String) -> String {
+		let lowercased = rawMessage.lowercased()
+
+		// Network-related errors
+		if lowercased.contains("network") || lowercased.contains("connection") || lowercased.contains("timeout")
+			|| lowercased.contains("unreachable")
+		{
+			return "Unable to connect. Please check your internet and try again."
+		}
+
+		// Server errors
+		if lowercased.contains("server") || lowercased.contains("internal") || lowercased.contains("500")
+			|| lowercased.contains("503")
+		{
+			return "We're experiencing technical difficulties. Please try again shortly."
+		}
+
+		// Default contextual message
+		return "We couldn't \(operation) the \(resource). Please try again."
+	}
 }

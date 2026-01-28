@@ -19,6 +19,8 @@ final class ActivityDescriptionViewModel {
 	var errorMessage: String?
 	var isLoading: Bool = false
 
+	private let errorNotificationService = ErrorNotificationService.shared
+
 	// MARK: - Helper Methods
 
 	/// Sets loading state and optional error message
@@ -106,7 +108,8 @@ final class ActivityDescriptionViewModel {
 
 		case .failure(let error):
 			print("❌ Error saving activity changes: \(error)")
-			errorMessage = ErrorFormattingService.shared.formatError(error)
+			errorMessage = errorNotificationService.handleError(
+				error, resource: .activity, operation: .update)
 		}
 	}
 
@@ -139,7 +142,7 @@ final class ActivityDescriptionViewModel {
 				case .invalidStatusCode(let statusCode) = apiErrorTyped,
 				statusCode == 400
 			{
-				// Activity is full
+				// Activity is full - show notification via the existing handler
 				NotificationCenter.default.post(
 					name: NSNotification.Name("ShowActivityFullAlert"),
 					object: nil,
@@ -147,7 +150,8 @@ final class ActivityDescriptionViewModel {
 				)
 			} else {
 				print("Error toggling participation: \(error)")
-				self.errorMessage = "Failed to update participation status"
+				self.errorMessage = errorNotificationService.handleError(
+					error, resource: .activity, operation: .join)
 			}
 		}
 	}
@@ -182,7 +186,8 @@ final class ActivityDescriptionViewModel {
 
 		case .failure(let error):
 			print("Error sending message: \(error)")
-			creationMessage = ErrorFormattingService.shared.formatError(error)
+			creationMessage = errorNotificationService.handleError(
+				error, resource: .message, operation: .send)
 		}
 	}
 
@@ -229,7 +234,8 @@ final class ActivityDescriptionViewModel {
 			print("Activity reported successfully")
 
 		case .failure(let error):
-			errorMessage = ErrorFormattingService.shared.formatError(error)
+			errorMessage = errorNotificationService.handleError(
+				error, resource: .report, operation: .send)
 		}
 	}
 

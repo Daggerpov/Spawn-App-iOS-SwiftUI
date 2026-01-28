@@ -40,6 +40,7 @@ final class ProfileViewModel {
 
 	private let dataService: DataService
 	private var cancellables = Set<AnyCancellable>()
+	private let errorNotificationService = ErrorNotificationService.shared
 
 	init(
 		userId: UUID? = nil,
@@ -181,7 +182,8 @@ final class ProfileViewModel {
 		case .failure(let error):
 			// Revert local state if API call fails
 			self.userInterests.removeAll { $0 == interest }
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = errorNotificationService.handleError(
+				error, resource: .profile, operation: .update)
 			return false
 		}
 	}
@@ -222,7 +224,8 @@ final class ProfileViewModel {
 			self.userSocialMedia = updatedSocialMedia
 
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = errorNotificationService.handleError(
+				error, resource: .profile, operation: .update)
 		}
 	}
 
@@ -830,7 +833,8 @@ final class ProfileViewModel {
 				.recommendedFriends(userId: fromUserId), cachePolicy: .apiOnly)
 
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = errorNotificationService.handleError(
+				error, resource: .friendRequest, operation: .send)
 		}
 	}
 
@@ -858,7 +862,8 @@ final class ProfileViewModel {
 			NotificationCenter.default.post(name: .friendsDidChange, object: nil)
 
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = errorNotificationService.handleError(
+				error, resource: .friendRequest, operation: .accept)
 			// Revert the optimistic update on failure
 			self.friendshipStatus = .requestReceived
 			self.pendingFriendRequestId = requestId
@@ -882,7 +887,8 @@ final class ProfileViewModel {
 			break
 
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = errorNotificationService.handleError(
+				error, resource: .friendRequest, operation: .reject)
 			// Revert the optimistic update on failure
 			self.friendshipStatus = .requestReceived
 			self.pendingFriendRequestId = requestId
@@ -962,7 +968,8 @@ final class ProfileViewModel {
 				.friends(userId: currentUserId), cachePolicy: .apiOnly)
 
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = errorNotificationService.handleError(
+				error, resource: .friend, operation: .delete)
 		}
 	}
 
@@ -984,7 +991,8 @@ final class ProfileViewModel {
 		case .success:
 			self.errorMessage = nil
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = errorNotificationService.handleError(
+				error, resource: .user, operation: .report)
 		}
 	}
 
@@ -1019,7 +1027,8 @@ final class ProfileViewModel {
 			}
 
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = errorNotificationService.handleError(
+				error, resource: .user, operation: .block)
 		}
 	}
 
@@ -1041,7 +1050,8 @@ final class ProfileViewModel {
 			}
 
 		case .failure(let error):
-			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = errorNotificationService.handleError(
+				error, resource: .user, operation: .unblock)
 		}
 	}
 
