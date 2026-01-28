@@ -241,36 +241,36 @@ struct UserActivitiesSection: View {
 			}
 		}
 	}
-	
+
 	// Helper function to determine if a cell is outside the current month
 	private func isDayOutsideCurrentMonth(row: Int, col: Int) -> Bool {
 		let calendar = Calendar.current
 		let now = Date()
 		let currentMonth = calendar.component(.month, from: now)
 		let currentYear = calendar.component(.year, from: now)
-		
+
 		// Calculate first day offset (0-6, where 0 = Sunday)
 		var components = DateComponents()
 		components.year = currentYear
 		components.month = currentMonth
 		components.day = 1
-		
+
 		guard let firstOfMonth = calendar.date(from: components) else {
 			return false
 		}
-		
+
 		let weekday = calendar.component(.weekday, from: firstOfMonth)
 		let firstDayOffset = weekday - 1  // Convert from 1-7 to 0-6
-		
+
 		// Calculate days in month
 		guard let range = calendar.range(of: .day, in: .month, for: firstOfMonth) else {
 			return false
 		}
 		let daysInMonth = range.count
-		
+
 		// Calculate day index (0-34)
 		let dayIndex = row * 7 + col
-		
+
 		// Day is outside month if it's before the first day or after the last day
 		return dayIndex < firstDayOffset || dayIndex >= firstDayOffset + daysInMonth
 	}

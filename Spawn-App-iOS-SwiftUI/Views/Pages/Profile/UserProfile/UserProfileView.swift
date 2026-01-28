@@ -426,7 +426,6 @@ struct UserProfileView: View {
 			.padding(.top, 20)
 			.padding(.bottom, 8)
 
-
 			// User Activities Section for other users (based on friendship status)
 			UserActivitiesSection(
 				user: user,
