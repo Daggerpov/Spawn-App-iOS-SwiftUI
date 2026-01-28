@@ -93,6 +93,12 @@ struct UserProfileView: View {
 				profileViewModel.setFriendshipStatusFromRecommendedFriend(recommendedFriend)
 			}
 
+			// Check if user is a FullFriendUserDTO or MinimalFriendDTO - these are ONLY used for existing friends
+			// so we can immediately set the friendship status without an API call
+			if user is FullFriendUserDTO || user is MinimalFriendDTO {
+				profileViewModel.friendshipStatus = .friends
+			}
+
 			// Load critical data that's required for the view to render meaningfully
 			// When requestingUserId is provided, profile info will include relationshipStatus
 			// (this eliminates the need for a separate checkFriendshipStatus API call)
