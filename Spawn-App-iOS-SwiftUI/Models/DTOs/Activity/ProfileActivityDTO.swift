@@ -178,4 +178,94 @@ final class ProfileActivityDTO: Identifiable, Codable, Equatable, ObservableObje
 			clientTimezone: clientTimezone
 		)
 	}
+
+	// MARK: - Mock Data for Previews
+
+	/// Mock upcoming activity for preview
+	static let mockUpcomingDinner: ProfileActivityDTO = {
+		let calendar = Calendar.current
+		let startTime = calendar.date(byAdding: .hour, value: 2, to: Date())
+		let endTime = calendar.date(byAdding: .hour, value: 4, to: Date())
+
+		return ProfileActivityDTO(
+			id: UUID(),
+			title: "Dinner at Gather",
+			startTime: startTime,
+			endTime: endTime,
+			note: "Let's grab some food!",
+			icon: "🍽️",
+			createdAt: Date(),
+			isExpired: false,
+			location: LocationDTO(
+				id: UUID(),
+				name: "Gather - Place Vanier",
+				latitude: 49.26468617023799,
+				longitude: -123.25859833051356
+			),
+			creatorUser: BaseUserDTO.danielAgapov,
+			participantUsers: [BaseUserDTO.danielLee, BaseUserDTO.haley],
+			isPastActivity: false
+		)
+	}()
+
+	/// Mock upcoming basketball activity for preview
+	static let mockUpcomingBasketball: ProfileActivityDTO = {
+		let calendar = Calendar.current
+		let startTime = calendar.date(byAdding: .day, value: 1, to: Date())
+		let endTime = calendar.date(byAdding: .hour, value: 26, to: Date())
+
+		return ProfileActivityDTO(
+			id: UUID(),
+			title: "Basketball Game",
+			startTime: startTime,
+			endTime: endTime,
+			note: "Let's play!",
+			icon: "🏀",
+			createdAt: Date(),
+			isExpired: false,
+			location: LocationDTO(
+				id: UUID(),
+				name: "UBC Recreation Center",
+				latitude: 49.26500000000000,
+				longitude: -123.25900000000000
+			),
+			creatorUser: BaseUserDTO.danielAgapov,
+			participantUsers: [BaseUserDTO.danielLee],
+			isPastActivity: false
+		)
+	}()
+
+	/// Mock past study session activity for preview
+	static let mockPastStudySession: ProfileActivityDTO = {
+		let calendar = Calendar.current
+		let startTime = calendar.date(byAdding: .day, value: -2, to: Date())
+		let endTime = calendar.date(byAdding: .hour, value: -46, to: Date())
+
+		return ProfileActivityDTO(
+			id: UUID(),
+			title: "Study Session",
+			startTime: startTime,
+			endTime: endTime,
+			note: "Exam prep together",
+			icon: "📚",
+			createdAt: calendar.date(byAdding: .day, value: -3, to: Date()),
+			isExpired: true,
+			location: LocationDTO(
+				id: UUID(),
+				name: "Central Library",
+				latitude: 49.26400000000000,
+				longitude: -123.25800000000000
+			),
+			creatorUser: BaseUserDTO.danielAgapov,
+			participantUsers: [BaseUserDTO.danielLee, BaseUserDTO.haley],
+			isPastActivity: true
+		)
+	}()
+
+	/// Array of mock activities for previews
+	static let mockActivities: [ProfileActivityDTO] = [
+		mockUpcomingDinner,
+		mockUpcomingBasketball,
+		mockPastStudySession,
+	]
 }

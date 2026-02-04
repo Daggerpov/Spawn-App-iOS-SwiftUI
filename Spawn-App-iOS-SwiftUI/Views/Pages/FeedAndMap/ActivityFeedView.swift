@@ -413,7 +413,32 @@ extension ActivityFeedView {
 }
 
 @available(iOS 17, *)
-#Preview {
+#Preview("With Activities") {
+	@Previewable @State var tab = TabType.home
+	@Previewable @State var deepLinkedActivityId: UUID? = nil
+	@Previewable @State var shouldShowDeepLinkedActivity = false
+	let previewViewModel: FeedViewModel = {
+		let viewModel = FeedViewModel(userId: BaseUserDTO.danielAgapov.id)
+		viewModel.activities = [
+			FullFeedActivityDTO.mockDinnerActivity,
+			FullFeedActivityDTO.mockSelfOwnedActivity,
+			FullFeedActivityDTO.mockSelfOwnedActivity2,
+		]
+		return viewModel
+	}()
+	NavigationView {
+		ActivityFeedView(
+			user: .danielAgapov,
+			viewModel: previewViewModel,
+			selectedTab: $tab,
+			deepLinkedActivityId: $deepLinkedActivityId,
+			shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity
+		)
+	}
+}
+
+@available(iOS 17, *)
+#Preview("Empty") {
 	@Previewable @State var tab = TabType.home
 	@Previewable @State var deepLinkedActivityId: UUID? = nil
 	@Previewable @State var shouldShowDeepLinkedActivity = false
