@@ -6,6 +6,7 @@ struct ActivityCardView: View {
 	@ObservedObject var locationManager: LocationManager
 	var color: Color
 	var callback: (FullFeedActivityDTO, Color) -> Void
+    var horizontalPadding: CGFloat
 	@Environment(\.colorScheme) private var colorScheme
 
 	// Optional binding to control tab selection for current user navigation
@@ -23,7 +24,8 @@ struct ActivityCardView: View {
 		userId: UUID, activity: FullFeedActivityDTO, color: Color,
 		locationManager: LocationManager,
 		callback: @escaping (FullFeedActivityDTO, Color) -> Void,
-		selectedTab: Binding<TabType?> = .constant(nil)
+		selectedTab: Binding<TabType?> = .constant(nil),
+        horizontalPadding: CGFloat = 32
 	) {
 		self.activity = activity
 		self.color = color
@@ -33,6 +35,7 @@ struct ActivityCardView: View {
 			activity: activity)
 		self.callback = callback
 		self._selectedTab = selectedTab
+        self.horizontalPadding = horizontalPadding
 
 	}
 
@@ -161,7 +164,7 @@ struct ActivityCardView: View {
 			// Time Status Badge
 			ActivityStatusView(activity: activity)
 		}
-		.padding(.horizontal, 32)  // 32px spacing from feed edges
+		.padding(.horizontal, horizontalPadding)  // 32px spacing from feed edges
 		.padding(.vertical, 2)
 	}
 

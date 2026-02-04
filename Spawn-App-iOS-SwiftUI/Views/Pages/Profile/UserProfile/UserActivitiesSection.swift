@@ -141,7 +141,7 @@ struct UserActivitiesSection: View {
 			} else {
 				// Vertical stack of activity cards (max 2) - per Figma design
 				VStack(spacing: 12) {
-					ForEach(Array(sortedActivities.prefix(2))) { activity in
+					ForEach(Array(sortedActivities.prefix(2))) { activity in 
 						let fullFeedActivity = activity.toFullFeedActivityDTO()
 						ActivityCardView(
 							userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
@@ -151,7 +151,8 @@ struct UserActivitiesSection: View {
 							callback: { selectedActivity, color in
 								profileViewModel.selectedActivity = selectedActivity
 								showActivityDetails = true
-							}
+							},
+                            horizontalPadding: 0
 						)
 					}
 				}
@@ -356,10 +357,55 @@ struct FriendCalendarDayCell: View {
 	}
 }
 
-#Preview {
+@available(iOS 17, *)
+#Preview("With Activities") {
+	let viewModel: ProfileViewModel = {
+		let vm = ProfileViewModel()
+		vm.friendshipStatus = .friends
+		vm.profileActivities = ProfileActivityDTO.mockActivities
+		return vm
+	}()
+
 	UserActivitiesSection(
 		user: BaseUserDTO.danielAgapov,
-		profileViewModel: ProfileViewModel(),
+		profileViewModel: viewModel,
 		showActivityDetails: .constant(false)
 	)
+	.padding(.horizontal, 16)
+	.background(universalBackgroundColor)
+}
+
+@available(iOS 17, *)
+#Preview("Empty Activities") {
+	let viewModel: ProfileViewModel = {
+		let vm = ProfileViewModel()
+		vm.friendshipStatus = .friends
+		vm.profileActivities = []
+		return vm
+	}()
+
+	UserActivitiesSection(
+		user: BaseUserDTO.danielAgapov,
+		profileViewModel: viewModel,
+		showActivityDetails: .constant(false)
+	)
+	.padding(.horizontal, 16)
+	.background(universalBackgroundColor)
+}
+
+@available(iOS 17, *)
+#Preview("Not Friends") {
+	let viewModel: ProfileViewModel = {
+		let vm = ProfileViewModel()
+		vm.friendshipStatus = .none
+		return vm
+	}()
+
+	UserActivitiesSection(
+		user: BaseUserDTO.danielAgapov,
+		profileViewModel: viewModel,
+		showActivityDetails: .constant(false)
+	)
+	.padding(.horizontal, 16)
+	.background(universalBackgroundColor)
 }

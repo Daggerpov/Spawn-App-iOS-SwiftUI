@@ -56,6 +56,15 @@ struct UserProfileView: View {
 		self._profileViewModel = State(wrappedValue: viewModel)
 	}
 
+	/// Preview-only initializer that allows setting friendship status and mock activities
+	init(user: Nameable, previewFriendshipStatus: FriendshipStatus, previewActivities: [ProfileActivityDTO]) {
+		self.user = user
+		let viewModel = ProfileViewModel(userId: user.id)
+		viewModel.friendshipStatus = previewFriendshipStatus
+		viewModel.profileActivities = previewActivities
+		self._profileViewModel = State(wrappedValue: viewModel)
+	}
+
 	var body: some View {
 		ZStack {
 			profileContent
@@ -821,7 +830,16 @@ struct UserProfileSheetsModifier: ViewModifier {
 }
 
 @available(iOS 17, *)
-#Preview("Friends") {
+#Preview("Friends with Activities") {
+	UserProfileView(
+		user: BaseUserDTO.danielAgapov,
+		previewFriendshipStatus: .friends,
+		previewActivities: ProfileActivityDTO.mockActivities
+	)
+}
+
+@available(iOS 17, *)
+#Preview("Friends (No Activities)") {
 	UserProfileView(user: BaseUserDTO.danielAgapov, previewFriendshipStatus: .friends)
 }
 
