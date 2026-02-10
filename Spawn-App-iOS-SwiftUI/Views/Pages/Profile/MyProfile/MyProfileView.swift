@@ -383,18 +383,27 @@ struct MyProfileView: View {
 		// Create a local copy of the selected image before starting async task
 		let imageToUpload = selectedImage
 
-		// Update profile info first
-		await userAuth.spawnEditProfile(
-			username: username,
-			name: name
-		)
+		// Only update profile info (name/username) if it actually changed
+		let currentName = userAuth.spawnUser?.name ?? ""
+		let currentUsername = userAuth.spawnUser?.username ?? ""
+		if username != currentUsername || name != currentName {
+			await userAuth.spawnEditProfile(
+				username: username,
+				name: name
+			)
+		}
 
-		// Update social media links
-		await profileViewModel.updateSocialMedia(
-			userId: userId,
-			whatsappLink: whatsappLink.isEmpty ? nil : whatsappLink,
-			instagramLink: instagramLink.isEmpty ? nil : instagramLink
-		)
+		// Only PUT social media when whatsapp or instagram actually changed
+		let currentWhatsapp = profileViewModel.userSocialMedia?.whatsappLink ?? ""
+		let currentInstagram = profileViewModel.userSocialMedia?.instagramLink ?? ""
+		let socialMediaChanged = whatsappLink != currentWhatsapp || instagramLink != currentInstagram
+		if socialMediaChanged {
+			await profileViewModel.updateSocialMedia(
+				userId: userId,
+				whatsappLink: whatsappLink.isEmpty ? nil : whatsappLink,
+				instagramLink: instagramLink.isEmpty ? nil : instagramLink
+			)
+		}
 
 		// Small delay before processing image update to ensure the text updates are complete
 		try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds

@@ -168,44 +168,48 @@ struct EditProfileView: View {
 		isSaving = true
 
 		Task {
-			// Check if there's a new profile picture
-			_ = selectedImage != nil
-
-			// Update profile info first
-			await userAuth.spawnEditProfile(
-				username: username,
-				name: name
-			)
-
-			// Force UI update by triggering objectWillChange
-			await MainActor.run {
-				userAuth.objectWillChange.send()
+			// Only update profile info (name/username) if it actually changed
+			let currentName = await MainActor.run {
+				userAuth.spawnUser.flatMap { FormatterService.shared.formatName(user: $0) } ?? ""
+			}
+			let currentUsername = await MainActor.run { userAuth.spawnUser?.username ?? "" }
+			if username != currentUsername || name != currentName {
+				await userAuth.spawnEditProfile(
+					username: username,
+					name: name
+				)
+				await MainActor.run { userAuth.objectWillChange.send() }
+				await userAuth.fetchUserData()
 			}
 
-			// Explicitly fetch updated user data
-			await userAuth.fetchUserData()
-
-			// Format social media links properly before saving
+			// Format social media links for comparison and API
 			let formattedWhatsapp = FormatterService.shared.formatWhatsAppLink(whatsappLink)
 			let formattedInstagram = FormatterService.shared.formatInstagramLink(instagramLink)
+			let newWhatsapp = formattedWhatsapp.isEmpty ? nil : formattedWhatsapp
+			let newInstagram = formattedInstagram.isEmpty ? nil : formattedInstagram
+			let oldWhatsapp = profileViewModel.userSocialMedia?.whatsappNumber
+			let oldInstagram = profileViewModel.userSocialMedia?.instagramUsername
+			let socialMediaChanged =
+				(newWhatsapp ?? "") != (oldWhatsapp ?? "") || (newInstagram ?? "") != (oldInstagram ?? "")
 
-			print("Saving whatsapp: \(formattedWhatsapp), instagram: \(formattedInstagram)")
+			// Only PUT social media when whatsapp or instagram actually changed
+			if socialMediaChanged {
+				await profileViewModel.updateSocialMedia(
+					userId: userId,
+					whatsappLink: newWhatsapp,
+					instagramLink: newInstagram
+				)
+			}
 
-			// Update social media links
-			await profileViewModel.updateSocialMedia(
-				userId: userId,
-				whatsappLink: formattedWhatsapp.isEmpty ? nil : formattedWhatsapp,
-				instagramLink: formattedInstagram.isEmpty ? nil : formattedInstagram
-			)
-
-			// Handle interest changes
+			// Only run interest add/remove for interests that changed (saveInterestChanges already does this)
 			await saveInterestChanges()
 
-			// Add an explicit delay and refresh to ensure data is properly updated
 			try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds delay
 
-			// Specifically fetch social media again to ensure it's updated
-			await profileViewModel.fetchUserSocialMedia(userId: userId)
+			// Only refetch social media if we updated it
+			if socialMediaChanged {
+				await profileViewModel.fetchUserSocialMedia(userId: userId)
+			}
 
 			// Update profile picture if selected
 			if let newImage = selectedImage {
