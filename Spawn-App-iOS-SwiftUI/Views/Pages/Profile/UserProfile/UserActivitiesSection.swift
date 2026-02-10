@@ -141,7 +141,7 @@ struct UserActivitiesSection: View {
 			} else {
 				// Vertical stack of activity cards (max 2) - per Figma design
 				VStack(spacing: 12) {
-					ForEach(Array(sortedActivities.prefix(2))) { activity in 
+					ForEach(Array(sortedActivities.prefix(2))) { activity in
 						let fullFeedActivity = activity.toFullFeedActivityDTO()
 						ActivityCardView(
 							userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
@@ -152,7 +152,7 @@ struct UserActivitiesSection: View {
 								profileViewModel.selectedActivity = selectedActivity
 								showActivityDetails = true
 							},
-                            horizontalPadding: 0
+							horizontalPadding: 0
 						)
 					}
 				}
