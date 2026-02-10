@@ -378,10 +378,12 @@ final class APIService: IAPIService, @unchecked Sendable {
 			return nil
 		}
 		if !data.isEmpty {
+			// When expecting EmptyResponse (e.g. writeWithoutResponse), backend may return 200/201 with a body
+			// (e.g. POST interests returns 201 with the interest name string). Treat as success without decoding.
+			if U.self == EmptyResponse.self {
+				return EmptyResponse() as? U
+			}
 			do {
-				//				if let responseString = String(data: data, encoding: .utf8) {
-				//					print("🔄 DEBUG: Raw response data: \(responseString)")
-				//				}
 				let decoder = APIService.makeDecoder()
 				let decodedData = try decoder.decode(U.self, from: data)
 				return decodedData
