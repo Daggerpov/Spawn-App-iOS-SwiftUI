@@ -322,3 +322,5 @@ Spawn-App-iOS-SwiftUI/Secrets.swift
 *.crash
 *.xcconfig
 .env
+
+.cursor/
