@@ -312,7 +312,6 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
-Spawn-App-iOS-SwiftUI.xcodeproj/xcshareddata/xcschemes/Spawn-App-iOS-SwiftUI.xcscheme
 .vscode/settings.json
 Spawn-App-iOS-SwiftUI/Secrets.swift
 
@@ -320,7 +319,19 @@ Spawn-App-iOS-SwiftUI/Secrets.swift
 .swiftpm/
 *.xcuserstate
 *.crash
-*.xcconfig
 .env
 
 .cursor/
+
+# Derived data
+DerivedData/
+.build/
+
+# SwiftPM
+.swiftpm/xcode/package.xcworkspace
+
+
+# Xcode user data
+xcuserdata/
+*.xcuserstate
+*.xcbkptlist
