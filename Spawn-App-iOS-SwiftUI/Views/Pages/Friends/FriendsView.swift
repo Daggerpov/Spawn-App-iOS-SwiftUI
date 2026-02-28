@@ -106,14 +106,12 @@ struct FriendsView: View {
 				case .success(let fetchedUser, source: _):
 					// Navigate to the profile
 					await MainActor.run {
-						let profileView = UserProfileView(user: fetchedUser)
+						let profileView = NavigationStack { UserProfileView(user: fetchedUser) }
 
-						// Get the current window and present the profile
 						if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
 							let window = windowScene.windows.first,
 							let rootViewController = window.rootViewController
 						{
-
 							let hostingController = UIHostingController(rootView: profileView)
 							rootViewController.present(hostingController, animated: true)
 						}

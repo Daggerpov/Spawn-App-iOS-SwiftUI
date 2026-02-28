@@ -48,7 +48,6 @@ struct FriendActivitiesCalendarView: View {
 					ProfileCalendarView(
 						profileViewModel: profileViewModel,
 						showCalendarPopup: $showCalendarPopup,
-						showActivityDetails: $showActivityDetails,
 						navigateToCalendar: $navigateToCalendar,
 						navigateToDayActivities: $navigateToDayActivities,
 						selectedDayActivities: $selectedDayActivities,
@@ -72,6 +71,19 @@ struct FriendActivitiesCalendarView: View {
 						.font(.system(size: 20, weight: .semibold))
 						.foregroundColor(universalAccentColor)
 				}
+			}
+		}
+		.onChange(of: showActivityDetails) { _, isShowing in
+			if isShowing, let activity = profileViewModel.selectedActivity {
+				let activityColor = getActivityColor(for: activity.id)
+
+				NotificationCenter.default.post(
+					name: .showGlobalActivityPopup,
+					object: nil,
+					userInfo: ["activity": activity, "color": activityColor]
+				)
+				showActivityDetails = false
+				profileViewModel.selectedActivity = nil
 			}
 		}
 		.navigationDestination(isPresented: $showFullActivityList) {

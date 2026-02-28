@@ -175,41 +175,38 @@ struct UserProfileView: View {
 
 	// Main content broken into a separate computed property to reduce complexity
 	private var profileContent: some View {
-		NavigationStack {
-			profileWithOverlay
-				.modifier(
-					UserProfileSheetsModifier(
-						showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
-						removeFriendConfirmationAlert: AnyView(removeFriendConfirmationAlert),
-						showReportDialog: $showReportDialog,
-						reportUserDrawer: AnyView(reportUserDrawer),
-						showBlockDialog: $showBlockDialog,
-						blockUserAlert: AnyView(blockUserAlert),
-						showProfileMenu: $showProfileMenu,
-						profileMenuSheet: AnyView(profileMenuSheet)
-					)
+		profileWithOverlay
+			.modifier(
+				UserProfileSheetsModifier(
+					showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
+					removeFriendConfirmationAlert: AnyView(removeFriendConfirmationAlert),
+					showReportDialog: $showReportDialog,
+					reportUserDrawer: AnyView(reportUserDrawer),
+					showBlockDialog: $showBlockDialog,
+					blockUserAlert: AnyView(blockUserAlert),
+					showProfileMenu: $showProfileMenu,
+					profileMenuSheet: AnyView(profileMenuSheet)
 				)
-				.onChange(of: showActivityDetails) { _, isShowing in
-					if isShowing, let activity = profileViewModel.selectedActivity {
-						let activityColor = getActivityColor(for: activity.id)
+			)
+			.onChange(of: showActivityDetails) { _, isShowing in
+				if isShowing, let activity = profileViewModel.selectedActivity {
+					let activityColor = getActivityColor(for: activity.id)
 
-						NotificationCenter.default.post(
-							name: .showGlobalActivityPopup,
-							object: nil,
-							userInfo: ["activity": activity, "color": activityColor]
-						)
-						showActivityDetails = false
-						profileViewModel.selectedActivity = nil
-					}
+					NotificationCenter.default.post(
+						name: .showGlobalActivityPopup,
+						object: nil,
+						userInfo: ["activity": activity, "color": activityColor]
+					)
+					showActivityDetails = false
+					profileViewModel.selectedActivity = nil
 				}
-				.onTapGesture {
-					// Dismiss profile menu if it's showing
-					if showProfileMenu {
-						showProfileMenu = false
-					}
+			}
+			.onTapGesture {
+				if showProfileMenu {
+					showProfileMenu = false
 				}
-				.background(universalBackgroundColor)
-		}
+			}
+			.background(universalBackgroundColor)
 	}
 
 	private var profileWithOverlay: some View {

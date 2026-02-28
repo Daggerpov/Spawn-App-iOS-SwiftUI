@@ -11,43 +11,36 @@ struct FriendActivitiesShowAllView: View {
 	@ObservedObject private var locationManager = LocationManager.shared
 
 	var body: some View {
-		NavigationStack {
-			ZStack {
-				// Background
-				universalBackgroundColor
-					.ignoresSafeArea()
+		ZStack {
+			universalBackgroundColor
+				.ignoresSafeArea()
 
-				VStack(spacing: 0) {
-					// Header
-					headerView
+			VStack(spacing: 0) {
+				headerView
 
-					ScrollView {
-						VStack(spacing: 12) {
-							// Upcoming Activities Section
-							upcomingActivitiesSection
-
-							// Past Activities Section
-							pastActivitiesSection
-						}
-						.padding(.horizontal, 16)
-						.padding(.top, 16)
-						.padding(.bottom, 100)  // Account for tab bar
+				ScrollView {
+					VStack(spacing: 12) {
+						upcomingActivitiesSection
+						pastActivitiesSection
 					}
+					.padding(.horizontal, 16)
+					.padding(.top, 16)
+					.padding(.bottom, 100)
 				}
 			}
-			.navigationBarHidden(true)
-			.onChange(of: showActivityDetails) { _, isShowing in
-				if isShowing, let activity = profileViewModel.selectedActivity {
-					let activityColor = getActivityColor(for: activity.id)
+		}
+		.navigationBarHidden(true)
+		.onChange(of: showActivityDetails) { _, isShowing in
+			if isShowing, let activity = profileViewModel.selectedActivity {
+				let activityColor = getActivityColor(for: activity.id)
 
-					NotificationCenter.default.post(
-						name: .showGlobalActivityPopup,
-						object: nil,
-						userInfo: ["activity": activity, "color": activityColor]
-					)
-					showActivityDetails = false
-					profileViewModel.selectedActivity = nil
-				}
+				NotificationCenter.default.post(
+					name: .showGlobalActivityPopup,
+					object: nil,
+					userInfo: ["activity": activity, "color": activityColor]
+				)
+				showActivityDetails = false
+				profileViewModel.selectedActivity = nil
 			}
 		}
 		.onAppear {

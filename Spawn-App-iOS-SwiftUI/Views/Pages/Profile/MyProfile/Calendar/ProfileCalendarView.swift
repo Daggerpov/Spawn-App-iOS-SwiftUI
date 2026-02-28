@@ -14,7 +14,6 @@ struct ProfileCalendarView: View {
 	@ObservedObject var userAuth = UserAuthViewModel.shared
 
 	@Binding var showCalendarPopup: Bool
-	@Binding var showActivityDetails: Bool
 	@Binding var navigateToCalendar: Bool
 	@Binding var navigateToDayActivities: Bool
 	@Binding var selectedDayActivities: [CalendarActivityDTO]
@@ -73,29 +72,6 @@ struct ProfileCalendarView: View {
 		}
 		.onAppear {
 			fetchCalendarData()
-		}
-		.overlay(
-			// Use the same ActivityPopupDrawer as the feed view for consistency
-			Group {
-				if showActivityDetails, profileViewModel.selectedActivity != nil {
-					EmptyView()  // Replaced with global popup system
-				}
-			}
-		)
-		.onChange(of: showActivityDetails) { _, isShowing in
-			if isShowing, let activity = profileViewModel.selectedActivity {
-				let activityColor = getActivityColor(for: activity)
-
-				// Post notification to show global popup
-				NotificationCenter.default.post(
-					name: .showGlobalActivityPopup,
-					object: nil,
-					userInfo: ["activity": activity, "color": activityColor]
-				)
-				// Reset local state since global popup will handle it
-				showActivityDetails = false
-				profileViewModel.selectedActivity = nil
-			}
 		}
 	}
 
@@ -235,16 +211,19 @@ struct ProfileCalendarView: View {
 	}
 
 	private func handleActivitySelection(_ activity: CalendarActivityDTO) {
-		// First close the calendar popup
 		showCalendarPopup = false
 
-		// Then fetch and show the activity details
 		Task {
 			if let activityId = activity.activityId,
-				await profileViewModel.fetchActivityDetails(activityId: activityId) != nil
+				let fullActivity = await profileViewModel.fetchActivityDetails(activityId: activityId)
 			{
 				await MainActor.run {
-					showActivityDetails = true
+					let activityColor = getActivityColor(for: fullActivity)
+					NotificationCenter.default.post(
+						name: .showGlobalActivityPopup,
+						object: nil,
+						userInfo: ["activity": fullActivity, "color": activityColor]
+					)
 				}
 			}
 		}
@@ -321,7 +300,6 @@ struct ProfileCalendarView: View {
 	ProfileCalendarView(
 		profileViewModel: ProfileViewModel(userId: UUID()),
 		showCalendarPopup: .constant(false),
-		showActivityDetails: .constant(false),
 		navigateToCalendar: .constant(false),
 		navigateToDayActivities: .constant(false),
 		selectedDayActivities: .constant([])
