@@ -49,7 +49,7 @@ struct CachedProfileImage: View {
 		case .participantsDrawer:
 			return 36
 		case .profilePage:
-			return 150
+			return 128
 		case .feedCardParticipants:
 			return 34
 		}
@@ -57,22 +57,22 @@ struct CachedProfileImage: View {
 
 	private var strokeColor: Color {
 		switch imageType {
-		case .feedPage, .profilePage:
+		case .feedPage:
 			return universalAccentColor
 		case .activityParticipants, .chatMessage:
 			return .white
-		case .friendsListView, .participantsPopup, .participantsDrawer, .feedCardParticipants:
+		case .friendsListView, .participantsPopup, .participantsDrawer, .feedCardParticipants, .profilePage:
 			return .clear
 		}
 	}
 
 	private var strokeLineWidth: CGFloat {
 		switch imageType {
-		case .feedPage, .profilePage:
+		case .feedPage:
 			return 2
 		case .activityParticipants, .chatMessage:
 			return 1
-		case .friendsListView, .participantsPopup, .participantsDrawer, .feedCardParticipants:
+		case .friendsListView, .participantsPopup, .participantsDrawer, .feedCardParticipants, .profilePage:
 			return 0
 		}
 	}
