@@ -179,8 +179,6 @@ struct UserProfileView: View {
 			profileWithOverlay
 				.modifier(
 					UserProfileSheetsModifier(
-						showActivityDetails: $showActivityDetails,
-						activityDetailsView: AnyView(activityDetailsView),
 						showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
 						removeFriendConfirmationAlert: AnyView(removeFriendConfirmationAlert),
 						showReportDialog: $showReportDialog,
@@ -191,6 +189,19 @@ struct UserProfileView: View {
 						profileMenuSheet: AnyView(profileMenuSheet)
 					)
 				)
+				.onChange(of: showActivityDetails) { _, isShowing in
+					if isShowing, let activity = profileViewModel.selectedActivity {
+						let activityColor = getActivityColor(for: activity.id)
+
+						NotificationCenter.default.post(
+							name: .showGlobalActivityPopup,
+							object: nil,
+							userInfo: ["activity": activity, "color": activityColor]
+						)
+						showActivityDetails = false
+						profileViewModel.selectedActivity = nil
+					}
+				}
 				.onTapGesture {
 					// Dismiss profile menu if it's showing
 					if showProfileMenu {
@@ -368,10 +379,10 @@ struct UserProfileView: View {
 								.foregroundColor(.white)
 						} else {
 							Image(systemName: "person.badge.clock")
-								.foregroundColor(Color(hex: colorsWhite))
+								.foregroundColor(universalAccentColor)
 							Text("Request Sent")
 								.bold()
-								.foregroundColor(Color(hex: colorsWhite))
+								.foregroundColor(universalAccentColor)
 						}
 					}
 					.font(.onestMedium(size: 16))
@@ -391,7 +402,7 @@ struct UserProfileView: View {
 						RoundedRectangle(cornerRadius: 12)
 							.stroke(
 								profileViewModel.friendshipStatus == .requestSent
-									? Color(hex: colorsWhite)
+									? universalAccentColor
 									: Color.clear,
 								lineWidth: 2
 							)
@@ -470,29 +481,6 @@ struct UserProfileView: View {
 						.fill(Color(hex: colorsGreen500))
 				)
 				.padding(.bottom, 10)
-			}
-		}
-	}
-
-	private var activityDetailsView: some View {
-		Group {
-			if profileViewModel.selectedActivity != nil {
-				EmptyView()  // Replaced with global popup system
-			}
-		}
-		.onChange(of: showActivityDetails) { _, isShowing in
-			if isShowing, let activity = profileViewModel.selectedActivity {
-				let activityColor = getActivityColor(for: activity.id)
-
-				// Post notification to show global popup
-				NotificationCenter.default.post(
-					name: .showGlobalActivityPopup,
-					object: nil,
-					userInfo: ["activity": activity, "color": activityColor]
-				)
-				// Reset local state since global popup will handle it
-				showActivityDetails = false
-				profileViewModel.selectedActivity = nil
 			}
 		}
 	}
@@ -790,8 +778,6 @@ struct UserProfileView: View {
 
 // MARK: - UserProfile Sheets Modifier
 struct UserProfileSheetsModifier: ViewModifier {
-	@Binding var showActivityDetails: Bool
-	var activityDetailsView: AnyView
 	@Binding var showRemoveFriendConfirmation: Bool
 	var removeFriendConfirmationAlert: AnyView
 	@Binding var showReportDialog: Bool
@@ -803,9 +789,6 @@ struct UserProfileSheetsModifier: ViewModifier {
 
 	func body(content: Content) -> some View {
 		content
-			.sheet(isPresented: $showActivityDetails) {
-				activityDetailsView
-			}
 			.confirmationDialog(
 				"Remove this friend?",
 				isPresented: $showRemoveFriendConfirmation,

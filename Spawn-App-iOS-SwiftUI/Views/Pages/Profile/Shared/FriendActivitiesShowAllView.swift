@@ -36,8 +36,18 @@ struct FriendActivitiesShowAllView: View {
 				}
 			}
 			.navigationBarHidden(true)
-			.sheet(isPresented: $showActivityDetails) {
-				activityDetailsView
+			.onChange(of: showActivityDetails) { _, isShowing in
+				if isShowing, let activity = profileViewModel.selectedActivity {
+					let activityColor = getActivityColor(for: activity.id)
+
+					NotificationCenter.default.post(
+						name: .showGlobalActivityPopup,
+						object: nil,
+						userInfo: ["activity": activity, "color": activityColor]
+					)
+					showActivityDetails = false
+					profileViewModel.selectedActivity = nil
+				}
 			}
 		}
 		.onAppear {
@@ -183,22 +193,6 @@ struct FriendActivitiesShowAllView: View {
 				}
 				return start1 > start2  // Most recent first
 			}
-	}
-
-	private var activityDetailsView: some View {
-		Group {
-			if let activity = profileViewModel.selectedActivity {
-				let activityColor = getActivityColor(for: activity.id)
-
-				ActivityDescriptionView(
-					activity: activity,
-					users: activity.participantUsers,
-					color: activityColor,
-					userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()
-				)
-				.presentationDetents([.medium, .large])
-			}
-		}
 	}
 
 	// MARK: - Helper Methods
