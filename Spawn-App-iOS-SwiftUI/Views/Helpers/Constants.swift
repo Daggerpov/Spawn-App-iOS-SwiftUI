@@ -286,6 +286,20 @@ var universalPlaceHolderTextColor: Color {
 		})
 }
 
+/// Figma --text/secondary: outline button text and border (Cancel, Add +). Light: #262424, Dark: lighter gray for contrast.
+@available(iOS 14.0, *)
+var universalSecondaryTextColor: Color {
+	Color(
+		UIColor { traitCollection in
+			switch traitCollection.userInterfaceStyle {
+			case .dark:
+				return UIColor(Color(hex: colorsGray300))
+			default:
+				return UIColor(Color(hex: colorsGray700))
+			}
+		})
+}
+
 // MARK: - Static Colors (Theme-independent) - Updated to use new design system
 let universalSecondaryColorHexCode: String = colorsIndigo500
 let universalSecondaryColor: Color = Color(hex: universalSecondaryColorHexCode)
@@ -309,6 +323,9 @@ let figmaGray700: Color = Color(hex: figmaGray700Hex)
 
 let figmaBlack300Hex: String = colorsGray400
 let figmaBlack300: Color = Color(hex: figmaBlack300Hex)
+
+// Figma "Add to see" section: border and text (--black-300 #8e8484)
+let colorsAddToSeeMutedHex: String = "#8e8484"
 
 let figmaGreen: Color = Color(hex: colorsGreen500)
 
