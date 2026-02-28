@@ -21,6 +21,8 @@ struct ProfileCalendarView: View {
 
 	// Whether to show the month/year header (default true for backwards compatibility)
 	var showMonthHeader: Bool = true
+	// When set, fetches calendar data for the friend instead of the current user
+	var friendUserId: UUID? = nil
 
 	@Environment(\.colorScheme) private var colorScheme
 	@State private var currentDate = Date()
@@ -268,7 +270,11 @@ struct ProfileCalendarView: View {
 
 	private func fetchCalendarData() {
 		Task {
-			await profileViewModel.fetchAllCalendarActivities()
+			if let friendUserId = friendUserId {
+				await profileViewModel.fetchAllCalendarActivities(friendUserId: friendUserId)
+			} else {
+				await profileViewModel.fetchAllCalendarActivities()
+			}
 		}
 	}
 
