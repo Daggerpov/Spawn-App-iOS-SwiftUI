@@ -180,9 +180,8 @@ final class ProfileViewModel {
 			return true
 
 		case .failure(let error):
-			// Revert local state if API call fails
 			self.userInterests.removeAll { $0 == interest }
-			self.errorMessage = notificationService.handleError(
+			_ = notificationService.handleError(
 				error, resource: .profile, operation: .update)
 			return false
 		}

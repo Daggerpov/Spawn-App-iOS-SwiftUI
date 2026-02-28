@@ -14,7 +14,6 @@ struct ActivityTypeView: View {
 	// Delete confirmation state
 	@State private var showDeleteConfirmation = false
 	@State private var activityTypeToDelete: ActivityTypeDTO?
-	@State private var showErrorAlert = false
 
 	// Store background refresh task so we can cancel it on disappear
 	@State private var backgroundRefreshTask: Task<Void, Never>?
@@ -99,18 +98,6 @@ struct ActivityTypeView: View {
 				// Cancel any ongoing background refresh to prevent blocking
 				backgroundRefreshTask?.cancel()
 				backgroundRefreshTask = nil
-			}
-			.alert("Error", isPresented: $showErrorAlert) {
-				Button("OK") {
-					viewModel.clearError()
-				}
-			} message: {
-				if let errorMessage = viewModel.errorMessage {
-					Text(errorMessage)
-				}
-			}
-			.onChange(of: viewModel.errorMessage) { _, newValue in
-				showErrorAlert = newValue != nil
 			}
 			.alert("Delete Activity Type", isPresented: $showDeleteConfirmation) {
 				Button("Cancel", role: .cancel) {

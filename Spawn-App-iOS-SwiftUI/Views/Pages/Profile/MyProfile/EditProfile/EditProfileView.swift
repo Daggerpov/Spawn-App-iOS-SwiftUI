@@ -15,8 +15,6 @@ struct EditProfileView: View {
 	@State private var whatsappLink: String
 	@State private var instagramLink: String
 	@State private var isSaving: Bool = false
-	@State private var showAlert: Bool = false
-	@State private var alertMessage: String = ""
 
 	// User ID to edit
 	let userId: UUID
@@ -114,9 +112,7 @@ struct EditProfileView: View {
 						profileViewModel: profileViewModel,
 						userId: userId,
 						newInterest: $newInterest,
-						maxInterests: maxInterests,
-						showAlert: $showAlert,
-						alertMessage: $alertMessage
+						maxInterests: maxInterests
 					)
 
 					// Third party apps section
@@ -136,13 +132,6 @@ struct EditProfileView: View {
 		.sheet(isPresented: $showImagePicker) {
 			SwiftUIImagePicker(selectedImage: $selectedImage)
 				.ignoresSafeArea()
-		}
-		.alert(isPresented: $showAlert) {
-			Alert(
-				title: Text("Profile Update"),
-				message: Text(alertMessage),
-				dismissButton: .default(Text("OK"))
-			)
 		}
 		.onAppear {
 			// Save original interests for cancel functionality
@@ -231,14 +220,8 @@ struct EditProfileView: View {
 
 			await MainActor.run {
 				isSaving = false
-				alertMessage = "Profile updated successfully"
-				showAlert = true
-
-				// Dismiss after a short delay
-				Task { @MainActor in
-					try? await Task.sleep(for: .seconds(1.5))
-					presentationMode.wrappedValue.dismiss()
-				}
+				InAppNotificationService.shared.showSuccess(.profileUpdated)
+				presentationMode.wrappedValue.dismiss()
 			}
 		}
 	}

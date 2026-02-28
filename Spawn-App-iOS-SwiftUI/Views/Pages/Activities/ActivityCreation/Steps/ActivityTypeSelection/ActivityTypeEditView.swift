@@ -11,7 +11,6 @@ struct ActivityTypeEditView: View {
 	@State private var hasChanges: Bool = false
 	@State private var friendSelectionActivityType: ActivityTypeDTO?
 	@State private var showEmojiPicker: Bool = false
-	@State private var showErrorAlert: Bool = false
 	@FocusState private var isTitleFieldFocused: Bool
 
 	@State private var viewModel: ActivityTypeViewModel
@@ -60,18 +59,6 @@ struct ActivityTypeEditView: View {
 				onComplete: handleFriendSelectionComplete
 			)
 			.environmentObject(AppCache.shared)
-		}
-		.alert("Error", isPresented: $showErrorAlert) {
-			Button("OK") {
-				viewModel.clearError()
-			}
-		} message: {
-			if let errorMessage = viewModel.errorMessage {
-				Text(errorMessage)
-			}
-		}
-		.onChange(of: viewModel.errorMessage) { _, newValue in
-			showErrorAlert = newValue != nil
 		}
 		.overlay(loadingOverlay)
 	}

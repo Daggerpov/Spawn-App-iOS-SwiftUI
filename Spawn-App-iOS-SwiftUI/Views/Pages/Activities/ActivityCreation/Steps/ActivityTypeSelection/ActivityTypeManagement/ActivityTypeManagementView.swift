@@ -9,7 +9,6 @@ struct ActivityTypeManagementView: View {
 	@State private var showingEditView = false
 	@State private var navigateToProfile = false
 	@State private var selectedUserForProfile: MinimalFriendDTO?
-	@State private var showErrorAlert = false
 
 	// Store background refresh task so we can cancel it on disappear
 	@State private var backgroundRefreshTask: Task<Void, Never>?
@@ -174,18 +173,6 @@ struct ActivityTypeManagementView: View {
 						showingEditView = false
 					}
 				}
-			}
-			.alert("Error", isPresented: $showErrorAlert) {
-				Button("OK") {
-					viewModel.clearError()
-				}
-			} message: {
-				if let errorMessage = viewModel.errorMessage {
-					Text(errorMessage)
-				}
-			}
-			.onChange(of: viewModel.errorMessage) { _, newValue in
-				showErrorAlert = newValue != nil
 			}
 
 			// Custom popup overlay

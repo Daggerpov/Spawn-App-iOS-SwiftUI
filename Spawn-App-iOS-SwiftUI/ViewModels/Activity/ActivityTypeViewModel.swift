@@ -160,7 +160,10 @@ final class ActivityTypeViewModel {
 		if willBePinned {
 			if currentPinnedCount >= 4 {
 				print("❌ Cannot pin: Already at maximum of 4 pinned activity types")
-				errorMessage = "You can only pin up to 4 activity types"
+				notificationService.showErrorMessage(
+					"You can only pin up to 4 activity types",
+					title: "Pin Limit Reached"
+				)
 				return
 			}
 		}
@@ -234,7 +237,10 @@ final class ActivityTypeViewModel {
 	/// Removes a friend from an activity type
 	func removeFriendFromActivityType(activityTypeId: UUID, friendId: UUID) async {
 		guard let activityType = activityTypes.first(where: { $0.id == activityTypeId }) else {
-			errorMessage = "Activity type not found"
+			notificationService.showErrorMessage(
+				"Activity type not found",
+				title: "Error"
+			)
 			return
 		}
 
@@ -279,9 +285,7 @@ final class ActivityTypeViewModel {
 			print("❌ Error updating activity type: \(error)")
 			print("❌ Error details: \(ErrorFormattingService.shared.formatError(error))")
 
-			// Check if error is related to pinning limits
 			let formattedError = ErrorFormattingService.shared.formatError(error)
-			print("🔍 Formatted error from server: \(formattedError)")
 			if formattedError.contains("pinned activity types") {
 				print("⚠️ Server returned pinning limit error - this might be a server-side validation bug")
 				errorMessage = "You can only pin up to 4 activity types"
@@ -294,7 +298,6 @@ final class ActivityTypeViewModel {
 					error, resource: .activityType, operation: .update)
 			}
 
-			// Refresh from API to get correct state
 			await fetchActivityTypes()
 		}
 	}

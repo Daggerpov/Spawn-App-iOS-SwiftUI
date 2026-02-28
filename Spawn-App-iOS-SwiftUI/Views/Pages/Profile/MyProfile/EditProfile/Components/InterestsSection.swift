@@ -6,8 +6,6 @@ struct InterestsSection: View {
 	let userId: UUID
 	@Binding var newInterest: String
 	let maxInterests: Int
-	@Binding var showAlert: Bool
-	@Binding var alertMessage: String
 	@FocusState private var isTextFieldFocused: Bool
 
 	var body: some View {
@@ -67,23 +65,23 @@ struct InterestsSection: View {
 	private func addInterest() {
 		guard !newInterest.isEmpty else { return }
 		guard profileViewModel.userInterests.count < maxInterests else {
-			alertMessage = "You can have a maximum of \(maxInterests) interests"
-			showAlert = true
+			InAppNotificationService.shared.showErrorMessage(
+				"You can have a maximum of \(maxInterests) interests",
+				title: "Limit Reached"
+			)
 			return
 		}
 
 		let interest = newInterest.trimmingCharacters(in: .whitespacesAndNewlines)
 
-		// Don't add duplicates
-		if !profileViewModel.userInterests.contains(interest) {
-			// Only update local state - don't call API until save
-			profileViewModel.userInterests.append(interest)
-			newInterest = ""
-			isTextFieldFocused = false  // Dismiss keyboard
-		} else {
-			newInterest = ""
-			isTextFieldFocused = false  // Dismiss keyboard
+		let isDuplicate = profileViewModel.userInterests.contains {
+			$0.caseInsensitiveCompare(interest) == .orderedSame
 		}
+		if !isDuplicate {
+			profileViewModel.userInterests.append(interest)
+		}
+		newInterest = ""
+		isTextFieldFocused = false
 	}
 
 	private func removeInterest(_ interest: String) {
