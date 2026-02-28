@@ -10,6 +10,10 @@ struct ActivityTypeCard: View {
 
 	@Environment(\.colorScheme) private var colorScheme
 
+	private var hasContextMenu: Bool {
+		onPin != nil && onDelete != nil && onManage != nil
+	}
+
 	private var adaptiveBackgroundColor: Color {
 		switch colorScheme {
 		case .dark:
@@ -40,14 +44,6 @@ struct ActivityTypeCard: View {
 			return Color(red: 0.52, green: 0.49, blue: 0.49)
 		@unknown default:
 			return Color(red: 0.52, green: 0.49, blue: 0.49)
-		}
-	}
-
-	private var backgroundFillColor: Color {
-		if isSelected {
-			return Color.blue.opacity(0.1)
-		} else {
-			return adaptiveBackgroundColor
 		}
 	}
 
@@ -84,7 +80,7 @@ struct ActivityTypeCard: View {
 				.frame(width: 116, height: 116)
 				.background(
 					RoundedRectangle(cornerRadius: 12)
-						.fill(backgroundFillColor)
+						.fill(adaptiveBackgroundColor)
 				)
 				.overlay(
 					RoundedRectangle(cornerRadius: 12)
@@ -99,9 +95,16 @@ struct ActivityTypeCard: View {
 							)
 						)
 				)
+				.overlay(
+					RoundedRectangle(cornerRadius: 12)
+						.stroke(
+							isSelected ? Color(hex: colorsIndigo500) : Color.clear,
+							lineWidth: isSelected ? 2.5 : 0
+						)
+				)
 				.clipShape(RoundedRectangle(cornerRadius: 12))
 
-				if activityTypeDTO.isPinned {
+				if activityTypeDTO.isPinned && hasContextMenu {
 					VStack {
 						HStack {
 							Image(systemName: "pin.fill")
