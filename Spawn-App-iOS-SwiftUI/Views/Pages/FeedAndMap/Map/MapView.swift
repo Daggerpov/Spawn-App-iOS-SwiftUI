@@ -126,6 +126,13 @@ struct MapView: View {
 		}
 	}
 
+	// MARK: - Constants
+
+	/// Maximum reasonable span for the map (anything larger is likely a bug)
+	private static let maxReasonableSpan: Double = 0.5
+	/// Default span for user-centered view
+	private static let defaultSpan: Double = 0.01
+
 	// MARK: - Lifecycle Methods
 
 	private func handleViewAppeared() {
@@ -146,19 +153,40 @@ struct MapView: View {
 		if !hasInitialized {
 			setInitialRegion()
 			hasInitialized = true
-		} else if !hasCenteredOnUser, let userLocation = locationManager.userLocation {
-			// Handle case where view reappears after location became available
-			withAnimation {
-				region = MKCoordinateRegion(
-					center: userLocation,
-					span: MKCoordinateSpan(
-						latitudeDelta: 0.01,
-						longitudeDelta: 0.01
-					)
+		} else {
+			// On subsequent appearances, check if region is unreasonably zoomed out
+			// This can happen due to MKMapView state issues during tab switching
+			let isZoomedOutTooFar =
+				region.span.latitudeDelta > Self.maxReasonableSpan
+				|| region.span.longitudeDelta > Self.maxReasonableSpan
+
+			if isZoomedOutTooFar, let userLocation = locationManager.userLocation {
+				print(
+					"⚠️ MapView: Detected unreasonable zoom level (span: \(region.span.latitudeDelta)), re-centering on user"
 				)
+				withAnimation {
+					region = MKCoordinateRegion(
+						center: userLocation,
+						span: MKCoordinateSpan(
+							latitudeDelta: Self.defaultSpan,
+							longitudeDelta: Self.defaultSpan
+						)
+					)
+				}
+			} else if !hasCenteredOnUser, let userLocation = locationManager.userLocation {
+				// Handle case where view reappears after location became available
+				withAnimation {
+					region = MKCoordinateRegion(
+						center: userLocation,
+						span: MKCoordinateSpan(
+							latitudeDelta: Self.defaultSpan,
+							longitudeDelta: Self.defaultSpan
+						)
+					)
+				}
+				hasCenteredOnUser = true
+				print("📍 MapView: Centered on user location (on reappear)")
 			}
-			hasCenteredOnUser = true
-			print("📍 MapView: Centered on user location (on reappear)")
 		}
 
 		// Start location updates
@@ -222,8 +250,8 @@ struct MapView: View {
 			region = MKCoordinateRegion(
 				center: userLocation,
 				span: MKCoordinateSpan(
-					latitudeDelta: 0.01,
-					longitudeDelta: 0.01
+					latitudeDelta: Self.defaultSpan,
+					longitudeDelta: Self.defaultSpan
 				)
 			)
 			hasCenteredOnUser = true
@@ -248,8 +276,8 @@ struct MapView: View {
 			region = MKCoordinateRegion(
 				center: userLocation,
 				span: MKCoordinateSpan(
-					latitudeDelta: 0.01,
-					longitudeDelta: 0.01
+					latitudeDelta: Self.defaultSpan,
+					longitudeDelta: Self.defaultSpan
 				)
 			)
 		}
