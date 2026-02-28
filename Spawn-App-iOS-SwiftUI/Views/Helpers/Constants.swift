@@ -321,6 +321,10 @@ let figmaBittersweetOrange: Color = Color(hex: figmaOrangeHex)
 let figmaGreyHex: String = colorsGray50
 let figmaGrey: Color = Color(hex: figmaGreyHex)
 
+// Interests + Hobbies section container (Figma: dark ~#282828, light subtle gray)
+let colorsInterestsSectionDark: String = "#282828"
+let colorsInterestsSectionLight: String = "#F5F3F3"
+
 let figmaLightGreyHex: String = colorsGray100
 let figmaLightGrey: Color = Color(hex: figmaLightGreyHex)
 
