@@ -395,9 +395,11 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 			}
 		case .failure(let error):
 			Task { @MainActor in
-				self.errorMessage =
-					"Apple Sign-In failed: \(error.localizedDescription)"
-				print(self.errorMessage as Any)
+				let userFriendlyMessage = ErrorFormattingService.shared.formatOnboardingError(
+					error, context: "apple sign-in")
+				self.errorMessage = userFriendlyMessage
+				self.authAlert = .unknownError(userFriendlyMessage)
+				print("Apple Sign-In failed: \(error.localizedDescription)")
 			}
 		}
 	}
@@ -445,9 +447,8 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 				let presentingViewController = windowScene.windows.first?
 					.rootViewController
 			else {
-				self.errorMessage =
-					"Error: Unable to get the presenting view controller."
-				print(self.errorMessage as Any)
+				self.errorMessage = "Unable to start Google Sign-In. Please try again."
+				print("Error: Unable to get the presenting view controller.")
 				return
 			}
 
@@ -584,8 +585,8 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 
 		guard let unwrappedIdToken = self.idToken else {
 			await MainActor.run {
-				self.errorMessage = "ID Token is missing."
-				print(self.errorMessage as Any)
+				self.errorMessage = "Authentication information is missing. Please try signing in again."
+				print("Error: ID Token is missing.")
 			}
 			return
 		}
@@ -1708,7 +1709,8 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 
 		guard let url = URL(string: APIService.baseURL + "auth/sign-in") else {
 			await MainActor.run {
-				self.errorMessage = "Failed to create sign-in URL"
+				self.errorMessage = "Unable to connect to the server. Please try again."
+				print("Error: Failed to create sign-in URL")
 			}
 			return
 		}
@@ -1785,23 +1787,27 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 			}
 		} catch let error as APIError {
 			await MainActor.run {
-				// Handle specific API errors
 				if case .invalidStatusCode(let statusCode) = error {
 					switch statusCode {
 					case 400:
-						self.errorMessage = "Invalid verification code"
+						self.errorMessage = "Invalid verification code. Please check the code and try again."
 					case 404:
-						self.errorMessage = "Verification code not found"
+						self.errorMessage = "This verification code has expired. Please request a new one."
+					case 429:
+						self.errorMessage = "Too many attempts. Please wait a few minutes and try again."
 					default:
-						self.errorMessage = "Failed to verify code"
+						self.errorMessage = ErrorFormattingService.shared.formatOnboardingError(
+							error, context: "verification")
 					}
 				} else {
-					self.errorMessage = "Failed to verify code"
+					self.errorMessage = ErrorFormattingService.shared.formatOnboardingError(
+						error, context: "verification")
 				}
 			}
 		} catch {
 			await MainActor.run {
-				self.errorMessage = "Failed to verify code"
+				self.errorMessage = ErrorFormattingService.shared.formatOnboardingError(
+					error, context: "verification")
 			}
 		}
 	}
@@ -1849,27 +1855,33 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 		} catch let error as APIError {
 			await MainActor.run {
 				switch error {
-				case .failedHTTPRequest(let description):
-					self.errorMessage = description
 				case .invalidStatusCode(let statusCode):
 					if statusCode == 401 {
-						// Authentication failed - tokens may be invalid
 						print("🔄 Authentication failed during user details update. Attempting re-authentication...")
 						self.handleAuthenticationFailure()
+					} else if statusCode == 409 {
+						self.errorMessage =
+							"This username or phone number is already in use. Please try different details."
 					} else {
-						self.errorMessage = "Server error (\(statusCode))."
+						let userFriendlyMessage = ErrorFormattingService.shared.formatOnboardingError(
+							error, context: "profile setup")
+						self.errorMessage = userFriendlyMessage
 					}
 				case .failedTokenSaving(let tokenType):
 					self.errorMessage = "Authentication error. Please try signing in again."
 					print("🔄 Token saving failed for \(tokenType). Logging out user.")
 					self.signOut()
 				default:
-					self.errorMessage = error.localizedDescription
+					let userFriendlyMessage = ErrorFormattingService.shared.formatOnboardingError(
+						error, context: "profile setup")
+					self.errorMessage = userFriendlyMessage
 				}
 			}
 		} catch {
 			await MainActor.run {
-				self.errorMessage = "Failed to update user details."
+				let userFriendlyMessage = ErrorFormattingService.shared.formatOnboardingError(
+					error, context: "profile setup")
+				self.errorMessage = userFriendlyMessage
 			}
 		}
 	}
@@ -1952,18 +1964,15 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 			}
 		} catch let error as APIError {
 			await MainActor.run {
-				switch error {
-				case .failedHTTPRequest(let description):
-					self.errorMessage = description
-				case .invalidStatusCode(let statusCode):
-					self.errorMessage = "Server error (\(statusCode))."
-				default:
-					self.errorMessage = error.localizedDescription
-				}
+				let userFriendlyMessage = ErrorFormattingService.shared.formatOnboardingError(
+					error, context: "profile setup")
+				self.errorMessage = userFriendlyMessage
 			}
 		} catch {
 			await MainActor.run {
-				self.errorMessage = "Failed to update optional details."
+				let userFriendlyMessage = ErrorFormattingService.shared.formatOnboardingError(
+					error, context: "profile setup")
+				self.errorMessage = userFriendlyMessage
 			}
 		}
 	}

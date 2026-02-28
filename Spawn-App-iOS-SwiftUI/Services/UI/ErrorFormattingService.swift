@@ -142,12 +142,30 @@ final class ErrorFormattingService: Sendable {
 		case "phone verification", "verification":
 			return "We're having trouble verifying your phone number. Please check the number and try again."
 		case "profile setup":
+			if isNetworkRelatedMessage(baseMessage) || isAuthRelatedMessage(baseMessage) {
+				return baseMessage
+			}
 			return "We're having trouble saving your profile information. Please check your details and try again."
+		case "apple sign-in", "google sign-in", "sign in", "authentication":
+			if isNetworkRelatedMessage(baseMessage) {
+				return baseMessage
+			}
+			return "We're having trouble signing you in. Please try again."
 		default:
 			break
 		}
 
 		return baseMessage
+	}
+
+	private func isNetworkRelatedMessage(_ message: String) -> Bool {
+		let lowercased = message.lowercased()
+		return lowercased.contains("connect") || lowercased.contains("internet") || lowercased.contains("network")
+	}
+
+	private func isAuthRelatedMessage(_ message: String) -> Bool {
+		let lowercased = message.lowercased()
+		return lowercased.contains("sign in") || lowercased.contains("session") || lowercased.contains("authentication")
 	}
 
 	/// Formats error messages with resource and operation context
