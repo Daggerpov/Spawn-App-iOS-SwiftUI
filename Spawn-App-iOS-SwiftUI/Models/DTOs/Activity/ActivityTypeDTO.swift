@@ -11,7 +11,7 @@ import Foundation
 /// Note: associatedFriends uses MinimalFriendDTO instead of BaseUserDTO to reduce memory usage.
 /// MinimalFriendDTO only contains essential fields (id, username, name, profilePicture)
 /// needed for displaying friends in activity type selection UI.
-struct ActivityTypeDTO: Identifiable, Codable, Equatable, Sendable {
+struct ActivityTypeDTO: Identifiable, Codable, Equatable, Hashable, Sendable {
 	var id: UUID
 	var title: String
 	var associatedFriends: [MinimalFriendDTO]

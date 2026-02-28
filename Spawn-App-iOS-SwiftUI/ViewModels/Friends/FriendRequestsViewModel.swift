@@ -130,6 +130,9 @@ final class FriendRequestsViewModel {
 				let _: DataResult<[FetchFriendRequestDTO]> = await dataService.read(
 					.friendRequests(userId: userId), cachePolicy: .apiOnly)
 				NotificationCenter.default.post(name: .friendsDidChange, object: nil)
+				notificationService.showSuccess(.friendRequestAccepted)
+			} else if action == .decline {
+				notificationService.showSuccess(.friendRequestDeclined)
 			}
 
 		case .failure(let error):

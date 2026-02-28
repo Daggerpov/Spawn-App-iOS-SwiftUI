@@ -61,11 +61,12 @@ struct UnifiedMapView: UIViewRepresentable {
 		mapView.preferredConfiguration = configuration
 
 		// Set initial region
+		let regionToSet: MKCoordinateRegion
 		if isValidRegion(region) {
-			mapView.setRegion(region, animated: false)
+			regionToSet = region
 		} else {
 			// Fallback to Vancouver if region is invalid
-			let fallbackRegion = MKCoordinateRegion(
+			regionToSet = MKCoordinateRegion(
 				center: CLLocationCoordinate2D(
 					latitude: 49.2827,
 					longitude: -123.1207
@@ -75,25 +76,39 @@ struct UnifiedMapView: UIViewRepresentable {
 					longitudeDelta: 0.01
 				)
 			)
-			mapView.setRegion(fallbackRegion, animated: false)
 		}
+		mapView.setRegion(regionToSet, animated: false)
+		context.coordinator.lastSetRegion = regionToSet
 
 		// Force initial render and tile loading
 		DispatchQueue.main.async { [weak mapView] in
 			guard let mapView = mapView else { return }
 			mapView.layoutIfNeeded()
-			// Force a small region change to trigger tile loading
-			let currentRegion = mapView.region
-			mapView.setRegion(currentRegion, animated: false)
 		}
 
 		return mapView
 	}
 
+	/// Maximum reasonable span - anything larger suggests a bug/reset
+	private static let maxReasonableSpan: Double = 0.5
+
 	func updateUIView(_ mapView: MKMapView, context: Context) {
 		// Update parent on main thread only
 		DispatchQueue.main.async {
 			context.coordinator.parent = self
+		}
+
+		// CRITICAL: Detect if MKMapView has zoomed out to an unreasonable level
+		// This can happen during tab switching or system memory pressure
+		let currentMapSpan = mapView.region.span.latitudeDelta
+		let isMapZoomedOutTooFar = currentMapSpan > Self.maxReasonableSpan
+
+		if isMapZoomedOutTooFar && isValidRegion(region) && region.span.latitudeDelta <= Self.maxReasonableSpan {
+			// Force reset to the binding's region
+			print("⚠️ UnifiedMapView: Detected MKMapView zoom anomaly (span: \(currentMapSpan)), forcing reset")
+			mapView.setRegion(region, animated: false)
+			context.coordinator.lastSetRegion = region
+			return
 		}
 
 		// Update region if significantly changed and valid

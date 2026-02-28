@@ -184,7 +184,7 @@ struct ActivityCreationLocationView: View {
 					}
 				}
 				.frame(height: 24)
-				.padding(.horizontal, 26)
+				.padding(.horizontal, screenEdgePadding)
 				.padding(.bottom, 6)
 
 				// Search bar
@@ -202,7 +202,7 @@ struct ActivityCreationLocationView: View {
 					RoundedRectangle(cornerRadius: 8)
 						.stroke(figmaBlack300, lineWidth: 1)
 				)
-				.padding(.horizontal, 26)
+				.padding(.horizontal, screenEdgePadding)
 				.padding(.bottom, 2)
 
 				// Location list
@@ -263,7 +263,7 @@ struct ActivityCreationLocationView: View {
 							}
 						}
 					}
-					.padding(.horizontal, 26)
+					.padding(.horizontal, screenEdgePadding)
 					Spacer()
 				}
 				Spacer()
@@ -437,7 +437,7 @@ struct ActivityCreationLocationView: View {
 							.padding(.bottom, 8)
 					}
 				}
-				.padding(.horizontal, 26)
+				.padding(.horizontal, screenEdgePadding)
 				.padding(.bottom, 10)
 				.background(
 					universalBackgroundColor

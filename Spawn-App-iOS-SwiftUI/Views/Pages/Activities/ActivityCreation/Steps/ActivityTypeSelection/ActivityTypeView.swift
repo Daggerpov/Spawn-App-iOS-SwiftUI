@@ -9,6 +9,7 @@ struct ActivityTypeView: View {
 	@State private var navigateToManageType = false
 	@State private var navigateToCreateType = false
 	@State private var selectedActivityTypeForManagement: ActivityTypeDTO?
+	@State private var newActivityTypeDTO: ActivityTypeDTO = ActivityTypeDTO.createNew()
 
 	// Delete confirmation state
 	@State private var showDeleteConfirmation = false
@@ -41,11 +42,11 @@ struct ActivityTypeView: View {
 							.font(.caption)
 							.foregroundColor(.red)
 					}
-					.padding(.horizontal)
+					.padding(.horizontal, screenEdgePadding)
 					.padding(.vertical, 8)
 					.background(Color.red.opacity(0.1))
 					.cornerRadius(8)
-					.padding(.horizontal)
+					.padding(.horizontal, screenEdgePadding)
 				}
 
 				if viewModel.isLoading {
@@ -98,15 +99,6 @@ struct ActivityTypeView: View {
 				backgroundRefreshTask?.cancel()
 				backgroundRefreshTask = nil
 			}
-			.alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-				Button("OK") {
-					viewModel.clearError()
-				}
-			} message: {
-				if let errorMessage = viewModel.errorMessage {
-					Text(errorMessage)
-				}
-			}
 			.alert("Delete Activity Type", isPresented: $showDeleteConfirmation) {
 				Button("Cancel", role: .cancel) {
 					activityTypeToDelete = nil
@@ -136,14 +128,14 @@ struct ActivityTypeView: View {
 			.sheet(
 				isPresented: $navigateToCreateType,
 				onDismiss: {
-					// Refresh the activity types list when the create sheet is dismissed
+					newActivityTypeDTO = ActivityTypeDTO.createNew()
 					Task {
 						await viewModel.fetchActivityTypes(forceRefresh: true)
 					}
 				},
 				content: {
 					NavigationStack {
-						ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.createNew())
+						ActivityTypeEditView(activityTypeDTO: newActivityTypeDTO)
 					}
 				}
 			)
@@ -173,7 +165,7 @@ extension ActivityTypeView {
 				.font(.title3)
 				.foregroundColor(.clear)
 		}
-		.padding(.horizontal)
+		.padding(.horizontal, screenEdgePadding)
 		.padding(.vertical, 12)
 	}
 
@@ -198,7 +190,7 @@ extension ActivityTypeView {
 			.buttonStyle(.borderedProminent)
 		}
 		.frame(maxWidth: .infinity, maxHeight: .infinity)
-		.padding()
+		.padding(screenEdgePadding)
 	}
 
 	private var activityTypeGrid: some View {
@@ -210,7 +202,7 @@ extension ActivityTypeView {
 
 				createNewActivityButton
 			}
-			.padding()
+			.padding(screenEdgePadding)
 		}
 	}
 
@@ -231,7 +223,10 @@ extension ActivityTypeView {
 	private func activityTypeCardView(for activityTypeDTO: ActivityTypeDTO) -> some View {
 		ActivityTypeCard(
 			activityTypeDTO: activityTypeDTO,
-			selectedActivityType: $selectedActivityType,
+			isSelected: selectedActivityType?.id == activityTypeDTO.id,
+			onTap: {
+				selectedActivityType = activityTypeDTO
+			},
 			onPin: {
 				Task {
 					await viewModel.togglePin(for: activityTypeDTO)
@@ -244,7 +239,7 @@ extension ActivityTypeView {
 			onManage: {
 				selectedActivityTypeForManagement = activityTypeDTO
 				navigateToManageType = true
-			},
+			}
 		)
 	}
 }

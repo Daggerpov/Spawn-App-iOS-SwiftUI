@@ -12,9 +12,6 @@ struct ChangePasswordView: View {
 	@State private var currentPassword = ""
 	@State private var newPassword = ""
 	@State private var confirmPassword = ""
-	@State private var showAlert = false
-	@State private var alertMessage = ""
-	@State private var isSuccess = false
 	@ObservedObject var userAuth = UserAuthViewModel.shared
 
 	// Show/hide password toggles
@@ -136,14 +133,18 @@ struct ChangePasswordView: View {
 
 				Button(action: {
 					if newPassword.isEmpty || confirmPassword.isEmpty || currentPassword.isEmpty {
-						alertMessage = "Please fill in all fields"
-						showAlert = true
+						InAppNotificationService.shared.showErrorMessage(
+							"Please fill in all fields",
+							title: "Missing Fields"
+						)
 						return
 					}
 
 					if newPassword != confirmPassword {
-						alertMessage = "New passwords don't match"
-						showAlert = true
+						InAppNotificationService.shared.showErrorMessage(
+							"New passwords don't match",
+							title: "Password Mismatch"
+						)
 						return
 					}
 
@@ -151,13 +152,15 @@ struct ChangePasswordView: View {
 						do {
 							try await userAuth.changePassword(
 								currentPassword: currentPassword, newPassword: newPassword)
-							alertMessage = "Password successfully changed"
-							isSuccess = true
-							showAlert = true
+							await MainActor.run {
+								InAppNotificationService.shared.showSuccess(.passwordChanged)
+								presentationMode.wrappedValue.dismiss()
+							}
 						} catch {
-							alertMessage = "Failed to change password: \(error.localizedDescription)"
-							isSuccess = false
-							showAlert = true
+							InAppNotificationService.shared.showErrorMessage(
+								"Failed to change password: \(error.localizedDescription)",
+								title: "Error"
+							)
 						}
 					}
 				}) {
@@ -175,17 +178,6 @@ struct ChangePasswordView: View {
 		}
 		.background(universalBackgroundColor)
 		.navigationBarHidden(true)
-		.alert(isPresented: $showAlert) {
-			Alert(
-				title: Text(isSuccess ? "Success" : "Error"),
-				message: Text(alertMessage),
-				dismissButton: .default(Text("OK")) {
-					if isSuccess {
-						presentationMode.wrappedValue.dismiss()
-					}
-				}
-			)
-		}
 	}
 }
 

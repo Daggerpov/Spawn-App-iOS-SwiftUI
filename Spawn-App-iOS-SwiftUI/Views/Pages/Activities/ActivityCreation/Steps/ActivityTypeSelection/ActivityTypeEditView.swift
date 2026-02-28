@@ -1,19 +1,5 @@
 import SwiftUI
 
-// MARK: - Lazy View Wrapper
-// Prevents eager evaluation of navigation destinations, avoiding re-render loops
-private struct LazyView<Content: View>: View {
-	private let build: () -> Content
-
-	init(_ build: @autoclosure @escaping () -> Content) {
-		self.build = build
-	}
-
-	var body: some View {
-		build()
-	}
-}
-
 struct ActivityTypeEditView: View {
 	let activityTypeDTO: ActivityTypeDTO
 	let onBack: (() -> Void)?
@@ -23,7 +9,7 @@ struct ActivityTypeEditView: View {
 	@State private var editedTitle: String = ""
 	@State private var editedIcon: String = ""
 	@State private var hasChanges: Bool = false
-	@State private var navigateToFriendSelection: Bool = false
+	@State private var friendSelectionActivityType: ActivityTypeDTO?
 	@State private var showEmojiPicker: Bool = false
 	@FocusState private var isTitleFieldFocused: Bool
 
@@ -67,25 +53,12 @@ struct ActivityTypeEditView: View {
 		.onChange(of: editedIcon) { _, _ in
 			updateHasChanges()
 		}
-		.navigationDestination(isPresented: $navigateToFriendSelection) {
-			// Use LazyView to prevent re-evaluation on every parent re-render
-			// This breaks the cycle where AppCache updates cause infinite view recreation
-			LazyView(
-				ActivityTypeFriendSelectionView(
-					activityTypeDTO: createUpdatedActivityType(),
-					onComplete: handleFriendSelectionComplete
-				)
-				.environmentObject(AppCache.shared)
+		.navigationDestination(item: $friendSelectionActivityType) { activityType in
+			ActivityTypeFriendSelectionView(
+				activityTypeDTO: activityType,
+				onComplete: handleFriendSelectionComplete
 			)
-		}
-		.alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-			Button("OK") {
-				viewModel.clearError()
-			}
-		} message: {
-			if let errorMessage = viewModel.errorMessage {
-				Text(errorMessage)
-			}
+			.environmentObject(AppCache.shared)
 		}
 		.overlay(loadingOverlay)
 	}
@@ -286,12 +259,11 @@ struct ActivityTypeEditView: View {
 	}
 
 	private func navigateToNextStep() {
-		// Validate input before proceeding
 		guard !editedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
 			return
 		}
 
-		navigateToFriendSelection = true
+		friendSelectionActivityType = createUpdatedActivityType()
 	}
 
 	private func createUpdatedActivityType() -> ActivityTypeDTO {

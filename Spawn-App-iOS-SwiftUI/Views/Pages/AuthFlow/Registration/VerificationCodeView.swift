@@ -203,10 +203,11 @@ struct VerificationCodeView: View {
 
 	@ViewBuilder
 	private var errorSection: some View {
-		if userAuthViewModel.errorMessage != nil {
-			Text("Invalid code. Try again.")
+		if let errorMessage = userAuthViewModel.errorMessage {
+			Text(errorMessage)
 				.font(Font.custom("Onest", size: 14).weight(.medium))
 				.foregroundColor(Color(red: 0.92, green: 0.26, blue: 0.21))
+				.multilineTextAlignment(.center)
 				.padding(.top, 8)
 		}
 	}

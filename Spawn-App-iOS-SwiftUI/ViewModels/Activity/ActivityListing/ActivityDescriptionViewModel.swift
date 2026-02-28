@@ -231,7 +231,7 @@ final class ActivityDescriptionViewModel {
 
 		switch result {
 		case .success:
-			print("Activity reported successfully")
+			notificationService.showSuccess(.reportSubmitted)
 
 		case .failure(let error):
 			errorMessage = notificationService.handleError(

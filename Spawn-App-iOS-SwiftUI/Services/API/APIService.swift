@@ -378,10 +378,12 @@ final class APIService: IAPIService, @unchecked Sendable {
 			return nil
 		}
 		if !data.isEmpty {
+			// When expecting EmptyResponse (e.g. writeWithoutResponse), backend may return 200/201 with a body
+			// (e.g. POST interests returns 201 with the interest name string). Treat as success without decoding.
+			if U.self == EmptyResponse.self {
+				return EmptyResponse() as? U
+			}
 			do {
-				//				if let responseString = String(data: data, encoding: .utf8) {
-				//					print("🔄 DEBUG: Raw response data: \(responseString)")
-				//				}
 				let decoder = APIService.makeDecoder()
 				let decodedData = try decoder.decode(U.self, from: data)
 				return decodedData
@@ -663,16 +665,14 @@ final class APIService: IAPIService, @unchecked Sendable {
 	private func handleAuthTokens(from response: HTTPURLResponse, for url: URL)
 		throws
 	{
-		// Check if this is an auth endpoint
-		let authEndpoints = [
-			APIService.baseURL + "auth/sign-in",
-			APIService.baseURL + "auth/login",
-			APIService.baseURL + "auth/register/oauth",
-			APIService.baseURL + "auth/register/verification/check",
-			APIService.baseURL + "auth/user/details",
-			APIService.baseURL + "auth/quick-sign-in",
-		]
-		guard authEndpoints.contains(where: { url.absoluteString.contains($0) }) else {
+		// Only process responses that actually contain auth tokens in headers.
+		// The backend returns new tokens (e.g. after username change) via
+		// Authorization and X-Refresh-Token headers on any endpoint that
+		// requires token rotation, not just auth endpoints.
+		guard
+			response.allHeaderFields["Authorization"] as? String != nil
+				|| response.allHeaderFields["authorization"] as? String != nil
+		else {
 			return
 		}
 
@@ -857,9 +857,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 
 		guard httpResponse.statusCode == 200 else {
 			if httpResponse.statusCode == 401 {
-				// Handle token refresh logic here
 				let newAccessToken: String = try await handleRefreshToken()
-				// Retry the request with the new access token
 				let newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
 				return try APIService.makeDecoder().decode(U.self, from: newData)
 			}
@@ -868,25 +866,33 @@ final class APIService: IAPIService, @unchecked Sendable {
 				"invalid status code \(httpResponse.statusCode) for \(url)"
 			print("❌ ERROR: Invalid status code \(httpResponse.statusCode) for \(url)")
 
-			// Try to parse error message from response
 			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
 				print("❌ ERROR DETAILS: \(errorJson)")
+
+				if httpResponse.statusCode == 400,
+					let message = errorJson["message"] as? String
+				{
+					throw APIError.validationError(message: message)
+				}
 			}
 
 			throw APIError.invalidStatusCode(
 				statusCode: httpResponse.statusCode)
 		}
 
+		try handleAuthTokens(from: httpResponse, for: url)
+
 		do {
 			let decoder = APIService.makeDecoder()
 			let decodedData = try decoder.decode(U.self, from: data)
 			return decodedData
+		} catch let apiError as APIError {
+			throw apiError
 		} catch {
 			errorMessage =
 				APIError.failedJSONParsing(url: url).localizedDescription
 			print("❌ ERROR: JSON parsing failed for \(url): \(error)")
 
-			// Log the data that couldn't be parsed
 			print(
 				"❌ DATA THAT FAILED TO PARSE: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
 

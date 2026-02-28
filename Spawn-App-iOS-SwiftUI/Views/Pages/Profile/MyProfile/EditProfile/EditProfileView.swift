@@ -15,8 +15,6 @@ struct EditProfileView: View {
 	@State private var whatsappLink: String
 	@State private var instagramLink: String
 	@State private var isSaving: Bool = false
-	@State private var showAlert: Bool = false
-	@State private var alertMessage: String = ""
 
 	// User ID to edit
 	let userId: UUID
@@ -114,9 +112,7 @@ struct EditProfileView: View {
 						profileViewModel: profileViewModel,
 						userId: userId,
 						newInterest: $newInterest,
-						maxInterests: maxInterests,
-						showAlert: $showAlert,
-						alertMessage: $alertMessage
+						maxInterests: maxInterests
 					)
 
 					// Third party apps section
@@ -136,13 +132,6 @@ struct EditProfileView: View {
 		.sheet(isPresented: $showImagePicker) {
 			SwiftUIImagePicker(selectedImage: $selectedImage)
 				.ignoresSafeArea()
-		}
-		.alert(isPresented: $showAlert) {
-			Alert(
-				title: Text("Profile Update"),
-				message: Text(alertMessage),
-				dismissButton: .default(Text("OK"))
-			)
 		}
 		.onAppear {
 			// Save original interests for cancel functionality
@@ -168,56 +157,57 @@ struct EditProfileView: View {
 		isSaving = true
 
 		Task {
-			// Check if there's a new profile picture
-			_ = selectedImage != nil
-
-			// Update profile info first
-			await userAuth.spawnEditProfile(
-				username: username,
-				name: name
-			)
-
-			// Force UI update by triggering objectWillChange
-			await MainActor.run {
-				userAuth.objectWillChange.send()
+			let currentName = await MainActor.run {
+				userAuth.spawnUser.flatMap { FormatterService.shared.formatName(user: $0) } ?? ""
+			}
+			let currentUsername = await MainActor.run { userAuth.spawnUser?.username ?? "" }
+			if username != currentUsername || name != currentName {
+				let errorMessage = await userAuth.spawnEditProfile(
+					username: username,
+					name: name
+				)
+				if let errorMessage {
+					await MainActor.run {
+						isSaving = false
+						InAppNotificationService.shared.showErrorMessage(
+							errorMessage,
+							title: "Profile Update Failed"
+						)
+					}
+					return
+				}
+				await MainActor.run { userAuth.objectWillChange.send() }
+				await userAuth.fetchUserData()
 			}
 
-			// Explicitly fetch updated user data
-			await userAuth.fetchUserData()
-
-			// Format social media links properly before saving
 			let formattedWhatsapp = FormatterService.shared.formatWhatsAppLink(whatsappLink)
 			let formattedInstagram = FormatterService.shared.formatInstagramLink(instagramLink)
+			let newWhatsapp = formattedWhatsapp.isEmpty ? nil : formattedWhatsapp
+			let newInstagram = formattedInstagram.isEmpty ? nil : formattedInstagram
+			let oldWhatsapp = profileViewModel.userSocialMedia?.whatsappNumber
+			let oldInstagram = profileViewModel.userSocialMedia?.instagramUsername
+			let socialMediaChanged =
+				(newWhatsapp ?? "") != (oldWhatsapp ?? "") || (newInstagram ?? "") != (oldInstagram ?? "")
 
-			print("Saving whatsapp: \(formattedWhatsapp), instagram: \(formattedInstagram)")
+			if socialMediaChanged {
+				await profileViewModel.updateSocialMedia(
+					userId: userId,
+					whatsappLink: newWhatsapp,
+					instagramLink: newInstagram
+				)
+			}
 
-			// Update social media links
-			await profileViewModel.updateSocialMedia(
-				userId: userId,
-				whatsappLink: formattedWhatsapp.isEmpty ? nil : formattedWhatsapp,
-				instagramLink: formattedInstagram.isEmpty ? nil : formattedInstagram
-			)
-
-			// Handle interest changes
 			await saveInterestChanges()
 
-			// Add an explicit delay and refresh to ensure data is properly updated
-			try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds delay
+			try? await Task.sleep(nanoseconds: 500_000_000)
 
-			// Specifically fetch social media again to ensure it's updated
-			await profileViewModel.fetchUserSocialMedia(userId: userId)
-
-			// Update profile picture if selected
 			if let newImage = selectedImage {
 				await userAuth.updateProfilePicture(newImage)
-				// Invalidate the cached profile picture since we have a new one
 				await ProfilePictureCache.shared.removeCachedImage(for: userId)
 			}
 
-			// Refresh all profile data
 			await profileViewModel.loadAllProfileData(userId: userId)
 
-			// Ensure the user object is fully refreshed
 			if let spawnUser = userAuth.spawnUser {
 				print("Updated profile: \(spawnUser.name ?? "Unknown"), @\(spawnUser.username ?? "unknown")")
 				await MainActor.run {
@@ -227,41 +217,22 @@ struct EditProfileView: View {
 
 			await MainActor.run {
 				isSaving = false
-				alertMessage = "Profile updated successfully"
-				showAlert = true
-
-				// Dismiss after a short delay
-				Task { @MainActor in
-					try? await Task.sleep(for: .seconds(1.5))
-					presentationMode.wrappedValue.dismiss()
-				}
+				InAppNotificationService.shared.showSuccess(.profileUpdated)
+				presentationMode.wrappedValue.dismiss()
 			}
 		}
 	}
 
 	private func saveInterestChanges() async {
-		let currentInterests = Set(profileViewModel.userInterests)
-		let originalInterests = Set(profileViewModel.originalUserInterests)
+		let currentInterests = profileViewModel.userInterests
+		let changed = Set(currentInterests) != Set(profileViewModel.originalUserInterests)
+		guard changed else { return }
 
-		// Find interests to add (in current but not in original)
-		let interestsToAdd = currentInterests.subtracting(originalInterests)
-
-		// Find interests to remove (in original but not in current)
-		let interestsToRemove = originalInterests.subtracting(currentInterests)
-
-		// Add new interests
-		for interest in interestsToAdd {
-			_ = await profileViewModel.addUserInterest(userId: userId, interest: interest)
-		}
-
-		// Remove old interests using the edit-specific method that handles 404 as success
-		for interest in interestsToRemove {
-			await profileViewModel.removeUserInterestForEdit(userId: userId, interest: interest)
-		}
-
-		// Update the original interests to match current state after saving
-		await MainActor.run {
-			profileViewModel.originalUserInterests = profileViewModel.userInterests
+		let success = await profileViewModel.replaceAllInterests(userId: userId, interests: currentInterests)
+		if success {
+			await MainActor.run {
+				profileViewModel.originalUserInterests = profileViewModel.userInterests
+			}
 		}
 	}
 }

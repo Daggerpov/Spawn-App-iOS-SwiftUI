@@ -172,15 +172,6 @@ struct ActivityEditView: View {
 			.sheet(isPresented: $showEmojiPicker) {
 				ElegantEmojiPickerView(selectedEmoji: $editedIcon, isPresented: $showEmojiPicker)
 			}
-			.alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-				Button("OK") {
-					viewModel.clearError()
-				}
-			} message: {
-				if let errorMessage = viewModel.errorMessage {
-					Text(errorMessage)
-				}
-			}
 			.alert("Save All Changes?", isPresented: $showSaveConfirmation) {
 				Button("Don't Save", role: .destructive) {
 					// Reset to original values and dismiss

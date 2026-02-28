@@ -61,16 +61,6 @@
 			path = "Spawn-App-iOS-SwiftUI";
 			sourceTree = "<group>";
 		};
-		65D503712CD86EB600923A01 /* Spawn-App-iOS-SwiftUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Spawn-App-iOS-SwiftUITests";
-			sourceTree = "<group>";
-		};
-		65D5037B2CD86EB600923A01 /* Spawn-App-iOS-SwiftUIUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Spawn-App-iOS-SwiftUIUITests";
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,8 +102,6 @@
 			isa = PBXGroup;
 			children = (
 				65D5035B2CD86EB300923A01 /* Spawn-App-iOS-SwiftUI */,
-				65D503712CD86EB600923A01 /* Spawn-App-iOS-SwiftUITests */,
-				65D5037B2CD86EB600923A01 /* Spawn-App-iOS-SwiftUIUITests */,
 				65D5035A2CD86EB300923A01 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -176,9 +164,6 @@
 			dependencies = (
 				65D503702CD86EB600923A01 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				65D503712CD86EB600923A01 /* Spawn-App-iOS-SwiftUITests */,
-			);
 			name = "Spawn-App-iOS-SwiftUITests";
 			packageProductDependencies = (
 			);
@@ -198,9 +183,6 @@
 			);
 			dependencies = (
 				65D5037A2CD86EB600923A01 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				65D5037B2CD86EB600923A01 /* Spawn-App-iOS-SwiftUIUITests */,
 			);
 			name = "Spawn-App-iOS-SwiftUIUITests";
 			packageProductDependencies = (

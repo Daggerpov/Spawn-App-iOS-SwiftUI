@@ -15,6 +15,10 @@ let dimensionMD: CGFloat = 16
 let dimensionLG: CGFloat = 32
 let dimensionXL: CGFloat = 64
 
+/// Horizontal padding from screen edges for main content (home feed, activity creation).
+/// Increased for physical devices (e.g. iPhone 11) where 32pt felt cramped.
+let screenEdgePadding: CGFloat = 40
+
 let spacingXS: CGFloat = dimensionXS
 let spacingSM: CGFloat = dimensionSM
 let spacingMD: CGFloat = dimensionMD
@@ -286,6 +290,20 @@ var universalPlaceHolderTextColor: Color {
 		})
 }
 
+/// Figma --text/secondary: outline button text and border (Cancel, Add +). Light: #262424, Dark: lighter gray for contrast.
+@available(iOS 14.0, *)
+var universalSecondaryTextColor: Color {
+	Color(
+		UIColor { traitCollection in
+			switch traitCollection.userInterfaceStyle {
+			case .dark:
+				return UIColor(Color(hex: colorsGray300))
+			default:
+				return UIColor(Color(hex: colorsGray700))
+			}
+		})
+}
+
 // MARK: - Static Colors (Theme-independent) - Updated to use new design system
 let universalSecondaryColorHexCode: String = colorsIndigo500
 let universalSecondaryColor: Color = Color(hex: universalSecondaryColorHexCode)
@@ -310,6 +328,9 @@ let figmaGray700: Color = Color(hex: figmaGray700Hex)
 let figmaBlack300Hex: String = colorsGray400
 let figmaBlack300: Color = Color(hex: figmaBlack300Hex)
 
+// Figma "Add to see" section: border and text (--black-300 #8e8484)
+let colorsAddToSeeMutedHex: String = "#8e8484"
+
 let figmaGreen: Color = Color(hex: colorsGreen500)
 
 let figmaBlack400Hex: String = colorsGray400
@@ -320,6 +341,10 @@ let figmaBittersweetOrange: Color = Color(hex: figmaOrangeHex)
 
 let figmaGreyHex: String = colorsGray50
 let figmaGrey: Color = Color(hex: figmaGreyHex)
+
+// Interests + Hobbies section container (Figma: dark ~#282828, light subtle gray)
+let colorsInterestsSectionDark: String = "#282828"
+let colorsInterestsSectionLight: String = "#F5F3F3"
 
 let figmaLightGreyHex: String = colorsGray100
 let figmaLightGrey: Color = Color(hex: figmaLightGreyHex)

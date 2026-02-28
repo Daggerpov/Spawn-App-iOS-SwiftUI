@@ -95,7 +95,7 @@ struct ActivityConfirmationView: View {
 							.font(Font.custom("Onest", size: 16).weight(.medium))
 							.foregroundColor(adaptiveSecondaryTextColor)
 							.multilineTextAlignment(.center)
-							.padding(.horizontal, 32)
+							.padding(.horizontal, screenEdgePadding)
 
 					}
 					.padding(.bottom, 30)
@@ -200,7 +200,7 @@ struct ActivityConfirmationView: View {
 				.font(.system(size: 20, weight: .semibold))
 				.foregroundColor(.clear)
 		}
-		.padding(.horizontal, 25)
+		.padding(.horizontal, screenEdgePadding)
 		.padding(.vertical, 12)
 	}
 }

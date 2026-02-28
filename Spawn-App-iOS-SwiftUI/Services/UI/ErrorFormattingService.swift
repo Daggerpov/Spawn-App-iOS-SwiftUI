@@ -34,6 +34,8 @@ final class ErrorFormattingService: Sendable {
 			return "We're having trouble connecting to our servers. Please try again."
 		case .invalidStatusCode(let statusCode):
 			return formatStatusCodeError(statusCode)
+		case .validationError(let message):
+			return formatGenericError(message)
 		case .failedJSONParsing:
 			return "We're having trouble processing the server response. Please try again."
 		case .invalidData:
@@ -142,12 +144,30 @@ final class ErrorFormattingService: Sendable {
 		case "phone verification", "verification":
 			return "We're having trouble verifying your phone number. Please check the number and try again."
 		case "profile setup":
+			if isNetworkRelatedMessage(baseMessage) || isAuthRelatedMessage(baseMessage) {
+				return baseMessage
+			}
 			return "We're having trouble saving your profile information. Please check your details and try again."
+		case "apple sign-in", "google sign-in", "sign in", "authentication":
+			if isNetworkRelatedMessage(baseMessage) {
+				return baseMessage
+			}
+			return "We're having trouble signing you in. Please try again."
 		default:
 			break
 		}
 
 		return baseMessage
+	}
+
+	private func isNetworkRelatedMessage(_ message: String) -> Bool {
+		let lowercased = message.lowercased()
+		return lowercased.contains("connect") || lowercased.contains("internet") || lowercased.contains("network")
+	}
+
+	private func isAuthRelatedMessage(_ message: String) -> Bool {
+		let lowercased = message.lowercased()
+		return lowercased.contains("sign in") || lowercased.contains("session") || lowercased.contains("authentication")
 	}
 
 	/// Formats error messages with resource and operation context
@@ -172,6 +192,8 @@ final class ErrorFormattingService: Sendable {
 			return formatContextualStatusCode(statusCode, resource: resource, operation: operation)
 		case .failedHTTPRequest:
 			return "We're having trouble connecting to our servers. Please check your connection and try again."
+		case .validationError(let message):
+			return formatGenericContextualError(message, resource: resource, operation: operation)
 		case .failedJSONParsing:
 			return "We received unexpected data. Please try again."
 		case .invalidData:

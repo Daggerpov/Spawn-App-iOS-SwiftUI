@@ -32,6 +32,7 @@ struct MapView: View {
 	@State private var filteredActivities: [FullFeedActivityDTO] = []
 	@State private var isMapLoaded = false
 	@State private var hasInitialized = false
+	@State private var hasCenteredOnUser = false
 	@State private var mapInitializationTask: Task<Void, Never>?
 	@State private var viewLifecycleState: ViewLifecycleState = .notAppeared
 
@@ -125,6 +126,13 @@ struct MapView: View {
 		}
 	}
 
+	// MARK: - Constants
+
+	/// Maximum reasonable span for the map (anything larger is likely a bug)
+	private static let maxReasonableSpan: Double = 0.5
+	/// Default span for user-centered view
+	private static let defaultSpan: Double = 0.01
+
 	// MARK: - Lifecycle Methods
 
 	private func handleViewAppeared() {
@@ -145,6 +153,40 @@ struct MapView: View {
 		if !hasInitialized {
 			setInitialRegion()
 			hasInitialized = true
+		} else {
+			// On subsequent appearances, check if region is unreasonably zoomed out
+			// This can happen due to MKMapView state issues during tab switching
+			let isZoomedOutTooFar =
+				region.span.latitudeDelta > Self.maxReasonableSpan
+				|| region.span.longitudeDelta > Self.maxReasonableSpan
+
+			if isZoomedOutTooFar, let userLocation = locationManager.userLocation {
+				print(
+					"⚠️ MapView: Detected unreasonable zoom level (span: \(region.span.latitudeDelta)), re-centering on user"
+				)
+				withAnimation {
+					region = MKCoordinateRegion(
+						center: userLocation,
+						span: MKCoordinateSpan(
+							latitudeDelta: Self.defaultSpan,
+							longitudeDelta: Self.defaultSpan
+						)
+					)
+				}
+			} else if !hasCenteredOnUser, let userLocation = locationManager.userLocation {
+				// Handle case where view reappears after location became available
+				withAnimation {
+					region = MKCoordinateRegion(
+						center: userLocation,
+						span: MKCoordinateSpan(
+							latitudeDelta: Self.defaultSpan,
+							longitudeDelta: Self.defaultSpan
+						)
+					)
+				}
+				hasCenteredOnUser = true
+				print("📍 MapView: Centered on user location (on reappear)")
+			}
 		}
 
 		// Start location updates
@@ -208,86 +250,39 @@ struct MapView: View {
 			region = MKCoordinateRegion(
 				center: userLocation,
 				span: MKCoordinateSpan(
-					latitudeDelta: 0.01,
-					longitudeDelta: 0.01
+					latitudeDelta: Self.defaultSpan,
+					longitudeDelta: Self.defaultSpan
 				)
 			)
+			hasCenteredOnUser = true
 			print(
 				"📍 MapView: Set initial region to user location (\(userLocation.latitude), \(userLocation.longitude))")
 			return
 		}
 
-		// Priority 2: Activities location
-		if !viewModel.activities.isEmpty {
-			fitRegionToActivities()
-			print("📍 MapView: Set initial region to fit activities")
-			return
-		}
-
-		// Priority 3: Default location (already set in @State)
+		// Priority 2: Default location - wait for user location rather than zooming to activities
+		// This prevents the zoomed-out view when activities are spread across the map
 		print(
 			"📍 MapView: Using default region (user location not yet available, authorization: \(locationManager.authorizationStatus.rawValue))"
 		)
 	}
 
 	private func handleUserLocationUpdate() {
-		// Only auto-center if still at default location
+		// Auto-center on user location if we haven't done so yet
 		guard let userLocation = locationManager.userLocation else { return }
+		guard !hasCenteredOnUser else { return }
 
-		let isStillAtDefault =
-			abs(region.center.latitude - defaultMapLatitude) < 0.001
-			&& abs(region.center.longitude - defaultMapLongitude) < 0.001
-
-		if isStillAtDefault {
-			withAnimation {
-				region = MKCoordinateRegion(
-					center: userLocation,
-					span: MKCoordinateSpan(
-						latitudeDelta: 0.01,
-						longitudeDelta: 0.01
-					)
+		withAnimation {
+			region = MKCoordinateRegion(
+				center: userLocation,
+				span: MKCoordinateSpan(
+					latitudeDelta: Self.defaultSpan,
+					longitudeDelta: Self.defaultSpan
 				)
-			}
-			print("📍 Auto-centered to user location")
-		}
-	}
-
-	private func fitRegionToActivities() {
-		let activitiesWithLocation = viewModel.activities.filter {
-			$0.location != nil
-		}
-		guard !activitiesWithLocation.isEmpty else { return }
-
-		let latitudes = activitiesWithLocation.compactMap {
-			$0.location?.latitude
-		}
-		let longitudes = activitiesWithLocation.compactMap {
-			$0.location?.longitude
-		}
-
-		guard let minLat = latitudes.min(),
-			let maxLat = latitudes.max(),
-			let minLon = longitudes.min(),
-			let maxLon = longitudes.max()
-		else {
-			return
-		}
-
-		let centerLat = (minLat + maxLat) / 2
-		let centerLon = (minLon + maxLon) / 2
-		let latDelta = max((maxLat - minLat) * 1.5, 0.01)
-		let lonDelta = max((maxLon - minLon) * 1.5, 0.01)
-
-		region = MKCoordinateRegion(
-			center: CLLocationCoordinate2D(
-				latitude: centerLat,
-				longitude: centerLon
-			),
-			span: MKCoordinateSpan(
-				latitudeDelta: latDelta,
-				longitudeDelta: lonDelta
 			)
-		)
+		}
+		hasCenteredOnUser = true
+		print("📍 Auto-centered to user location")
 	}
 
 	// MARK: - Activity Filtering

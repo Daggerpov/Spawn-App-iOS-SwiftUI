@@ -37,25 +37,24 @@ struct UserDetailsInputView: View {
 		}
 	}
 
-	// Phone number formatter (US style: (XXX) XXX-XXXX)
+	@State private var isFormattingPhone = false
+
 	private func formatPhoneNumber(_ number: String) -> String {
-		let digits = number.filter { $0.isNumber }
-		var result = ""
+		let digits = String(number.filter { $0.isNumber }.prefix(10))
 		let count = digits.count
 		if count == 0 { return "" }
 		if count < 4 {
-			result = digits
+			return digits
 		} else if count < 7 {
 			let area = digits.prefix(3)
-			let prefix = digits.suffix(count - 3)
-			result = "(\(area)) \(prefix)"
+			let rest = digits.dropFirst(3)
+			return "(\(area)) \(rest)"
 		} else {
 			let area = digits.prefix(3)
-			let prefix = digits.dropFirst(3).prefix(3)
-			let line = digits.dropFirst(6).prefix(4)
-			result = "(\(area)) \(prefix)-\(line)"
+			let mid = digits.dropFirst(3).prefix(3)
+			let line = digits.dropFirst(6)
+			return "(\(area)) \(mid)-\(line)"
 		}
-		return result
 	}
 
 	var body: some View {
@@ -122,11 +121,13 @@ struct UserDetailsInputView: View {
 						errorMessage: phoneError
 					)
 					.onChange(of: phoneNumber) { _, newValue in
+						guard !isFormattingPhone else { return }
 						let formatted = formatPhoneNumber(newValue)
 						if formatted != newValue {
+							isFormattingPhone = true
 							phoneNumber = formatted
+							isFormattingPhone = false
 						}
-						// Check for taken phone number (demo scenario)
 						if formatted == "(778) 100-1000" {
 							isPhoneNumberTaken = true
 							phoneError = "This phone number has already been used. Try signing in instead."

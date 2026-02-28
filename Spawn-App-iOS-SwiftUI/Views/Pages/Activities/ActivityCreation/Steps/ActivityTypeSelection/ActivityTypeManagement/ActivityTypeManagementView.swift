@@ -174,15 +174,6 @@ struct ActivityTypeManagementView: View {
 					}
 				}
 			}
-			.alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-				Button("OK") {
-					viewModel.clearError()
-				}
-			} message: {
-				if let errorMessage = viewModel.errorMessage {
-					Text(errorMessage)
-				}
-			}
 
 			// Custom popup overlay
 			if showingOptions {

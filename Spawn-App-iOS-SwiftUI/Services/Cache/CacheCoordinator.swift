@@ -52,6 +52,7 @@ final class CacheCoordinator: ObservableObject {
 		activityCache.clearAllCaches()
 		friendshipCache.clearAllCaches()
 		profileCache.clearAllCaches()
+		ProfileViewModelCache.shared.clear()
 
 		Task {
 			await profilePictureCache.clearAllCache()

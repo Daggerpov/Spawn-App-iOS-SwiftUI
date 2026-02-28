@@ -15,6 +15,7 @@ struct ActivityCalendarView: View {
 
 	let userCreationDate: Date?
 	let calendarOwnerName: String?
+	var friendUserId: UUID? = nil
 
 	@State private var currentMonth = Date()
 	@State private var scrollOffset: CGFloat = 0
@@ -98,9 +99,6 @@ struct ActivityCalendarView: View {
 			isReturningFromNavigation = true
 			// Reset the scroll flag so we scroll properly when coming back
 			hasPerformedInitialScroll = false
-			// Reset navigation state when leaving the calendar view
-			// This prevents the NavigationLink from getting stuck in active state
-			onDismiss?()
 		}
 		.onChange(of: profileViewModel.allCalendarActivities) { oldActivities, newActivities in
 			// When activities are first loaded (or change significantly), scroll to current month
@@ -203,7 +201,11 @@ struct ActivityCalendarView: View {
 
 	private func fetchCalendarData() {
 		Task {
-			await profileViewModel.fetchAllCalendarActivities()
+			if let friendUserId = friendUserId {
+				await profileViewModel.fetchAllCalendarActivities(friendUserId: friendUserId)
+			} else {
+				await profileViewModel.fetchAllCalendarActivities()
+			}
 		}
 	}
 

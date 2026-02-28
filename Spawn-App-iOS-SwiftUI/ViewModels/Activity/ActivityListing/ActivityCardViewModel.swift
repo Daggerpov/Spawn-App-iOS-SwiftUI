@@ -68,11 +68,13 @@ final class ActivityCardViewModel {
 			.reportActivity(report: reportDTO)
 		)
 
+		let notificationService = InAppNotificationService.shared
+
 		switch result {
 		case .success:
-			print("Activity reported successfully")
+			notificationService.showSuccess(.reportSubmitted)
 		case .failure(let error):
-			print("Error reporting activity: \(ErrorFormattingService.shared.formatError(error))")
+			notificationService.showError(error, resource: .activity, operation: .report)
 		}
 	}
 
@@ -94,20 +96,18 @@ final class ActivityCardViewModel {
 			updateActivityAfterAPISuccess(updatedActivity)
 
 		case .failure(let error):
-			// Handle specific API errors
 			if let apiError = error as? APIError,
 				case .invalidStatusCode(let statusCode) = apiError
 			{
 				if statusCode == 400 {
-					// Activity is full
 					handleActivityFullError()
 				} else {
-					print(
-						"Error toggling participation (status \(statusCode)): \(ErrorFormattingService.shared.formatAPIError(apiError))"
-					)
+					InAppNotificationService.shared.showError(
+						error, resource: .activity, operation: .join)
 				}
 			} else {
-				print("Error toggling participation: \(ErrorFormattingService.shared.formatError(error))")
+				InAppNotificationService.shared.showError(
+					error, resource: .activity, operation: .join)
 			}
 		}
 	}
@@ -119,15 +119,16 @@ final class ActivityCardViewModel {
 			.deleteActivity(activityId: activity.id)
 		)
 
-		// Handle the result
 		switch result {
 		case .success:
-			// Post notification for activity deletion
 			NotificationCenter.default.post(
 				name: .activityDeleted,
 				object: activity.id
 			)
+			InAppNotificationService.shared.showSuccess(.activityDeleted)
 		case .failure(let error):
+			InAppNotificationService.shared.showError(
+				error, resource: .activity, operation: .delete)
 			throw error
 		}
 	}

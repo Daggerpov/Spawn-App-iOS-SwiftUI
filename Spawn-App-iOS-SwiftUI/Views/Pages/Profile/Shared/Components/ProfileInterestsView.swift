@@ -16,6 +16,21 @@ struct ProfileInterestsView: View {
 	var openSocialMediaLink: (String, String) -> Void
 	var removeInterest: (String) -> Void
 
+	@Environment(\.colorScheme) private var colorScheme
+
+	// Figma: Interests container dark ~#282828, light subtle gray
+	private var interestsSectionBackground: Color {
+		colorScheme == .dark
+			? Color(hex: colorsInterestsSectionDark)
+			: Color(hex: colorsInterestsSectionLight)
+	}
+
+	// Primary text on orange pill (white in dark, dark in light)
+	private var interestsPillTextColor: Color { universalAccentColor }
+
+	// Muted text for empty state (Figma: secondary/muted)
+	private var emptyStateTextColor: Color { universalPlaceHolderTextColor }
+
 	// Check if this is the current user's profile
 	var isCurrentUserProfile: Bool {
 		if MockAPIService.isMocking {
@@ -50,14 +65,14 @@ struct ProfileInterestsView: View {
 		.background(
 			RoundedRectangle(cornerRadius: 15)
 				.stroke(figmaBittersweetOrange, lineWidth: 1)
-				.background(universalBackgroundColor.opacity(0.5).cornerRadius(15))
+				.background(interestsSectionBackground.cornerRadius(15))
 		)
 		.overlay(alignment: .topLeading) {
-			// Header positioned on the border
+			// Header positioned on the border (Figma: primary text on orange pill)
 			HStack {
 				Text("Interests + Hobbies")
 					.font(.onestBold(size: 14))
-					.foregroundColor(.black)
+					.foregroundColor(interestsPillTextColor)
 					.padding(.vertical, 8)
 					.padding(.horizontal, 12)
 					.background(figmaBittersweetOrange)
@@ -135,14 +150,14 @@ struct ProfileInterestsView: View {
 		.background(
 			RoundedRectangle(cornerRadius: 15)
 				.stroke(figmaBittersweetOrange, lineWidth: 1)
-				.background(universalBackgroundColor.opacity(0.5).cornerRadius(15))
+				.background(interestsSectionBackground.cornerRadius(15))
 		)
 		.overlay(alignment: .topLeading) {
-			// Header positioned on the border
+			// Header positioned on the border (Figma: primary text on orange pill)
 			HStack {
 				Text("Interests + Hobbies")
 					.font(.onestBold(size: 14))
-					.foregroundColor(Color(hex: colorsGray900))
+					.foregroundColor(interestsPillTextColor)
 					.padding(.vertical, 8)
 					.padding(.horizontal, 12)
 					.background(figmaBittersweetOrange)
@@ -163,7 +178,7 @@ struct ProfileInterestsView: View {
 	private var emptyInterestsView: some View {
 		Text("No interests added yet.")
 			.frame(maxWidth: .infinity)
-			.foregroundColor(.secondary)
+			.foregroundColor(emptyStateTextColor)
 			.italic()
 			.font(.onestRegular(size: 14))
 			.padding(.horizontal, 16)
