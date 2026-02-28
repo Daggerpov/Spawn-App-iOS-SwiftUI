@@ -141,6 +141,7 @@ struct AddToActivityTypeView: View {
 						)
 				}
 			}
+			.frame(width: 120, height: 120)
 
 			// User info text
 			VStack(spacing: 2) {

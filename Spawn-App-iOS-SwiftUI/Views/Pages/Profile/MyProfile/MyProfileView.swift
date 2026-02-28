@@ -278,10 +278,6 @@ struct MyProfileView: View {
 			profileViewModel: profileViewModel,
 			userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
 			calendarOwnerName: nil,
-			onDismiss: {
-				// Reset navigation state when calendar view is dismissed
-				navigateToCalendar = false
-			},
 			onActivitySelected: { activity in
 				// Handle single activity - fetch details and show popup directly
 				handleActivitySelection(activity)

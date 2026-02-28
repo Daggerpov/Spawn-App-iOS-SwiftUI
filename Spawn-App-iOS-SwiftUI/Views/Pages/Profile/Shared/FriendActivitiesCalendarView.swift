@@ -4,9 +4,8 @@ struct FriendActivitiesCalendarView: View {
 	let user: Nameable
 	var profileViewModel: ProfileViewModel
 	@Binding var showActivityDetails: Bool
-	/// When set to false by the calendar view (e.g. back tapped), parent pops this screen so we return to the profile.
-	@Binding var isPresented: Bool
 
+	@Environment(\.dismiss) private var dismiss
 	@Environment(\.colorScheme) private var colorScheme
 	@ObservedObject private var locationManager = LocationManager.shared
 
@@ -58,7 +57,7 @@ struct FriendActivitiesCalendarView: View {
 		.toolbar {
 			ToolbarItem(placement: .navigationBarLeading) {
 				Button(action: {
-					isPresented = false
+					dismiss()
 				}) {
 					Image(systemName: "chevron.left")
 						.font(.system(size: 20, weight: .semibold))
@@ -253,8 +252,7 @@ struct FriendActivitiesCalendarView: View {
 		FriendActivitiesCalendarView(
 			user: BaseUserDTO.danielAgapov,
 			profileViewModel: viewModel,
-			showActivityDetails: .constant(false),
-			isPresented: .constant(true)
+			showActivityDetails: .constant(false)
 		)
 	}
 }
