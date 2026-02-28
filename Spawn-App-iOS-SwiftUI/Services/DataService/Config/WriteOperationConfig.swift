@@ -19,6 +19,9 @@ enum WriteOperationType {
 
 	// MARK: - Profile Operations
 
+	/// Replace all interests for a user's profile
+	case replaceProfileInterests(userId: UUID, interests: [String])
+
 	/// Add an interest to a user's profile
 	case addProfileInterest(userId: UUID, interest: String)
 
@@ -147,7 +150,8 @@ enum WriteOperationType {
 			.updateNotificationPreferences:
 			return .post
 
-		case .updateSocialMedia,
+		case .replaceProfileInterests,
+			.updateSocialMedia,
 			.acceptFriendRequest,
 			.declineFriendRequest,
 			.batchUpdateActivityTypes,
@@ -180,10 +184,11 @@ enum WriteOperationType {
 	var endpoint: String {
 		switch self {
 		// Profile
+		case .replaceProfileInterests(let userId, _):
+			return "users/\(userId)/interests"
 		case .addProfileInterest(let userId, _):
 			return "users/\(userId)/interests"
 		case .removeProfileInterest(let userId, let interest):
-			// URL encode the interest name
 			let encoded = interest.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? interest
 			return "users/\(userId)/interests/\(encoded)"
 		case .updateSocialMedia(let userId, _):
@@ -280,7 +285,8 @@ enum WriteOperationType {
 	var cacheInvalidationKeys: [String] {
 		switch self {
 		// Profile
-		case .addProfileInterest(let userId, _),
+		case .replaceProfileInterests(let userId, _),
+			.addProfileInterest(let userId, _),
 			.removeProfileInterest(let userId, _):
 			return ["profileInterests-\(userId)"]
 		case .updateSocialMedia(let userId, _):
@@ -371,6 +377,8 @@ enum WriteOperationType {
 	/// Human-readable name for logging
 	var displayName: String {
 		switch self {
+		case .replaceProfileInterests:
+			return "Replace Profile Interests"
 		case .addProfileInterest:
 			return "Add Profile Interest"
 		case .removeProfileInterest:
@@ -438,6 +446,8 @@ enum WriteOperationType {
 	/// Returns nil if the operation doesn't have a body
 	func getBody<T>() -> T? where T: Encodable {
 		switch self {
+		case .replaceProfileInterests(_, let interests):
+			return interests as? T
 		case .addProfileInterest(_, let interest):
 			return interest as? T
 		case .updateSocialMedia(_, let socialMedia):
@@ -500,6 +510,8 @@ enum WriteOperationType {
 	/// This preserves the actual body type without requiring generic type inference
 	func getAnyBody() -> AnyEncodable? {
 		switch self {
+		case .replaceProfileInterests(_, let interests):
+			return AnyEncodable(interests)
 		case .addProfileInterest(_, let interest):
 			return AnyEncodable(interest)
 		case .updateSocialMedia(_, let socialMedia):

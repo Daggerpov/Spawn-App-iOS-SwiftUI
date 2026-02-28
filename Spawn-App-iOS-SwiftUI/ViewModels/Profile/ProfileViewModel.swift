@@ -179,33 +179,37 @@ final class ProfileViewModel {
 		}
 	}
 
+	func replaceAllInterests(userId: UUID, interests: [String]) async -> Bool {
+		let operationType = WriteOperationType.replaceProfileInterests(userId: userId, interests: interests)
+		let result: DataResult<[String]> = await dataService.write(operationType, body: interests)
+
+		switch result {
+		case .success(let savedInterests, _):
+			self.userInterests = savedInterests
+			return true
+		case .failure(let error):
+			_ = notificationService.handleError(error, resource: .profile, operation: .update)
+			return false
+		}
+	}
+
 	func addUserInterest(userId: UUID, interest: String) async -> Bool {
-		// Don't add if already present (case-insensitive)
 		let isDuplicate = self.userInterests.contains {
 			$0.caseInsensitiveCompare(interest) == .orderedSame
 		}
 		guard !isDuplicate else { return true }
 
-		// Update local state immediately for better UX
 		self.userInterests.append(interest)
 
-		// Use DataService for the POST operation
-		let operation = WriteOperation<String>.post(
-			endpoint: "users/\(userId)/interests",
-			body: interest,
-			cacheInvalidationKeys: ["profileInterests_\(userId)"]
-		)
-
-		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operation)
+		let operationType = WriteOperationType.addProfileInterest(userId: userId, interest: interest)
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operationType)
 
 		switch result {
 		case .success:
-			// Refresh interests from cache after successful update
 			let refreshResult: DataResult<[String]> = await dataService.read(
 				.profileInterests(userId: userId),
 				cachePolicy: .apiOnly
 			)
-
 			if case .success(let interests, _) = refreshResult {
 				self.userInterests = interests
 			}
@@ -699,74 +703,27 @@ final class ProfileViewModel {
 		userInterests = originalUserInterests
 	}
 
-	// Interest management methods
 	func removeUserInterest(userId: UUID, interest: String) async {
-		// Store original state for potential rollback
 		let originalInterests = userInterests
-
-		// Update local state immediately for better UX
 		self.userInterests.removeAll { $0 == interest }
 
-		// URL encode the interest name to handle spaces and special characters
-		guard let encodedInterest = interest.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-			self.userInterests = originalInterests
-			self.errorMessage = "Failed to encode interest name"
-			return
-		}
-
-		let operation = WriteOperation<EmptyRequestBody>.delete(
-			endpoint: "users/\(userId)/interests/\(encodedInterest)",
-			cacheInvalidationKeys: ["profileInterests_\(userId)"]
-		)
-
-		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operation)
+		let operationType = WriteOperationType.removeProfileInterest(userId: userId, interest: interest)
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operationType)
 
 		switch result {
 		case .success:
-			// Refresh interests from server after successful delete
 			let refreshResult: DataResult<[String]> = await dataService.read(
 				.profileInterests(userId: userId),
 				cachePolicy: .apiOnly
 			)
-
 			if case .success(let interests, _) = refreshResult {
 				self.userInterests = interests
 			}
 
 		case .failure(let error):
 			print("❌ Failed to remove interest '\(interest)': \(ErrorFormattingService.shared.formatError(error))")
-
-			// Revert the optimistic update since the API call failed
 			self.userInterests = originalInterests
 			self.errorMessage = ErrorFormattingService.shared.formatError(error)
-		}
-	}
-
-	// Method for edit profile flow - doesn't revert local state on error
-	func removeUserInterestForEdit(userId: UUID, interest: String) async {
-		// URL encode the interest name to handle spaces and special characters
-		guard let encodedInterest = interest.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-			print("❌ Failed to encode interest name: \(interest)")
-			return
-		}
-
-		let operation = WriteOperation<EmptyRequestBody>.delete(
-			endpoint: "users/\(userId)/interests/\(encodedInterest)",
-			cacheInvalidationKeys: ["profileInterests_\(userId)"]
-		)
-
-		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operation)
-
-		switch result {
-		case .success:
-			// Refresh interests from cache
-			let _: DataResult<[String]> = await dataService.read(
-				.profileInterests(userId: userId), cachePolicy: .apiOnly)
-
-		case .failure(let error):
-			print("❌ Failed to remove interest '\(interest)': \(ErrorFormattingService.shared.formatError(error))")
-		// For other errors, we could show a warning but still keep the local state
-		// since the user explicitly wanted to remove it
 		}
 	}
 

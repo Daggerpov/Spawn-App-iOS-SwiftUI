@@ -222,28 +222,15 @@ struct EditProfileView: View {
 	}
 
 	private func saveInterestChanges() async {
-		let currentInterests = Set(profileViewModel.userInterests)
-		let originalInterests = Set(profileViewModel.originalUserInterests)
+		let currentInterests = profileViewModel.userInterests
+		let changed = Set(currentInterests) != Set(profileViewModel.originalUserInterests)
+		guard changed else { return }
 
-		// Find interests to add (in current but not in original)
-		let interestsToAdd = currentInterests.subtracting(originalInterests)
-
-		// Find interests to remove (in original but not in current)
-		let interestsToRemove = originalInterests.subtracting(currentInterests)
-
-		// Add new interests
-		for interest in interestsToAdd {
-			_ = await profileViewModel.addUserInterest(userId: userId, interest: interest)
-		}
-
-		// Remove old interests using the edit-specific method that handles 404 as success
-		for interest in interestsToRemove {
-			await profileViewModel.removeUserInterestForEdit(userId: userId, interest: interest)
-		}
-
-		// Update the original interests to match current state after saving
-		await MainActor.run {
-			profileViewModel.originalUserInterests = profileViewModel.userInterests
+		let success = await profileViewModel.replaceAllInterests(userId: userId, interests: currentInterests)
+		if success {
+			await MainActor.run {
+				profileViewModel.originalUserInterests = profileViewModel.userInterests
+			}
 		}
 	}
 }

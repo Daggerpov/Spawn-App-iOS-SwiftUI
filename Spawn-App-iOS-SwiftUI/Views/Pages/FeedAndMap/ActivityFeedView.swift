@@ -40,6 +40,7 @@ struct ActivityFeedView: View {
 	// Tutorial state
 	@State private var showTutorialPreConfirmation = false
 	@State private var tutorialSelectedActivityType: ActivityTypeDTO?
+	@State private var activityTypesFrame: CGRect = .zero
 
 	init(
 		user: BaseUserDTO, viewModel: FeedViewModel, selectedTab: Binding<TabType>,
@@ -78,6 +79,15 @@ struct ActivityFeedView: View {
 
 				// Activity Types row
 				activityTypeListView
+					.background(
+						GeometryReader { geo in
+							Color.clear
+								.preference(
+									key: ActivityTypesFrameKey.self,
+									value: geo.frame(in: .global)
+								)
+						}
+					)
 					.padding(.bottom, 30)
 					.padding(.horizontal, screenEdgePadding)
 
@@ -128,9 +138,11 @@ struct ActivityFeedView: View {
 				colorInPopup = nil
 			}
 		}
+		.onPreferenceChange(ActivityTypesFrameKey.self) { frame in
+			activityTypesFrame = frame
+		}
 		.overlay(
-			// Tutorial overlay
-			TutorialOverlayView()
+			TutorialOverlayView(activityTypesFrame: activityTypesFrame)
 		)
 		.overlay(
 			// Tutorial pre-confirmation popup
