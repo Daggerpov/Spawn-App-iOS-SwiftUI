@@ -1214,52 +1214,59 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
-	func spawnEditProfile(username: String, name: String) async {
+	/// Returns nil on success, or a user-facing error message on failure.
+	func spawnEditProfile(username: String, name: String) async -> String? {
 		guard let userId = spawnUser?.id else {
 			print("Cannot edit profile: No user ID found")
-			return
+			return "No user ID found."
 		}
 
-		// Log user details
 		if let user = spawnUser {
 			print(
 				"Editing profile for user \(userId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))"
 			)
 		}
 
-		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
-			do {
-				let updateDTO = UserUpdateDTO(
-					username: username,
-					name: name
+		guard let url = URL(string: APIService.baseURL + "users/\(userId)") else {
+			return "Invalid URL."
+		}
+
+		do {
+			let updateDTO = UserUpdateDTO(
+				username: username,
+				name: name
+			)
+
+			print("Updating profile with: username=\(username), name=\(name)")
+
+			let updatedUser: BaseUserDTO = try await self.apiService.patchData(
+				from: url,
+				with: updateDTO
+			)
+
+			await MainActor.run {
+				self.spawnUser = updatedUser
+				self.objectWillChange.send()
+
+				print("Profile updated successfully: \(updatedUser.username ?? "Unknown")")
+
+				NotificationCenter.default.post(
+					name: .profileUpdated,
+					object: nil,
+					userInfo: ["updatedUser": updatedUser, "updateType": "nameAndUsername"]
 				)
-
-				print("Updating profile with: username=\(username), name=\(name)")
-
-				let updatedUser: BaseUserDTO = try await self.apiService.patchData(
-					from: url,
-					with: updateDTO
-				)
-
-				await MainActor.run {
-					// Update the current user object
-					self.spawnUser = updatedUser
-
-					// Ensure UI updates with the latest values
-					self.objectWillChange.send()
-
-					print("Profile updated successfully: \(updatedUser.username ?? "Unknown")")
-
-					// Post notification for profile update to trigger hot-reload across the app
-					NotificationCenter.default.post(
-						name: .profileUpdated,
-						object: nil,
-						userInfo: ["updatedUser": updatedUser, "updateType": "nameAndUsername"]
-					)
-				}
-			} catch {
-				print("Error updating profile: \(error.localizedDescription)")
 			}
+			return nil
+		} catch let apiError as APIError {
+			if case .validationError(let message) = apiError {
+				print("Validation error updating profile: \(message)")
+				return message
+			}
+			APIError.logIfNotCancellation(apiError, message: "Error updating profile")
+			return "Failed to update profile. Please try again."
+		} catch {
+			print("Error updating profile: \(error.localizedDescription)")
+			return "Failed to update profile. Please try again."
 		}
 	}
 

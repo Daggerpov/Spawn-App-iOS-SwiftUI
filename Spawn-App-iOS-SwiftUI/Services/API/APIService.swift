@@ -859,9 +859,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 
 		guard httpResponse.statusCode == 200 else {
 			if httpResponse.statusCode == 401 {
-				// Handle token refresh logic here
 				let newAccessToken: String = try await handleRefreshToken()
-				// Retry the request with the new access token
 				let newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
 				return try APIService.makeDecoder().decode(U.self, from: newData)
 			}
@@ -870,9 +868,14 @@ final class APIService: IAPIService, @unchecked Sendable {
 				"invalid status code \(httpResponse.statusCode) for \(url)"
 			print("❌ ERROR: Invalid status code \(httpResponse.statusCode) for \(url)")
 
-			// Try to parse error message from response
 			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
 				print("❌ ERROR DETAILS: \(errorJson)")
+
+				if httpResponse.statusCode == 400,
+					let message = errorJson["message"] as? String
+				{
+					throw APIError.validationError(message: message)
+				}
 			}
 
 			throw APIError.invalidStatusCode(
@@ -883,12 +886,13 @@ final class APIService: IAPIService, @unchecked Sendable {
 			let decoder = APIService.makeDecoder()
 			let decodedData = try decoder.decode(U.self, from: data)
 			return decodedData
+		} catch let apiError as APIError {
+			throw apiError
 		} catch {
 			errorMessage =
 				APIError.failedJSONParsing(url: url).localizedDescription
 			print("❌ ERROR: JSON parsing failed for \(url): \(error)")
 
-			// Log the data that couldn't be parsed
 			print(
 				"❌ DATA THAT FAILED TO PARSE: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
 

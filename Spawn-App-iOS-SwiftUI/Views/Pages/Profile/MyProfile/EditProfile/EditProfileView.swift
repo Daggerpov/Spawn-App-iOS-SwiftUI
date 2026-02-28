@@ -157,21 +157,29 @@ struct EditProfileView: View {
 		isSaving = true
 
 		Task {
-			// Only update profile info (name/username) if it actually changed
 			let currentName = await MainActor.run {
 				userAuth.spawnUser.flatMap { FormatterService.shared.formatName(user: $0) } ?? ""
 			}
 			let currentUsername = await MainActor.run { userAuth.spawnUser?.username ?? "" }
 			if username != currentUsername || name != currentName {
-				await userAuth.spawnEditProfile(
+				let errorMessage = await userAuth.spawnEditProfile(
 					username: username,
 					name: name
 				)
+				if let errorMessage {
+					await MainActor.run {
+						isSaving = false
+						InAppNotificationService.shared.showErrorMessage(
+							errorMessage,
+							title: "Profile Update Failed"
+						)
+					}
+					return
+				}
 				await MainActor.run { userAuth.objectWillChange.send() }
 				await userAuth.fetchUserData()
 			}
 
-			// Format social media links for comparison and API
 			let formattedWhatsapp = FormatterService.shared.formatWhatsAppLink(whatsappLink)
 			let formattedInstagram = FormatterService.shared.formatInstagramLink(instagramLink)
 			let newWhatsapp = formattedWhatsapp.isEmpty ? nil : formattedWhatsapp
@@ -181,7 +189,6 @@ struct EditProfileView: View {
 			let socialMediaChanged =
 				(newWhatsapp ?? "") != (oldWhatsapp ?? "") || (newInstagram ?? "") != (oldInstagram ?? "")
 
-			// Only PUT social media when whatsapp or instagram actually changed
 			if socialMediaChanged {
 				await profileViewModel.updateSocialMedia(
 					userId: userId,
@@ -190,22 +197,17 @@ struct EditProfileView: View {
 				)
 			}
 
-			// Only run interest add/remove for interests that changed (saveInterestChanges already does this)
 			await saveInterestChanges()
 
-			try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds delay
+			try? await Task.sleep(nanoseconds: 500_000_000)
 
-			// Update profile picture if selected
 			if let newImage = selectedImage {
 				await userAuth.updateProfilePicture(newImage)
-				// Invalidate the cached profile picture since we have a new one
 				await ProfilePictureCache.shared.removeCachedImage(for: userId)
 			}
 
-			// Refresh all profile data
 			await profileViewModel.loadAllProfileData(userId: userId)
 
-			// Ensure the user object is fully refreshed
 			if let spawnUser = userAuth.spawnUser {
 				print("Updated profile: \(spawnUser.name ?? "Unknown"), @\(spawnUser.username ?? "unknown")")
 				await MainActor.run {
