@@ -60,7 +60,7 @@ struct ActivityPreConfirmationView: View {
 
 				// Activity card
 				activityCardView
-					.padding(.horizontal, 24)
+					.padding(.horizontal, screenEdgePadding)
 
 				// Activity title
 				Text(
@@ -87,7 +87,7 @@ struct ActivityPreConfirmationView: View {
 				.font(.onestMedium(size: 20))
 				.foregroundColor(adaptiveSecondaryTextColor)
 				.padding(.top, 12)
-				.padding(.horizontal, 16)
+				.padding(.horizontal, screenEdgePadding)
 
 				Spacer()
 
@@ -130,7 +130,7 @@ struct ActivityPreConfirmationView: View {
 				}
 			}
 		}
-		.padding(.horizontal, 25)
+		.padding(.horizontal, screenEdgePadding)
 		.padding(.bottom, 80)  // Standard bottom padding
 		.background(adaptiveBackgroundColor)
 	}
@@ -159,7 +159,7 @@ struct ActivityPreConfirmationView: View {
 				.font(.system(size: 20, weight: .semibold))
 				.foregroundColor(.clear)
 		}
-		.padding(.horizontal, 25)
+		.padding(.horizontal, screenEdgePadding)
 		.padding(.vertical, 12)
 	}
 

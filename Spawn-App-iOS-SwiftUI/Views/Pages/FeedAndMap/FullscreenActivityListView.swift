@@ -34,7 +34,7 @@ struct FullscreenActivityListView: View {
 					.font(.system(size: 20, weight: .semibold))
 					.foregroundColor(.clear)
 			}
-			.padding(.horizontal, 25)
+			.padding(.horizontal, screenEdgePadding)
 			.padding(.vertical, 12)
 
 			ActivityListView(viewModel: viewModel, user: user, callback: callback)

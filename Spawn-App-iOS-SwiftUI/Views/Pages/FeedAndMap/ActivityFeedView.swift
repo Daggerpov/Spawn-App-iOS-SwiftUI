@@ -15,7 +15,7 @@ struct ActivityFeedView: View {
 	@State private var activityInPopup: FullFeedActivityDTO?
 	@State private var colorInPopup: Color?
 	@Binding private var selectedTab: TabType
-	private let horizontalSubHeadingPadding: CGFloat = 32
+	private let horizontalSubHeadingPadding: CGFloat = screenEdgePadding
 	private let bottomSubHeadingPadding: CGFloat = 14
 	@State private var showFullActivitiesList: Bool = false
 	@Environment(\.dismiss) private var dismiss
@@ -63,7 +63,7 @@ struct ActivityFeedView: View {
 				HeaderView(user: user)
 					.padding(.bottom, 30)
 					.padding(.top, 60)
-					.padding(.horizontal, 32)
+					.padding(.horizontal, screenEdgePadding)
 
 				// Spawn In! row
 				HStack {
@@ -74,12 +74,12 @@ struct ActivityFeedView: View {
 					seeAllActivityTypesButton
 				}
 				.padding(.bottom, 20)
-				.padding(.horizontal, 32)
+				.padding(.horizontal, screenEdgePadding)
 
 				// Activity Types row
 				activityTypeListView
 					.padding(.bottom, 30)
-					.padding(.horizontal, 32)
+					.padding(.horizontal, screenEdgePadding)
 
 				// Activities in Your Area row
 				HStack {
@@ -90,7 +90,7 @@ struct ActivityFeedView: View {
 					seeAllActivitiesButton
 				}
 				.padding(.bottom, 14)
-				.padding(.horizontal, 32)
+				.padding(.horizontal, screenEdgePadding)
 
 				// Activities - no container padding, cards will handle their own
 				ActivityListView(

@@ -15,6 +15,10 @@ let dimensionMD: CGFloat = 16
 let dimensionLG: CGFloat = 32
 let dimensionXL: CGFloat = 64
 
+/// Horizontal padding from screen edges for main content (home feed, activity creation).
+/// Increased for physical devices (e.g. iPhone 11) where 32pt felt cramped.
+let screenEdgePadding: CGFloat = 40
+
 let spacingXS: CGFloat = dimensionXS
 let spacingSM: CGFloat = dimensionSM
 let spacingMD: CGFloat = dimensionMD

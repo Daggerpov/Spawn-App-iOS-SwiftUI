@@ -380,7 +380,7 @@ struct ActivityDateTimeView: View {
 							.font(.system(size: 20, weight: .semibold))
 							.foregroundColor(.clear)
 					}
-					.padding(.horizontal, 25)
+					.padding(.horizontal, screenEdgePadding)
 					.padding(.vertical, 12)
 				} else {
 					HStack {
@@ -397,7 +397,7 @@ struct ActivityDateTimeView: View {
 							.font(.onestSemiBold(size: 20))
 							.foregroundColor(.clear)
 					}
-					.padding(.horizontal, 25)
+					.padding(.horizontal, screenEdgePadding)
 					.padding(.vertical, 12)
 				}
 				Text("Set a time for your Activity")
@@ -488,7 +488,7 @@ struct ActivityDateTimeView: View {
 						}
 
 					}
-					.padding(.horizontal, 50)
+					.padding(.horizontal, screenEdgePadding)
 					.padding(.bottom, 24)
 
 					// Activity Duration Section
@@ -508,14 +508,14 @@ struct ActivityDateTimeView: View {
 						}
 
 					}
-					.padding(.horizontal, 50)
+					.padding(.horizontal, screenEdgePadding)
 					.padding(.bottom, 50)
 
 					if !viewModel.timeValidationMessage.isEmpty {
 						Text(viewModel.timeValidationMessage)
 							.font(.custom("Onest", size: 12))
 							.foregroundColor(.red)
-							.padding(.horizontal, 20)
+							.padding(.horizontal, screenEdgePadding)
 							.padding(.bottom, 8)
 					}
 
@@ -549,7 +549,7 @@ struct ActivityDateTimeView: View {
 							}
 						}
 					}
-					.padding(.horizontal, 50)
+					.padding(.horizontal, screenEdgePadding)
 
 					// Step indicators
 					StepIndicatorView(currentStep: 1, totalSteps: 3)
