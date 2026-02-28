@@ -9,10 +9,12 @@ struct ActivityTypeView: View {
 	@State private var navigateToManageType = false
 	@State private var navigateToCreateType = false
 	@State private var selectedActivityTypeForManagement: ActivityTypeDTO?
+	@State private var newActivityTypeDTO: ActivityTypeDTO = ActivityTypeDTO.createNew()
 
 	// Delete confirmation state
 	@State private var showDeleteConfirmation = false
 	@State private var activityTypeToDelete: ActivityTypeDTO?
+	@State private var showErrorAlert = false
 
 	// Store background refresh task so we can cancel it on disappear
 	@State private var backgroundRefreshTask: Task<Void, Never>?
@@ -98,7 +100,7 @@ struct ActivityTypeView: View {
 				backgroundRefreshTask?.cancel()
 				backgroundRefreshTask = nil
 			}
-			.alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+			.alert("Error", isPresented: $showErrorAlert) {
 				Button("OK") {
 					viewModel.clearError()
 				}
@@ -106,6 +108,9 @@ struct ActivityTypeView: View {
 				if let errorMessage = viewModel.errorMessage {
 					Text(errorMessage)
 				}
+			}
+			.onChange(of: viewModel.errorMessage) { _, newValue in
+				showErrorAlert = newValue != nil
 			}
 			.alert("Delete Activity Type", isPresented: $showDeleteConfirmation) {
 				Button("Cancel", role: .cancel) {
@@ -136,14 +141,14 @@ struct ActivityTypeView: View {
 			.sheet(
 				isPresented: $navigateToCreateType,
 				onDismiss: {
-					// Refresh the activity types list when the create sheet is dismissed
+					newActivityTypeDTO = ActivityTypeDTO.createNew()
 					Task {
 						await viewModel.fetchActivityTypes(forceRefresh: true)
 					}
 				},
 				content: {
 					NavigationStack {
-						ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.createNew())
+						ActivityTypeEditView(activityTypeDTO: newActivityTypeDTO)
 					}
 				}
 			)
@@ -231,7 +236,10 @@ extension ActivityTypeView {
 	private func activityTypeCardView(for activityTypeDTO: ActivityTypeDTO) -> some View {
 		ActivityTypeCard(
 			activityTypeDTO: activityTypeDTO,
-			selectedActivityType: $selectedActivityType,
+			isSelected: selectedActivityType?.id == activityTypeDTO.id,
+			onTap: {
+				selectedActivityType = activityTypeDTO
+			},
 			onPin: {
 				Task {
 					await viewModel.togglePin(for: activityTypeDTO)
@@ -244,7 +252,7 @@ extension ActivityTypeView {
 			onManage: {
 				selectedActivityTypeForManagement = activityTypeDTO
 				navigateToManageType = true
-			},
+			}
 		)
 	}
 }

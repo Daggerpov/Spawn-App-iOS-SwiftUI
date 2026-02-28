@@ -13,6 +13,7 @@ struct ActivityEditView: View {
 	@State private var hasChanges: Bool = false
 	@State private var showSuccessMessage: Bool = false
 	@State private var showSaveConfirmation: Bool = false
+	@State private var showErrorAlert: Bool = false
 	@FocusState private var isTitleFieldFocused: Bool
 
 	private var adaptiveBackgroundColor: Color {
@@ -172,7 +173,7 @@ struct ActivityEditView: View {
 			.sheet(isPresented: $showEmojiPicker) {
 				ElegantEmojiPickerView(selectedEmoji: $editedIcon, isPresented: $showEmojiPicker)
 			}
-			.alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+			.alert("Error", isPresented: $showErrorAlert) {
 				Button("OK") {
 					viewModel.clearError()
 				}
@@ -180,6 +181,9 @@ struct ActivityEditView: View {
 				if let errorMessage = viewModel.errorMessage {
 					Text(errorMessage)
 				}
+			}
+			.onChange(of: viewModel.errorMessage) { _, newValue in
+				showErrorAlert = newValue != nil
 			}
 			.alert("Save All Changes?", isPresented: $showSaveConfirmation) {
 				Button("Don't Save", role: .destructive) {
