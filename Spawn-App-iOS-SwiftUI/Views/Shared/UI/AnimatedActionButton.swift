@@ -26,8 +26,8 @@ enum FriendActionButtonStyle {
 	var normalColor: Color {
 		switch self {
 		case .accept: return .white
-		case .remove, .cancel: return figmaGray700
-		case .add: return .white
+		case .remove, .cancel: return universalSecondaryTextColor
+		case .add: return universalSecondaryTextColor
 		}
 	}
 
@@ -46,7 +46,7 @@ enum FriendActionButtonStyle {
 			case .remove, .cancel:
 				return Color.clear
 			case .add:
-				return universalSecondaryColor
+				return Color.clear
 			}
 		}
 	}
@@ -54,10 +54,12 @@ enum FriendActionButtonStyle {
 	var borderColor: (_ isActive: Bool) -> Color {
 		return { isActive in
 			switch self {
-			case .accept, .add:
+			case .accept:
 				return Color.clear
+			case .add:
+				return isActive ? figmaGreen : universalSecondaryTextColor
 			case .remove, .cancel:
-				return isActive ? figmaGreen : figmaGray700
+				return isActive ? figmaGreen : universalSecondaryTextColor
 			}
 		}
 	}

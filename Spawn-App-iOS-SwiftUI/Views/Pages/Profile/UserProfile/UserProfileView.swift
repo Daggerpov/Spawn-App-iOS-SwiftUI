@@ -40,6 +40,14 @@ struct UserProfileView: View {
 
 	// Add environment object for navigation
 	@Environment(\.presentationMode) var presentationMode
+	@Environment(\.colorScheme) private var colorScheme
+
+	// Figma: Request Sent border --text/secondary (#262424) light; visible gray in dark
+	private var requestSentBorderColor: Color {
+		colorScheme == .dark
+			? Color(hex: colorsGray400)
+			: Color(hex: colorsGray700)
+	}
 
 	init(user: Nameable) {
 		self.user = user
@@ -219,11 +227,9 @@ struct UserProfileView: View {
 					Button(action: {
 						presentationMode.wrappedValue.dismiss()
 					}) {
-						HStack(spacing: 4) {
-							Image(systemName: "chevron.left")
-							Text("Back")
-						}
-						.foregroundColor(universalAccentColor)
+						Image(systemName: "chevron.left")
+							.font(.system(size: 20, weight: .semibold))
+							.foregroundColor(universalAccentColor)
 					}
 				}
 
@@ -258,7 +264,7 @@ struct UserProfileView: View {
 	private var profileInnerComponentsView: some View {
 		VStack(alignment: .center, spacing: 10) {
 			// Profile Header (Profile Picture + Name) - read-only for other users
-			VStack(spacing: 10) {
+			VStack(spacing: 16) {
 				// Profile Picture
 				ZStack(alignment: .bottomTrailing) {
 					if let pfpUrl = user.profilePicture {
@@ -275,7 +281,7 @@ struct UserProfileView: View {
 					} else {
 						Circle()
 							.fill(Color.gray)
-							.frame(width: 150, height: 150)
+							.frame(width: 128, height: 128)
 					}
 				}
 
@@ -370,10 +376,10 @@ struct UserProfileView: View {
 								.foregroundColor(.white)
 						} else {
 							Image(systemName: "person.badge.clock")
-								.foregroundColor(Color.gray)
+								.foregroundColor(universalPlaceHolderTextColor)
 							Text("Request Sent")
 								.bold()
-								.foregroundColor(Color.gray)
+								.foregroundColor(universalPlaceHolderTextColor)
 						}
 					}
 					.font(.onestMedium(size: 16))
@@ -393,9 +399,9 @@ struct UserProfileView: View {
 						RoundedRectangle(cornerRadius: 12)
 							.stroke(
 								profileViewModel.friendshipStatus == .requestSent
-									? Color.gray
+									? requestSentBorderColor
 									: Color.clear,
-								lineWidth: 1
+								lineWidth: 2
 							)
 					)
 					.scaleEffect(addFriendScale)
@@ -442,7 +448,6 @@ struct UserProfileView: View {
 				openSocialMediaLink: openSocialMediaLink,
 				removeInterest: { _ in }  // No-op for other users
 			)
-			.padding(.horizontal, 16)
 			.padding(.top, 20)
 			.padding(.bottom, 8)
 
@@ -452,7 +457,6 @@ struct UserProfileView: View {
 				profileViewModel: profileViewModel,
 				showActivityDetails: $showActivityDetails
 			)
-			.padding(.horizontal, 16)
 			.padding(.bottom, 100)
 		}
 	}
