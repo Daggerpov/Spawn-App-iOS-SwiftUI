@@ -665,16 +665,14 @@ final class APIService: IAPIService, @unchecked Sendable {
 	private func handleAuthTokens(from response: HTTPURLResponse, for url: URL)
 		throws
 	{
-		// Check if this is an auth endpoint
-		let authEndpoints = [
-			APIService.baseURL + "auth/sign-in",
-			APIService.baseURL + "auth/login",
-			APIService.baseURL + "auth/register/oauth",
-			APIService.baseURL + "auth/register/verification/check",
-			APIService.baseURL + "auth/user/details",
-			APIService.baseURL + "auth/quick-sign-in",
-		]
-		guard authEndpoints.contains(where: { url.absoluteString.contains($0) }) else {
+		// Only process responses that actually contain auth tokens in headers.
+		// The backend returns new tokens (e.g. after username change) via
+		// Authorization and X-Refresh-Token headers on any endpoint that
+		// requires token rotation, not just auth endpoints.
+		guard
+			response.allHeaderFields["Authorization"] as? String != nil
+				|| response.allHeaderFields["authorization"] as? String != nil
+		else {
 			return
 		}
 
@@ -881,6 +879,8 @@ final class APIService: IAPIService, @unchecked Sendable {
 			throw APIError.invalidStatusCode(
 				statusCode: httpResponse.statusCode)
 		}
+
+		try handleAuthTokens(from: httpResponse, for: url)
 
 		do {
 			let decoder = APIService.makeDecoder()

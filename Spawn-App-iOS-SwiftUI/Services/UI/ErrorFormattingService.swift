@@ -34,6 +34,8 @@ final class ErrorFormattingService: Sendable {
 			return "We're having trouble connecting to our servers. Please try again."
 		case .invalidStatusCode(let statusCode):
 			return formatStatusCodeError(statusCode)
+		case .validationError(let message):
+			return formatGenericError(message)
 		case .failedJSONParsing:
 			return "We're having trouble processing the server response. Please try again."
 		case .invalidData:
@@ -190,6 +192,8 @@ final class ErrorFormattingService: Sendable {
 			return formatContextualStatusCode(statusCode, resource: resource, operation: operation)
 		case .failedHTTPRequest:
 			return "We're having trouble connecting to our servers. Please check your connection and try again."
+		case .validationError(let message):
+			return formatGenericContextualError(message, resource: resource, operation: operation)
 		case .failedJSONParsing:
 			return "We received unexpected data. Please try again."
 		case .invalidData:
