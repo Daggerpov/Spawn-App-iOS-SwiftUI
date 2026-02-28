@@ -217,14 +217,8 @@ final class DataWriter: IDataWriter {
 
 		print("🗑️ [DataWriter] Invalidating cache keys: \(keys.joined(separator: ", "))")
 
-		// For now, we'll just log. In a more sophisticated implementation,
-		// we would have a cache invalidation mechanism in AppCache
-		// that could selectively clear or refresh specific cache keys.
-
-		// Future enhancement: Add a method to AppCache like:
-		// appCache.invalidateCacheKeys(keys)
-
-		// For now, we can trigger a background refresh of affected data
-		// by posting notifications or calling refresh methods
+		// Note: Cache invalidation is handled at the ViewModel level through
+		// force-refresh (apiOnly) reads after write operations. The ViewModel's
+		// loadAllProfileData() always uses apiOnly to ensure fresh data.
 	}
 }

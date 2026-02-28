@@ -195,11 +195,6 @@ struct EditProfileView: View {
 
 			try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds delay
 
-			// Only refetch social media if we updated it
-			if socialMediaChanged {
-				await profileViewModel.fetchUserSocialMedia(userId: userId)
-			}
-
 			// Update profile picture if selected
 			if let newImage = selectedImage {
 				await userAuth.updateProfilePicture(newImage)

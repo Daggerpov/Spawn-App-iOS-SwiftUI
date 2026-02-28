@@ -77,7 +77,12 @@ struct InterestsSection: View {
 		let isDuplicate = profileViewModel.userInterests.contains {
 			$0.caseInsensitiveCompare(interest) == .orderedSame
 		}
-		if !isDuplicate {
+		if isDuplicate {
+			InAppNotificationService.shared.showErrorMessage(
+				"\"\(interest)\" is already in your interests",
+				title: "Duplicate Interest"
+			)
+		} else {
 			profileViewModel.userInterests.append(interest)
 		}
 		newInterest = ""

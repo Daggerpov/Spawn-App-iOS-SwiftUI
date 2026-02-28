@@ -262,7 +262,6 @@ struct MyProfileView: View {
 			ProfileCalendarView(
 				profileViewModel: profileViewModel,
 				showCalendarPopup: $showCalendarPopup,
-				showActivityDetails: $showActivityDetails,
 				navigateToCalendar: $navigateToCalendar,
 				navigateToDayActivities: $navigateToDayActivities,
 				selectedDayActivities: $selectedDayActivities,

@@ -112,7 +112,7 @@ final class ProfileViewModel {
 			.store(in: &cancellables)
 	}
 
-	func fetchUserStats(userId: UUID) async {
+	func fetchUserStats(userId: UUID, forceRefresh: Bool = false) async {
 		// Check if user is still authenticated before making API call
 		guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
 			print("Cannot fetch user stats: User is not logged in")
@@ -120,15 +120,28 @@ final class ProfileViewModel {
 			return
 		}
 
+		let cachePolicy: CachePolicy = forceRefresh ? .apiOnly : .cacheFirst(backgroundRefresh: false)
 		let result: DataResult<UserStatsDTO> = await dataService.read(
 			.profileStats(userId: userId),
-			cachePolicy: .cacheFirst(backgroundRefresh: true)
+			cachePolicy: cachePolicy
 		)
 
 		switch result {
-		case .success(let stats, _):
+		case .success(let stats, let source):
 			self.userStats = stats
 			self.isLoadingStats = false
+
+			if source == .cache {
+				Task { @MainActor in
+					let freshResult: DataResult<UserStatsDTO> = await self.dataService.read(
+						.profileStats(userId: userId),
+						cachePolicy: .apiOnly
+					)
+					if case .success(let freshStats, _) = freshResult {
+						self.userStats = freshStats
+					}
+				}
+			}
 
 		case .failure(let error):
 			self.errorMessage = ErrorFormattingService.shared.formatError(error)
@@ -136,16 +149,29 @@ final class ProfileViewModel {
 		}
 	}
 
-	func fetchUserInterests(userId: UUID) async {
+	func fetchUserInterests(userId: UUID, forceRefresh: Bool = false) async {
+		let cachePolicy: CachePolicy = forceRefresh ? .apiOnly : .cacheFirst(backgroundRefresh: false)
 		let result: DataResult<[String]> = await dataService.read(
 			.profileInterests(userId: userId),
-			cachePolicy: .cacheFirst(backgroundRefresh: true)
+			cachePolicy: cachePolicy
 		)
 
 		switch result {
-		case .success(let interests, _):
+		case .success(let interests, let source):
 			self.userInterests = interests
 			self.isLoadingInterests = false
+
+			if source == .cache {
+				Task { @MainActor in
+					let freshResult: DataResult<[String]> = await self.dataService.read(
+						.profileInterests(userId: userId),
+						cachePolicy: .apiOnly
+					)
+					if case .success(let freshInterests, _) = freshResult {
+						self.userInterests = freshInterests
+					}
+				}
+			}
 
 		case .failure(let error):
 			self.errorMessage = ErrorFormattingService.shared.formatError(error)
@@ -154,6 +180,12 @@ final class ProfileViewModel {
 	}
 
 	func addUserInterest(userId: UUID, interest: String) async -> Bool {
+		// Don't add if already present (case-insensitive)
+		let isDuplicate = self.userInterests.contains {
+			$0.caseInsensitiveCompare(interest) == .orderedSame
+		}
+		guard !isDuplicate else { return true }
+
 		// Update local state immediately for better UX
 		self.userInterests.append(interest)
 
@@ -187,16 +219,29 @@ final class ProfileViewModel {
 		}
 	}
 
-	func fetchUserSocialMedia(userId: UUID) async {
+	func fetchUserSocialMedia(userId: UUID, forceRefresh: Bool = false) async {
+		let cachePolicy: CachePolicy = forceRefresh ? .apiOnly : .cacheFirst(backgroundRefresh: false)
 		let result: DataResult<UserSocialMediaDTO> = await dataService.read(
 			.profileSocialMedia(userId: userId),
-			cachePolicy: .cacheFirst(backgroundRefresh: true)
+			cachePolicy: cachePolicy
 		)
 
 		switch result {
-		case .success(let socialMedia, _):
+		case .success(let socialMedia, let source):
 			self.userSocialMedia = socialMedia
 			self.isLoadingSocialMedia = false
+
+			if source == .cache {
+				Task { @MainActor in
+					let freshResult: DataResult<UserSocialMediaDTO> = await self.dataService.read(
+						.profileSocialMedia(userId: userId),
+						cachePolicy: .apiOnly
+					)
+					if case .success(let freshSocialMedia, _) = freshResult {
+						self.userSocialMedia = freshSocialMedia
+					}
+				}
+			}
 
 		case .failure(let error):
 			self.errorMessage = ErrorFormattingService.shared.formatError(error)
@@ -228,7 +273,7 @@ final class ProfileViewModel {
 		}
 	}
 
-	func fetchUserProfileInfo(userId: UUID, requestingUserId: UUID? = nil) async {
+	func fetchUserProfileInfo(userId: UUID, requestingUserId: UUID? = nil, forceRefresh: Bool = false) async {
 		// Check if user is still authenticated before making API call
 		guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
 			print("Cannot fetch profile info: User is not logged in")
@@ -238,13 +283,13 @@ final class ProfileViewModel {
 
 		self.isLoadingProfileInfo = true
 
-		// Use centralized DataType configuration
-		// When requestingUserId is provided, the backend returns relationshipStatus and pendingFriendRequestId
+		let cachePolicy: CachePolicy = forceRefresh ? .apiOnly : .cacheFirst(backgroundRefresh: false)
 		let result: DataResult<BaseUserDTO> = await dataService.read(
-			.profileInfo(userId: userId, requestingUserId: requestingUserId))
+			.profileInfo(userId: userId, requestingUserId: requestingUserId),
+			cachePolicy: cachePolicy)
 
 		switch result {
-		case .success(let profileInfo, _):
+		case .success(let profileInfo, let source):
 			self.userProfileInfo = profileInfo
 			self.isLoadingProfileInfo = false
 
@@ -252,6 +297,21 @@ final class ProfileViewModel {
 			if let relationshipStatus = profileInfo.relationshipStatus {
 				setFriendshipStatusFromRelationshipType(
 					relationshipStatus, pendingRequestId: profileInfo.pendingFriendRequestId)
+			}
+
+			if source == .cache {
+				Task { @MainActor in
+					let freshResult: DataResult<BaseUserDTO> = await self.dataService.read(
+						.profileInfo(userId: userId, requestingUserId: requestingUserId),
+						cachePolicy: .apiOnly)
+					if case .success(let freshInfo, _) = freshResult {
+						self.userProfileInfo = freshInfo
+						if let relationshipStatus = freshInfo.relationshipStatus {
+							self.setFriendshipStatusFromRelationshipType(
+								relationshipStatus, pendingRequestId: freshInfo.pendingFriendRequestId)
+						}
+					}
+				}
 			}
 
 		case .failure(let error):
@@ -305,11 +365,12 @@ final class ProfileViewModel {
 	}
 
 	func loadAllProfileData(userId: UUID, requestingUserId: UUID? = nil) async {
-		// Use async let to fetch all profile data in parallel for faster loading
-		async let stats: () = fetchUserStats(userId: userId)
-		async let interests: () = fetchUserInterests(userId: userId)
-		async let socialMedia: () = fetchUserSocialMedia(userId: userId)
-		async let profileInfo: () = fetchUserProfileInfo(userId: userId, requestingUserId: requestingUserId)
+		// Always force-refresh from API since this is called after save operations
+		async let stats: () = fetchUserStats(userId: userId, forceRefresh: true)
+		async let interests: () = fetchUserInterests(userId: userId, forceRefresh: true)
+		async let socialMedia: () = fetchUserSocialMedia(userId: userId, forceRefresh: true)
+		async let profileInfo: () = fetchUserProfileInfo(
+			userId: userId, requestingUserId: requestingUserId, forceRefresh: true)
 
 		// Wait for all fetches to complete
 		let _ = await (stats, interests, socialMedia, profileInfo)
