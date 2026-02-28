@@ -100,8 +100,8 @@ struct DayActivitiesPageView: View {
 			// Invisible button for spacing balance
 			Color.clear.frame(width: 24, height: 24)
 		}
-		.padding(.horizontal, 20)
-		.padding(.vertical, 16)
+		.padding(.horizontal, 16)
+		.padding(.vertical, 12)
 	}
 
 	// MARK: - Content View
@@ -128,7 +128,7 @@ struct DayActivitiesPageView: View {
 
 	private var activitiesListView: some View {
 		ScrollView {
-			LazyVStack(spacing: 16) {
+			LazyVStack(spacing: 14) {
 				ForEach(activities, id: \.id) { activity in
 					if let activityId = activity.activityId,
 						let fullActivity = fullActivities[activityId]
@@ -141,7 +141,8 @@ struct DayActivitiesPageView: View {
 							locationManager: locationManager,
 							callback: { _, _ in
 								onActivitySelected(activity)
-							}
+							},
+							horizontalPadding: 16
 						)
 					} else {
 						// Show loading placeholder while activity details are being fetched
@@ -152,8 +153,8 @@ struct DayActivitiesPageView: View {
 					}
 				}
 			}
-			.padding(.horizontal, 20)
-			.padding(.top, 8)
+			.padding(.horizontal, 16)
+			.padding(.top, 4)
 		}
 	}
 
