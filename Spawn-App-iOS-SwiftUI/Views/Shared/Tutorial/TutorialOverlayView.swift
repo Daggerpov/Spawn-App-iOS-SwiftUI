@@ -7,6 +7,13 @@
 
 import SwiftUI
 
+struct ActivityTypesFrameKey: PreferenceKey {
+	static var defaultValue: CGRect = .zero
+	static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+		value = nextValue()
+	}
+}
+
 struct TutorialOverlayView: View {
 	var tutorialViewModel = TutorialViewModel.shared
 	@Environment(\.colorScheme) var colorScheme
@@ -16,6 +23,10 @@ struct TutorialOverlayView: View {
 
 	@State private var showCallout = false
 
+	private let cutoutPadding: CGFloat = 12
+	private let cutoutCornerRadius: CGFloat = 16
+	private let calloutGap: CGFloat = 14
+
 	init(activityTypesFrame: CGRect? = nil, headerFrame: CGRect? = nil) {
 		self.activityTypesFrame = activityTypesFrame
 		self.headerFrame = headerFrame
@@ -24,54 +35,31 @@ struct TutorialOverlayView: View {
 	var body: some View {
 		ZStack {
 			if tutorialViewModel.tutorialState.shouldShowTutorialOverlay {
-				GeometryReader { geometry in
-					let safeAreaTop = geometry.safeAreaInsets.top
-					let _ = geometry.size.height
+				GeometryReader { _ in
+					ZStack(alignment: .top) {
+						overlayWithCutout
 
-					// Calculate dynamic positions based on screen size
-					let headerHeight = safeAreaTop + 44  // Safe area + navigation bar
-					let spawnInHeight: CGFloat = 100  // Approximate height of "Spawn in!" section
-					let activityTypesAreaHeight: CGFloat = 62  // Activity types height (115) + minimal padding (16)
-					let welcomeMessageHeight: CGFloat = 80  // Welcome message area
-
-					// Dynamic overlay positioning
-					VStack(spacing: 0) {
-						// Top overlay (covers header and "Spawn in!" section)
-						Color.black.opacity(0.6)
-							.frame(height: headerHeight + spawnInHeight)
-
-						// Clear space for activity types with minimal padding
-						Color.clear
-							.frame(height: activityTypesAreaHeight)
-
-						// Clear space for welcome message
-						Color.clear
-							.frame(height: welcomeMessageHeight)
-
-						// Bottom overlay (covers remaining space)
-						Color.black.opacity(0.6)
-							.frame(maxHeight: .infinity)
+						if showCallout && tutorialViewModel.shouldShowCallout,
+							let frame = activityTypesFrame, frame != .zero
+						{
+							calloutView
+								.padding(.top, frame.maxY + cutoutPadding + calloutGap)
+								.allowsHitTesting(false)
+								.transition(
+									.asymmetric(
+										insertion: .move(edge: .top).combined(with: .opacity),
+										removal: .opacity
+									)
+								)
+						}
 					}
 				}
 				.ignoresSafeArea()
-				.onTapGesture {
-					// Prevent background taps during tutorial
-				}
-
-				// Tutorial callout
-				if showCallout && tutorialViewModel.shouldShowCallout {
-					tutorialCallout
-						.transition(
-							.asymmetric(
-								insertion: .move(edge: .top).combined(with: .opacity),
-								removal: .opacity
-							))
-				}
+				.onTapGesture {}
 			}
 		}
 		.onAppear {
 			if tutorialViewModel.tutorialState.shouldShowTutorialOverlay {
-				// Animate in the callout with delay
 				Task { @MainActor in
 					try? await Task.sleep(for: .seconds(0.5))
 					withAnimation(.easeOut(duration: 0.4)) {
@@ -89,21 +77,39 @@ struct TutorialOverlayView: View {
 		}
 	}
 
-	private var tutorialCallout: some View {
-		VStack(spacing: 12) {
-			// Callout text with theme-appropriate styling
-			VStack(spacing: 8) {
-				Text("Welcome to Spawn! 👋")
-					.font(.onestSemiBold(size: 18))
-					.foregroundColor(Color(red: 0.23, green: 0.22, blue: 0.22))
+	@ViewBuilder
+	private var overlayWithCutout: some View {
+		if let frame = activityTypesFrame, frame != .zero {
+			TutorialCutoutShape(
+				cutoutRect: CGRect(
+					x: frame.origin.x - cutoutPadding,
+					y: frame.origin.y - cutoutPadding,
+					width: frame.width + cutoutPadding * 2,
+					height: frame.height + cutoutPadding * 2
+				),
+				cornerRadius: cutoutCornerRadius
+			)
+			.fill(Color.black.opacity(0.6), style: FillStyle(eoFill: true))
+		} else {
+			Color.black.opacity(0.6)
+		}
+	}
 
-				Text("Tap on an Activity Type to create your first activity")
-					.font(.onestMedium(size: 16))
-					.foregroundColor(Color(red: 0.23, green: 0.22, blue: 0.22))
-					.multilineTextAlignment(.center)
-			}
+	private var calloutView: some View {
+		VStack(spacing: 0) {
+			CalloutTriangle()
+				.fill(Color.white)
+				.frame(width: 24, height: 14)
+
+			Text(
+				"Welcome to Spawn! Tap on an Activity Type to create your first activity."
+			)
+			.font(.onestMedium(size: 16))
+			.foregroundColor(Color(red: 0.23, green: 0.22, blue: 0.22))
+			.multilineTextAlignment(.center)
 			.padding(.horizontal, 24)
 			.padding(.vertical, 20)
+			.frame(maxWidth: .infinity)
 			.background(
 				RoundedRectangle(cornerRadius: 16)
 					.fill(Color.white)
@@ -114,15 +120,33 @@ struct TutorialOverlayView: View {
 						y: 4
 					)
 			)
-			.padding(.horizontal, 32)
 		}
-		.position(x: UIScreen.main.bounds.width / 2, y: calculateCalloutPosition())
+		.padding(.horizontal, 24)
 	}
+}
 
-	private func calculateCalloutPosition() -> CGFloat {
-		// Position the callout in the space between activity types and "See what's happening"
-		// Activity types end around 425px, "See what's happening" starts around 500px
-		// So position callout around 450px from top
-		return 350
+private struct TutorialCutoutShape: Shape {
+	let cutoutRect: CGRect
+	let cornerRadius: CGFloat
+
+	func path(in rect: CGRect) -> Path {
+		var path = Path()
+		path.addRect(rect)
+		path.addRoundedRect(
+			in: cutoutRect,
+			cornerSize: CGSize(width: cornerRadius, height: cornerRadius)
+		)
+		return path
+	}
+}
+
+private struct CalloutTriangle: Shape {
+	func path(in rect: CGRect) -> Path {
+		var path = Path()
+		path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+		path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+		path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+		path.closeSubpath()
+		return path
 	}
 }
