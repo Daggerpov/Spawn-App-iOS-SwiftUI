@@ -6,14 +6,13 @@ struct FriendActivitiesCalendarView: View {
 	@Binding var showActivityDetails: Bool
 
 	@Environment(\.dismiss) private var dismiss
-	@Environment(\.colorScheme) private var colorScheme
 	@ObservedObject private var locationManager = LocationManager.shared
 
 	@State private var showFullActivityList: Bool = false
-
-	private var emptyDayCellColor: Color {
-		colorScheme == .dark ? Color(hex: colorsGray700) : Color(hex: colorsGray200)
-	}
+	@State private var showCalendarPopup: Bool = false
+	@State private var navigateToCalendar: Bool = false
+	@State private var navigateToDayActivities: Bool = false
+	@State private var selectedDayActivities: [CalendarActivityDTO] = []
 
 	private var sortedActivities: [ProfileActivityDTO] {
 		let upcomingActivities = profileViewModel.profileActivities
@@ -45,7 +44,17 @@ struct FriendActivitiesCalendarView: View {
 			ScrollView {
 				VStack(alignment: .leading, spacing: 24) {
 					activitiesSection
-					calendarSection
+
+					ProfileCalendarView(
+						profileViewModel: profileViewModel,
+						showCalendarPopup: $showCalendarPopup,
+						showActivityDetails: $showActivityDetails,
+						navigateToCalendar: $navigateToCalendar,
+						navigateToDayActivities: $navigateToDayActivities,
+						selectedDayActivities: $selectedDayActivities,
+						showMonthHeader: true,
+						friendUserId: user.id
+					)
 				}
 				.padding(.horizontal, 16)
 				.padding(.top, 16)
@@ -71,6 +80,24 @@ struct FriendActivitiesCalendarView: View {
 				profileViewModel: profileViewModel,
 				showActivityDetails: $showActivityDetails
 			)
+		}
+		.navigationDestination(isPresented: $navigateToCalendar) {
+			ActivityCalendarView(
+				profileViewModel: profileViewModel,
+				userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
+				calendarOwnerName: FormatterService.shared.formatFirstName(user: user),
+				friendUserId: user.id,
+				onActivitySelected: { activity in
+					handleCalendarActivitySelection(activity)
+				},
+				onDayActivitiesSelected: { activities in
+					selectedDayActivities = activities
+					navigateToDayActivities = true
+				}
+			)
+		}
+		.navigationDestination(isPresented: $navigateToDayActivities) {
+			calendarDayActivitiesPageView
 		}
 	}
 
@@ -139,102 +166,34 @@ struct FriendActivitiesCalendarView: View {
 		)
 	}
 
-	// MARK: - Calendar Section
-	private var calendarSection: some View {
-		VStack(spacing: 16) {
-			HStack(spacing: 6.618) {
-				ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { _, day in
-					Text(day)
-						.font(.onestMedium(size: 13))
-						.foregroundColor(universalAccentColor)
-						.frame(width: 46.33)
+	// MARK: - Calendar Navigation Helpers
+
+	private var calendarDayActivitiesPageView: some View {
+		let date = selectedDayActivities.first?.dateAsDate ?? Date()
+
+		return DayActivitiesPageView(
+			date: date,
+			initialActivities: selectedDayActivities,
+			onDismiss: {
+				navigateToDayActivities = false
+			},
+			onActivitySelected: { activity in
+				navigateToDayActivities = false
+				handleCalendarActivitySelection(activity)
+			}
+		)
+	}
+
+	private func handleCalendarActivitySelection(_ activity: CalendarActivityDTO) {
+		Task {
+			if let activityId = activity.activityId,
+				await profileViewModel.fetchActivityDetails(activityId: activityId) != nil
+			{
+				await MainActor.run {
+					showActivityDetails = true
 				}
 			}
-
-			if profileViewModel.isLoadingCalendar {
-				ProgressView()
-					.frame(maxWidth: .infinity, minHeight: 150)
-			} else {
-				VStack(spacing: 6.618) {
-					ForEach(0..<5, id: \.self) { row in
-						HStack(spacing: 6.618) {
-							ForEach(0..<7, id: \.self) { col in
-								calendarDayCell(row: row, col: col)
-							}
-						}
-					}
-				}
-			}
 		}
-	}
-
-	@ViewBuilder
-	private func calendarDayCell(row: Int, col: Int) -> some View {
-		if row < profileViewModel.calendarActivities.count,
-			col < profileViewModel.calendarActivities[row].count,
-			let activity = profileViewModel.calendarActivities[row][col]
-		{
-			FriendCalendarDayCell(activity: activity)
-		} else {
-			emptyDayCell(row: row, col: col)
-		}
-	}
-
-	@ViewBuilder
-	private func emptyDayCell(row: Int, col: Int) -> some View {
-		let isOutsideMonth = isDayOutsideCurrentMonth(row: row, col: col)
-
-		if isOutsideMonth {
-			RoundedRectangle(cornerRadius: 6.618)
-				.stroke(style: StrokeStyle(lineWidth: 1.655, dash: [6, 6]))
-				.foregroundColor(universalAccentColor.opacity(0.1))
-				.frame(width: 46.33, height: 46.33)
-		} else {
-			ZStack {
-				RoundedRectangle(cornerRadius: 6.618)
-					.fill(emptyDayCellColor)
-					.frame(width: 46.33, height: 46.33)
-					.shadow(color: Color.black.opacity(0.1), radius: 6.618, x: 0, y: 1.655)
-
-				RoundedRectangle(cornerRadius: 6.618)
-					.fill(
-						LinearGradient(
-							colors: [Color.white.opacity(0.5), Color.clear],
-							startPoint: .top,
-							endPoint: .bottom
-						)
-					)
-					.frame(width: 46.33, height: 46.33)
-					.allowsHitTesting(false)
-			}
-		}
-	}
-
-	private func isDayOutsideCurrentMonth(row: Int, col: Int) -> Bool {
-		let calendar = Calendar.current
-		let now = Date()
-		let currentMonth = calendar.component(.month, from: now)
-		let currentYear = calendar.component(.year, from: now)
-
-		var components = DateComponents()
-		components.year = currentYear
-		components.month = currentMonth
-		components.day = 1
-
-		guard let firstOfMonth = calendar.date(from: components) else {
-			return false
-		}
-
-		let weekday = calendar.component(.weekday, from: firstOfMonth)
-		let firstDayOffset = weekday - 1
-
-		guard let range = calendar.range(of: .day, in: .month, for: firstOfMonth) else {
-			return false
-		}
-		let daysInMonth = range.count
-		let dayIndex = row * 7 + col
-
-		return dayIndex < firstDayOffset || dayIndex >= firstDayOffset + daysInMonth
 	}
 }
 
