@@ -158,11 +158,17 @@ struct AddToActivityTypeView: View {
 	}
 
 	private var selectedActivityTypesText: String {
-		let selectedTypes = viewModel.activityTypes.filter { selectedActivityTypes.contains($0.id) }
-		if selectedTypes.isEmpty {
+		let titles = viewModel.sortedActivityTypes
+			.filter { selectedActivityTypes.contains($0.id) }
+			.map(\.title)
+		if titles.isEmpty {
 			return "No activity types selected"
 		}
-		return selectedTypes.map { $0.title }.joined(separator: " & ")
+		switch titles.count {
+		case 1: return titles[0]
+		case 2: return "\(titles[0]) and \(titles[1])"
+		default: return titles.dropLast().joined(separator: ", ") + ", and " + (titles.last ?? "")
+		}
 	}
 
 	private var activityTypeGrid: some View {
@@ -174,7 +180,7 @@ struct AddToActivityTypeView: View {
 			],
 			spacing: 10
 		) {
-			ForEach(viewModel.activityTypes, id: \.id) { activityType in
+			ForEach(viewModel.sortedActivityTypes, id: \.id) { activityType in
 				ActivityTypeCard(
 					activityTypeDTO: activityType,
 					isSelected: selectedActivityTypes.contains(activityType.id),
@@ -259,6 +265,14 @@ final class AddToActivityTypeViewModel: ObservableObject {
 		case .failure(let error):
 			self.errorMessage = "Failed to load activity types: \(ErrorFormattingService.shared.formatError(error))"
 			self.isLoading = false
+		}
+	}
+
+	/// Activity types sorted with pinned first, then alphabetically by title.
+	var sortedActivityTypes: [ActivityTypeDTO] {
+		activityTypes.sorted { first, second in
+			if first.isPinned != second.isPinned { return first.isPinned }
+			return first.title.localizedCaseInsensitiveCompare(second.title) == .orderedAscending
 		}
 	}
 
