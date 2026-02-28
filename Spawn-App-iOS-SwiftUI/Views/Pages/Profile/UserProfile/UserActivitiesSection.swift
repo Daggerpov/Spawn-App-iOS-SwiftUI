@@ -201,11 +201,6 @@ struct UserActivitiesSection: View {
 						.font(.onestMedium(size: 16))
 						.foregroundColor(addToSeeMutedColor)
 						.multilineTextAlignment(.center)
-
-					Text("Connect with them to discover what they're up to!")
-						.font(.onestRegular(size: 14))
-						.foregroundColor(addToSeeMutedColor)
-						.multilineTextAlignment(.center)
 				}
 				.frame(maxWidth: .infinity)
 				.padding(32)
