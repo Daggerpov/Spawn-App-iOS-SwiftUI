@@ -183,7 +183,7 @@ struct ContentView: View {
 				friendsViewModel = FriendsTabViewModel(userId: user.id)
 			}
 			if profileViewModel == nil {
-				profileViewModel = ProfileViewModel(userId: user.id)
+				profileViewModel = ProfileViewModelCache.shared.viewModel(for: user.id)
 			}
 
 			// CRITICAL FIX: Load cached activities immediately to unblock UI

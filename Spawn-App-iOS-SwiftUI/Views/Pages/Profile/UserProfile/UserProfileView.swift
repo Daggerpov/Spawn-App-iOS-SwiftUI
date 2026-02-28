@@ -40,26 +40,18 @@ struct UserProfileView: View {
 
 	// Add environment object for navigation
 	@Environment(\.presentationMode) var presentationMode
-	@Environment(\.colorScheme) private var colorScheme
-
-	// Figma: Request Sent border --text/secondary (#262424) light; visible gray in dark
-	private var requestSentBorderColor: Color {
-		colorScheme == .dark
-			? Color(hex: colorsGray400)
-			: Color(hex: colorsGray700)
-	}
 
 	init(user: Nameable) {
 		self.user = user
 		self._profileViewModel = State(
-			wrappedValue: ProfileViewModel(userId: user.id)
+			wrappedValue: ProfileViewModelCache.shared.viewModel(for: user.id)
 		)
 	}
 
 	/// Preview-only initializer that allows setting a specific friendship status
 	init(user: Nameable, previewFriendshipStatus: FriendshipStatus) {
 		self.user = user
-		let viewModel = ProfileViewModel(userId: user.id)
+		let viewModel = ProfileViewModelCache.shared.viewModel(for: user.id)
 		viewModel.friendshipStatus = previewFriendshipStatus
 		self._profileViewModel = State(wrappedValue: viewModel)
 	}
@@ -67,7 +59,7 @@ struct UserProfileView: View {
 	/// Preview-only initializer that allows setting friendship status and mock activities
 	init(user: Nameable, previewFriendshipStatus: FriendshipStatus, previewActivities: [ProfileActivityDTO]) {
 		self.user = user
-		let viewModel = ProfileViewModel(userId: user.id)
+		let viewModel = ProfileViewModelCache.shared.viewModel(for: user.id)
 		viewModel.friendshipStatus = previewFriendshipStatus
 		viewModel.profileActivities = previewActivities
 		self._profileViewModel = State(wrappedValue: viewModel)
@@ -376,10 +368,10 @@ struct UserProfileView: View {
 								.foregroundColor(.white)
 						} else {
 							Image(systemName: "person.badge.clock")
-								.foregroundColor(universalPlaceHolderTextColor)
+								.foregroundColor(Color(hex: colorsGray200))
 							Text("Request Sent")
 								.bold()
-								.foregroundColor(universalPlaceHolderTextColor)
+								.foregroundColor(Color(hex: colorsGray200))
 						}
 					}
 					.font(.onestMedium(size: 16))
@@ -399,7 +391,7 @@ struct UserProfileView: View {
 						RoundedRectangle(cornerRadius: 12)
 							.stroke(
 								profileViewModel.friendshipStatus == .requestSent
-									? requestSentBorderColor
+									? Color(hex: colorsGray200)
 									: Color.clear,
 								lineWidth: 2
 							)
