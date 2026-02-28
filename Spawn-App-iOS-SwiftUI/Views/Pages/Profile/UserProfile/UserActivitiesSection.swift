@@ -6,8 +6,6 @@ struct UserActivitiesSection: View {
 	@ObservedObject private var locationManager = LocationManager.shared
 	@Binding var showActivityDetails: Bool
 	@State private var showFriendActivities: Bool = false
-	@State private var showDayActivitiesFromFriend: Bool = false
-	@State private var selectedDayActivities: [CalendarActivityDTO] = []
 
 	// Adaptive colors for dark mode support
 	private var secondaryTextColor: Color {
@@ -58,41 +56,11 @@ struct UserActivitiesSection: View {
 			addToSeeActivitiesSection
 		}
 		.navigationDestination(isPresented: $showFriendActivities) {
-			ActivityCalendarView(
+			FriendActivitiesCalendarView(
+				user: user,
 				profileViewModel: profileViewModel,
-				userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
-				calendarOwnerName: FormatterService.shared.formatFirstName(user: user),
-				onDismiss: { showFriendActivities = false },
-				onActivitySelected: { handleFriendActivitySelection($0) },
-				onDayActivitiesSelected: { activities in
-					selectedDayActivities = activities
-					showDayActivitiesFromFriend = true
-				}
+				showActivityDetails: $showActivityDetails
 			)
-		}
-		.navigationDestination(isPresented: $showDayActivitiesFromFriend) {
-			DayActivitiesPageView(
-				date: selectedDayActivities.first?.dateAsDate ?? Date(),
-				initialActivities: selectedDayActivities,
-				onDismiss: { showDayActivitiesFromFriend = false },
-				onActivitySelected: { activity in
-					showDayActivitiesFromFriend = false
-					handleFriendActivitySelection(activity)
-				}
-			)
-		}
-	}
-
-	/// Fetches full activity details and shows the global activity popup (same as own profile).
-	private func handleFriendActivitySelection(_ activity: CalendarActivityDTO) {
-		Task {
-			if let activityId = activity.activityId,
-				await profileViewModel.fetchActivityDetails(activityId: activityId) != nil
-			{
-				await MainActor.run {
-					showActivityDetails = true
-				}
-			}
 		}
 	}
 
@@ -135,7 +103,7 @@ struct UserActivitiesSection: View {
 				Button(action: {
 					showFriendActivities = true
 				}) {
-					Text("See More")
+					Text("Show All")
 						.font(.onestMedium(size: 14))
 						.foregroundColor(universalSecondaryColor)
 				}

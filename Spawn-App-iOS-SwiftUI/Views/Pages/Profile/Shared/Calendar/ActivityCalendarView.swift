@@ -98,9 +98,6 @@ struct ActivityCalendarView: View {
 			isReturningFromNavigation = true
 			// Reset the scroll flag so we scroll properly when coming back
 			hasPerformedInitialScroll = false
-			// Reset navigation state when leaving the calendar view
-			// This prevents the NavigationLink from getting stuck in active state
-			onDismiss?()
 		}
 		.onChange(of: profileViewModel.allCalendarActivities) { oldActivities, newActivities in
 			// When activities are first loaded (or change significantly), scroll to current month
