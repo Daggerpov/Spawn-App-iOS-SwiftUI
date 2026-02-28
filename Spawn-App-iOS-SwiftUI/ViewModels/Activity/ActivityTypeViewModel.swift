@@ -195,6 +195,7 @@ final class ActivityTypeViewModel {
 		switch result {
 		case .success(let updatedActivityTypes, _):
 			updateStateAfterAPISuccess(updatedActivityTypes)
+			notificationService.showSuccess(.activityTypeDeleted)
 
 		case .failure(let error):
 			print("❌ Error deleting activity type: \(error)")
@@ -221,6 +222,7 @@ final class ActivityTypeViewModel {
 		switch result {
 		case .success(let updatedActivityTypes, _):
 			updateStateAfterAPISuccess(updatedActivityTypes)
+			notificationService.showSuccess(.activityTypeCreated)
 
 		case .failure(let error):
 			print("❌ Error creating activity type: \(error)")

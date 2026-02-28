@@ -826,6 +826,7 @@ final class ProfileViewModel {
 					.friendRequests(userId: userId), cachePolicy: .apiOnly)
 			}
 			NotificationCenter.default.post(name: .friendsDidChange, object: nil)
+			notificationService.showSuccess(.friendRequestAccepted)
 
 		case .failure(let error):
 			self.errorMessage = notificationService.handleError(
@@ -849,8 +850,7 @@ final class ProfileViewModel {
 
 		switch result {
 		case .success:
-			// Successfully declined
-			break
+			notificationService.showSuccess(.friendRequestDeclined)
 
 		case .failure(let error):
 			self.errorMessage = notificationService.handleError(
@@ -932,6 +932,7 @@ final class ProfileViewModel {
 			// Refresh friends list
 			let _: DataResult<[FullFriendUserDTO]> = await dataService.read(
 				.friends(userId: currentUserId), cachePolicy: .apiOnly)
+			notificationService.showSuccess(.friendRemoved)
 
 		case .failure(let error):
 			self.errorMessage = notificationService.handleError(
@@ -956,6 +957,7 @@ final class ProfileViewModel {
 		switch result {
 		case .success:
 			self.errorMessage = nil
+			notificationService.showSuccess(.userReported)
 		case .failure(let error):
 			self.errorMessage = notificationService.handleError(
 				error, resource: .user, operation: .report)
@@ -991,6 +993,7 @@ final class ProfileViewModel {
 				let _: DataResult<[FullFriendUserDTO]> = await dataService.read(
 					.friends(userId: userId), cachePolicy: .apiOnly)
 			}
+			notificationService.showSuccess(.userBlocked)
 
 		case .failure(let error):
 			self.errorMessage = notificationService.handleError(
@@ -1014,6 +1017,7 @@ final class ProfileViewModel {
 				let _: DataResult<[FullFriendUserDTO]> = await dataService.read(
 					.friends(userId: userId), cachePolicy: .apiOnly)
 			}
+			notificationService.showSuccess(.userUnblocked)
 
 		case .failure(let error):
 			self.errorMessage = notificationService.handleError(

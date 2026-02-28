@@ -45,6 +45,8 @@ final class FriendRequestViewModel {
 			result = await dataService.writeWithoutResponse(operation)
 		}
 
+		let notificationService = InAppNotificationService.shared
+
 		// Handle the result
 		switch result {
 		case .success:
@@ -60,12 +62,16 @@ final class FriendRequestViewModel {
 
 				// Notify other views to refresh
 				NotificationCenter.default.post(name: .friendsDidChange, object: nil)
+				notificationService.showSuccess(.friendRequestAccepted)
+			} else if action == .decline {
+				notificationService.showSuccess(.friendRequestDeclined)
 			}
 			NotificationCenter.default.post(name: .friendRequestsDidChange, object: nil)
 
 		case .failure(let error):
-			creationMessage =
-				"There was an error \(action == .accept ? "accepting" : action == .cancel ? "canceling" : "declining") the friend request. Please try again"
+			let operation: OperationContext = action == .accept ? .accept : action == .cancel ? .cancel : .reject
+			creationMessage = notificationService.handleError(
+				error, resource: .friendRequest, operation: operation)
 			print("Error processing friend request: \(error)")
 		}
 	}

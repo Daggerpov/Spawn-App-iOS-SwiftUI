@@ -59,6 +59,7 @@ final class FeedbackViewModel {
 		case .success:
 			isSubmitting = false
 			successMessage = "Thank you for your feedback!"
+			notificationService.showSuccess(.feedbackSent)
 
 		case .failure(let error):
 			let formattedError = notificationService.handleError(

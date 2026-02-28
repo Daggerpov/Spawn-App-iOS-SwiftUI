@@ -681,8 +681,15 @@ final class FriendsTabViewModel {
 			let _: DataResult<[FullFriendUserDTO]> = await dataService.read(
 				.friends(userId: userId), cachePolicy: .apiOnly)
 
+			await MainActor.run {
+				InAppNotificationService.shared.showSuccess(.friendRemoved)
+			}
+
 		case .failure(let error):
-			print("Error removing friend: \(ErrorFormattingService.shared.formatError(error))")
+			await MainActor.run {
+				InAppNotificationService.shared.showError(
+					error, resource: .friend, operation: .remove)
+			}
 		}
 
 		await MainActor.run {
@@ -839,10 +846,14 @@ final class FriendsTabViewModel {
 			await MainActor.run {
 				self.friends.removeAll { $0.id == blockedId }
 				self.filteredFriends.removeAll { $0.id == blockedId }
+				InAppNotificationService.shared.showSuccess(.userBlocked)
 			}
 
 		case .failure(let error):
-			print("Failed to block user: \(ErrorFormattingService.shared.formatError(error))")
+			await MainActor.run {
+				InAppNotificationService.shared.showError(
+					error, resource: .user, operation: .block)
+			}
 		}
 	}
 

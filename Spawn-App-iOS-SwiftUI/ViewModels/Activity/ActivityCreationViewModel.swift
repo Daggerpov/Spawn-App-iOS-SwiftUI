@@ -585,14 +585,12 @@ final class ActivityCreationViewModel {
 
 		switch result {
 		case .success(let response, _):
-			// Notify about successful creation
 			NotificationCenter.default.post(name: .activityCreated, object: response.activity)
-
 			await setCreationMessage("Activity created successfully!")
-			print("🔍 DEBUG: Activity creation successful")
+			notificationService.showSuccess(.activityCreated)
 
 		case .failure(let error):
-			print("🔍 DEBUG: Activity creation failed: \(error)")
+			print("Activity creation failed: \(error)")
 			notificationService.showError(error, resource: .activity, operation: .create)
 			await setCreationMessage("Failed to create activity. Please try again.")
 		}
@@ -628,10 +626,10 @@ final class ActivityCreationViewModel {
 		switch result {
 		case .success(let updatedActivity, _):
 			await MainActor.run {
-				// Notify about successful update
 				NotificationCenter.default.post(name: .activityUpdated, object: updatedActivity)
 				creationMessage = "Activity updated successfully!"
 			}
+			notificationService.showSuccess(.activityUpdated)
 
 		case .failure(let error):
 			print("Error updating activity: \(error)")

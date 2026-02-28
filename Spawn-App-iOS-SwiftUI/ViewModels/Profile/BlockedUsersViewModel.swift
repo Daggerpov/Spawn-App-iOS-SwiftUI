@@ -47,6 +47,7 @@ final class BlockedUsersViewModel {
 			print("✅ [BlockedUsersViewModel] Removed user from local list, remaining: \(blockedUsers.count)")
 
 			errorMessage = nil
+			notificationService.showSuccess(.userUnblocked)
 		} catch let error as APIError {
 			print("❌ [BlockedUsersViewModel] APIError: \(error)")
 			errorMessage = notificationService.handleError(
