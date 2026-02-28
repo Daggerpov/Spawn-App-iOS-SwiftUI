@@ -14,13 +14,37 @@ struct AddToActivityTypeView: View {
 					.ignoresSafeArea()
 
 				VStack(spacing: 0) {
+					// Custom header
+					HStack {
+						Button(action: {
+							presentationMode.wrappedValue.dismiss()
+						}) {
+							Image(systemName: "chevron.left")
+								.font(.system(size: 18, weight: .medium))
+								.foregroundColor(universalAccentColor)
+						}
+
+						Spacer()
+
+						Text("Add to Activity Type")
+							.font(.onestMedium(size: 20))
+							.foregroundColor(universalAccentColor)
+
+						Spacer()
+
+						Image(systemName: "chevron.left")
+							.font(.system(size: 18, weight: .medium))
+							.foregroundColor(.clear)
+					}
+					.padding(.horizontal, 24)
+					.padding(.top, 8)
+					.padding(.bottom, 8)
+
 					// Main content
 					ScrollView {
 						VStack(spacing: 24) {
-							// Profile section with glow effect
 							profileSection
 
-							// Activity type grid or loading state
 							if viewModel.isLoading {
 								ProgressView("Loading activity types...")
 									.font(.onestRegular(size: 16))
@@ -30,7 +54,6 @@ struct AddToActivityTypeView: View {
 								activityTypeGrid
 							}
 
-							// Error message display
 							if let errorMessage = viewModel.errorMessage {
 								Text(errorMessage)
 									.font(.onestRegular(size: 14))
@@ -39,7 +62,6 @@ struct AddToActivityTypeView: View {
 									.padding(.horizontal)
 							}
 
-							// Spacer to push save button to bottom
 							Spacer(minLength: 100)
 						}
 						.padding(.horizontal, 16)
@@ -49,29 +71,11 @@ struct AddToActivityTypeView: View {
 					// Save button at bottom
 					saveButton
 						.padding(.horizontal, 16)
-						.padding(.bottom, 34)  // Account for tab bar
+						.padding(.bottom, 100)
 				}
 			}
 		}
-		.navigationBarTitleDisplayMode(.inline)
-		.navigationBarBackButtonHidden(true)
-		.toolbar {
-			ToolbarItem(placement: .navigationBarLeading) {
-				Button(action: {
-					presentationMode.wrappedValue.dismiss()
-				}) {
-					Image(systemName: "chevron.left")
-						.font(.system(size: 18, weight: .medium))
-						.foregroundColor(universalAccentColor)
-				}
-			}
-
-			ToolbarItem(placement: .principal) {
-				Text("Add to Activity Type")
-					.font(.onestMedium(size: 20))
-					.foregroundColor(universalAccentColor)
-			}
-		}
+		.navigationBarHidden(true)
 		.task {
 			await viewModel.loadActivityTypes()
 		}
@@ -162,14 +166,22 @@ struct AddToActivityTypeView: View {
 	}
 
 	private var activityTypeGrid: some View {
-		LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 3), spacing: 16) {
+		LazyVGrid(
+			columns: [
+				GridItem(.fixed(116), spacing: 8),
+				GridItem(.fixed(116), spacing: 8),
+				GridItem(.fixed(116), spacing: 8),
+			],
+			spacing: 10
+		) {
 			ForEach(viewModel.activityTypes, id: \.id) { activityType in
-				ActivityTypeSelectionCard(
-					activityType: activityType,
-					isSelected: selectedActivityTypes.contains(activityType.id)
-				) {
-					toggleSelection(for: activityType)
-				}
+				ActivityTypeCard(
+					activityTypeDTO: activityType,
+					isSelected: selectedActivityTypes.contains(activityType.id),
+					onTap: {
+						toggleSelection(for: activityType)
+					}
+				)
 			}
 		}
 	}
@@ -211,91 +223,6 @@ struct AddToActivityTypeView: View {
 			// If not successful, the error message will be shown in the UI
 			// The viewModel.errorMessage will be displayed to the user
 		}
-	}
-}
-
-struct ActivityTypeSelectionCard: View {
-	let activityType: ActivityTypeDTO
-	let isSelected: Bool
-	let onTap: () -> Void
-	@Environment(\.colorScheme) var colorScheme
-
-	// Dynamic colors based on selection state
-	private var iconColor: Color {
-		if isSelected {
-			return colorScheme == .dark ? .white : Color(red: 0.07, green: 0.07, blue: 0.07)
-		} else {
-			return colorScheme == .dark
-				? Color.white.opacity(0.5) : Color(red: 0.07, green: 0.07, blue: 0.07).opacity(0.4)
-		}
-	}
-
-	private var titleColor: Color {
-		if isSelected {
-			return colorScheme == .dark ? .white : Color(red: 0.07, green: 0.07, blue: 0.07)
-		} else {
-			return colorScheme == .dark
-				? Color.white.opacity(0.5) : Color(red: 0.07, green: 0.07, blue: 0.07).opacity(0.4)
-		}
-	}
-
-	private var peopleCountColor: Color {
-		if isSelected {
-			return Color(red: 0.52, green: 0.49, blue: 0.49)
-		} else {
-			return Color(red: 0.52, green: 0.49, blue: 0.49).opacity(0.4)
-		}
-	}
-
-	private var backgroundColor: Color {
-		if isSelected {
-			return colorScheme == .dark
-				? Color(red: 0.24, green: 0.23, blue: 0.23) : Color(red: 0.95, green: 0.93, blue: 0.93)
-		} else {
-			return colorScheme == .dark
-				? Color(red: 0.24, green: 0.23, blue: 0.23).opacity(0.5)
-				: Color(red: 0.95, green: 0.93, blue: 0.93).opacity(0.5)
-		}
-	}
-
-	var body: some View {
-		Button(action: onTap) {
-			VStack(spacing: 4) {
-				// Icon
-				Text(activityType.icon)
-					.font(.onestBold(size: 34))
-					.foregroundColor(iconColor)
-
-				VStack(spacing: 2) {
-					// Title
-					Text(activityType.title)
-						.font(.onestSemiBold(size: 16))
-						.foregroundColor(titleColor)
-
-					// People count
-					Text("\(activityType.associatedFriends.count) people")
-						.font(.onestRegular(size: 13))
-						.foregroundColor(peopleCountColor)
-				}
-			}
-			.padding(16)
-			.frame(width: 111, height: 111)
-			.background(
-				RoundedRectangle(cornerRadius: 12)
-					.fill(backgroundColor)
-			)
-			.shadow(
-				color: isSelected
-					? (colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.1)) : Color.clear,
-				radius: isSelected ? 4 : 0,
-				x: 0,
-				y: isSelected ? 2 : 0
-			)
-			.scaleEffect(isSelected ? 1.02 : 1.0)
-			.opacity(isSelected ? 1.0 : 0.6)
-		}
-		.buttonStyle(PlainButtonStyle())
-		.animation(.easeInOut(duration: 0.2), value: isSelected)
 	}
 }
 
