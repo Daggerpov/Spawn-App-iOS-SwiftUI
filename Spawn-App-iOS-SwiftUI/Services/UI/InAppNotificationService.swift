@@ -813,7 +813,6 @@ final class InAppNotificationService {
 	/// Generate a default success message for combinations not explicitly handled
 	private func generateDefaultSuccessMessage(resource: ResourceContext, operation: OperationContext) -> String {
 		let resourceName = resource.displayName
-		let article = resource.article
 
 		switch operation {
 		case .create:

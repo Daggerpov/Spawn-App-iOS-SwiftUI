@@ -47,6 +47,15 @@ struct VerificationCodeView: View {
 		.onDisappear {
 			viewModel.stopTimer()
 		}
+		.toolbar {
+			ToolbarItemGroup(placement: .keyboard) {
+				Spacer()
+				Button("Done") {
+					focusedIndex = nil
+					viewModel.focusedIndex = nil
+				}
+			}
+		}
 		.navigationBarHidden(true)
 	}
 

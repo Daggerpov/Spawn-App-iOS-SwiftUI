@@ -8,6 +8,10 @@ struct ServiceConstants {
 
 		// Base URL for sharing activities - updated to match deployed web app
 		static let shareBase = "https://getspawn.com"
+
+		/// Privacy Policy — open in browser from Settings → Legal → Privacy Policy and from terms (Section 5).
+		static let privacyPolicy =
+			"https://doc-hosting.flycricket.io/spawn-privacy-policy/8f254bc3-3403-4928-8353-f1f787ed6eec/privacy"
 	}
 
 	// MARK: - Share URL Generation

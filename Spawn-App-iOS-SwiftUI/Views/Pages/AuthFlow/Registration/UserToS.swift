@@ -12,6 +12,8 @@ struct UserToS: View {
 	@ObservedObject private var userAuth = UserAuthViewModel.shared
 	@State private var agreed: Bool = false
 	@State private var isSubmitting: Bool = false
+	@State private var showTermsSheet: Bool = false
+	@State private var showPrivacySheet: Bool = false
 	@ObservedObject var themeService = ThemeService.shared
 	@Environment(\.colorScheme) var colorScheme
 
@@ -77,20 +79,28 @@ struct UserToS: View {
 					}
 					.buttonStyle(PlainButtonStyle())
 
-					Text("I agree to the ")
-						.font(.onestMedium(size: 14))
-						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-						+ Text("Terms")
-						.font(.onestMedium(size: 14))
-						.underline()
-						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-						+ Text(" & ")
-						.font(.onestMedium(size: 14))
-						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-						+ Text("Privacy Policy")
-						.font(.onestMedium(size: 14))
-						.underline()
-						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+					HStack(spacing: 0) {
+						Text("I agree to the ")
+							.font(.onestMedium(size: 14))
+							.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+						Button(action: { showTermsSheet = true }) {
+							Text("Terms")
+								.font(.onestMedium(size: 14))
+								.underline()
+								.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+						}
+						.buttonStyle(PlainButtonStyle())
+						Text(" & ")
+							.font(.onestMedium(size: 14))
+							.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+						Button(action: { showPrivacySheet = true }) {
+							Text("Privacy Policy")
+								.font(.onestMedium(size: 14))
+								.underline()
+								.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+						}
+						.buttonStyle(PlainButtonStyle())
+					}
 				}
 				.padding(.horizontal, 40)
 
@@ -140,6 +150,12 @@ struct UserToS: View {
 		.onAppear {
 			// Clear any previous error state when this view appears
 			userAuth.clearAllErrors()
+		}
+		.sheet(isPresented: $showTermsSheet) {
+			TermsAndConditionsView()
+		}
+		.sheet(isPresented: $showPrivacySheet) {
+			PrivacyPolicyPlaceholderView()
 		}
 	}
 }
