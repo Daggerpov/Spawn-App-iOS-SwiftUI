@@ -27,7 +27,7 @@ struct TermsAndConditionsView: View {
 
 			ScrollView {
 				VStack(alignment: .leading, spacing: 20) {
-					Text("March 2nd 2025")
+					Text("March 10th 2026")
 						.font(.onestMedium(size: 14))
 						.foregroundColor(universalPlaceHolderTextColor(from: themeService, environment: colorScheme))
 
@@ -54,20 +54,23 @@ struct TermsAndConditionsView: View {
 					bodyText("Not post false, misleading, or inappropriate content.")
 					bodyText("Not use the App for illegal, harmful, or fraudulent purposes.")
 					bodyText("Not attempt to hack, disrupt, or exploit the App.")
+					bodyText(
+						"You retain ownership of content you create (e.g. activity descriptions, photos). By posting content, you grant Spawn a license to use, display, and share it as needed to operate the service. Activity locations and times may be visible to friends you invite or others based on your and the App's settings."
+					)
 
 					sectionTitle("5. Privacy Policy")
 					bodyText(
-						"Your use of Spawn is subject to our Privacy Policy, which explains how we collect, use, and protect your data. By using Spawn, you agree to our data practices. Include link to Privacy Policy"
+						"Your use of Spawn is subject to our Privacy Policy, which explains how we collect, use, and protect your data. By using Spawn, you agree to our data practices. Our Privacy Policy is available in the app under Settings → Legal → Privacy Policy and at the link provided there."
 					)
 
 					sectionTitle("6. Location Services")
 					bodyText(
-						"Spawn uses real-time location data to enhance user experience. You acknowledge and agree that your location may be shared with friends based on your selected privacy settings."
+						"Spawn uses your location to show nearby activities on the map and as the initial location for new activities you create and share with friends. You can control location access in your device and in-app settings. Disabling location may limit features such as seeing or joining nearby activities."
 					)
 
 					sectionTitle("7. Intellectual Property")
 					bodyText(
-						"Spawn and its associated trademarks, logos, and content are the exclusive property of [Company Name]."
+						"Spawn and its associated trademarks, logos, and content are the exclusive property of the operators of Spawn."
 					)
 					bodyText("Users may not copy, modify, or distribute any content from Spawn without permission.")
 
