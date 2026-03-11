@@ -61,10 +61,17 @@ struct ActivityTypeFriendSelectionView: View {
 				}
 			}
 		}
-		.navigationTitle("Select friends to add to this type")
 		.navigationBarTitleDisplayMode(.inline)
 		.navigationBarBackButtonHidden(false)
 		.toolbar {
+			ToolbarItem(placement: .principal) {
+				Text("Select friends to add to this type")
+					.font(.onestSemiBold(size: 17))
+					.foregroundColor(universalAccentColor)
+					.multilineTextAlignment(.center)
+					.lineLimit(2)
+					.fixedSize(horizontal: false, vertical: true)
+			}
 			ToolbarItem(placement: .navigationBarTrailing) {
 				Button(action: { saveActivityType() }) {
 					Text("Save")
