@@ -57,12 +57,6 @@ struct AuthProviderButtonView: View {
 			RoundedRectangle(cornerRadius: 16)
 				.fill(getButtonBackgroundColor())
 		)
-		.shadow(
-			color: Color.black.opacity(0.15),
-			radius: 8,
-			x: 0,
-			y: 4
-		)
 	}
 
 	private func getButtonBackgroundColor() -> Color {
