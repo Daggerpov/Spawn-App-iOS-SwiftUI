@@ -152,6 +152,51 @@ struct SettingsView: View {
 						}
 					}
 
+					// Legal
+					SettingsSection(title: "Legal") {
+						NavigationLink(destination: TermsAndConditionsView()) {
+							HStack {
+								Image(systemName: "doc.text")
+									.font(.system(size: 18))
+									.foregroundColor(universalAccentColor)
+									.frame(width: 24, height: 24)
+
+								Text("Terms and Conditions")
+									.font(.body)
+									.foregroundColor(universalAccentColor)
+
+								Spacer()
+
+								Image(systemName: "chevron.right")
+									.font(.system(size: 14))
+									.foregroundColor(.gray)
+							}
+							.padding(.horizontal)
+							.frame(height: 44)
+						}
+
+						NavigationLink(destination: PrivacyPolicyPlaceholderView()) {
+							HStack {
+								Image(systemName: "hand.raised")
+									.font(.system(size: 18))
+									.foregroundColor(universalAccentColor)
+									.frame(width: 24, height: 24)
+
+								Text("Privacy Policy")
+									.font(.body)
+									.foregroundColor(universalAccentColor)
+
+								Spacer()
+
+								Image(systemName: "chevron.right")
+									.font(.system(size: 14))
+									.foregroundColor(.gray)
+							}
+							.padding(.horizontal)
+							.frame(height: 44)
+						}
+					}
+
 					// Contact Us
 					SettingsSection(title: "Contact Us") {
 						if let userId = userAuth.spawnUser?.id, let email = userAuth.spawnUser?.email {
