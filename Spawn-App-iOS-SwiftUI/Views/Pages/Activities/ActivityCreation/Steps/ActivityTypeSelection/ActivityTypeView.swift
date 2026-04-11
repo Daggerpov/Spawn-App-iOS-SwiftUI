@@ -42,11 +42,11 @@ struct ActivityTypeView: View {
 							.font(.caption)
 							.foregroundColor(.red)
 					}
-					.padding(.horizontal, screenEdgePadding)
+					.padding(.horizontal, screenEdgePadding())
 					.padding(.vertical, 8)
 					.background(Color.red.opacity(0.1))
 					.cornerRadius(8)
-					.padding(.horizontal, screenEdgePadding)
+					.padding(.horizontal, screenEdgePadding())
 				}
 
 				if viewModel.isLoading {
@@ -165,7 +165,7 @@ extension ActivityTypeView {
 				.font(.title3)
 				.foregroundColor(.clear)
 		}
-		.padding(.horizontal, screenEdgePadding)
+		.padding(.horizontal, screenEdgePadding())
 		.padding(.vertical, 12)
 	}
 
@@ -190,7 +190,7 @@ extension ActivityTypeView {
 			.buttonStyle(.borderedProminent)
 		}
 		.frame(maxWidth: .infinity, maxHeight: .infinity)
-		.padding(screenEdgePadding)
+		.padding(screenEdgePadding())
 	}
 
 	private var activityTypeGrid: some View {
@@ -202,7 +202,7 @@ extension ActivityTypeView {
 
 				createNewActivityButton
 			}
-			.padding(screenEdgePadding)
+			.padding(screenEdgePadding())
 		}
 	}
 

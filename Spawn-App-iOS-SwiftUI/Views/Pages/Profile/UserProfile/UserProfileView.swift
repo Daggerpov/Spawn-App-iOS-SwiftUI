@@ -520,7 +520,9 @@ struct UserProfileView: View {
 			shareProfile: shareProfile
 		)
 		.background(universalBackgroundColor)
-		.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 364 : 276)])
+		.presentationDetents([
+			.height(profileViewModel.friendshipStatus == .friends ? 520 : 380)
+		])
 	}
 
 	private var removeFriendConfirmationAlert: some View {

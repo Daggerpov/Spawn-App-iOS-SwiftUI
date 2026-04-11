@@ -60,7 +60,7 @@ struct ActivityPreConfirmationView: View {
 
 				// Activity card
 				activityCardView
-					.padding(.horizontal, screenEdgePadding)
+					.padding(.horizontal, screenEdgePadding())
 
 				// Activity title
 				Text(
@@ -87,7 +87,7 @@ struct ActivityPreConfirmationView: View {
 				.font(.onestMedium(size: 20))
 				.foregroundColor(adaptiveSecondaryTextColor)
 				.padding(.top, 12)
-				.padding(.horizontal, screenEdgePadding)
+				.padding(.horizontal, screenEdgePadding())
 
 				Spacer()
 
@@ -130,37 +130,18 @@ struct ActivityPreConfirmationView: View {
 				}
 			}
 		}
-		.padding(.horizontal, screenEdgePadding)
+		.padding(.horizontal, screenEdgePadding())
 		.padding(.bottom, 80)  // Standard bottom padding
 		.background(adaptiveBackgroundColor)
 	}
 
 	// MARK: - Header View
 	private var headerView: some View {
-		HStack {
-			// Back button
-			if let onBack = onBack {
-				ActivityBackButton {
-					onBack()
-				}
-			}
-
-			Spacer()
-
-			// Title
-			Text("Confirm")
-				.font(.onestSemiBold(size: 20))
-				.foregroundColor(adaptiveTextColor)
-
-			Spacer()
-
-			// Invisible chevron to balance the back button
-			Image(systemName: "chevron.left")
-				.font(.system(size: 20, weight: .semibold))
-				.foregroundColor(.clear)
-		}
-		.padding(.horizontal, screenEdgePadding)
-		.padding(.vertical, 12)
+		ActivityCreationCenteredTitleHeader(
+			title: "Confirm",
+			titleColor: adaptiveTextColor,
+			onBack: onBack
+		)
 	}
 
 	// MARK: - Activity Card View

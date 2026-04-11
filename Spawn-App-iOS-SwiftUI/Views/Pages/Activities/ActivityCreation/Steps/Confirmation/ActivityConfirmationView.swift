@@ -95,7 +95,7 @@ struct ActivityConfirmationView: View {
 							.font(Font.custom("Onest", size: 16).weight(.medium))
 							.foregroundColor(adaptiveSecondaryTextColor)
 							.multilineTextAlignment(.center)
-							.padding(.horizontal, screenEdgePadding)
+							.padding(.horizontal, screenEdgePadding())
 
 					}
 					.padding(.bottom, 30)
@@ -178,30 +178,11 @@ struct ActivityConfirmationView: View {
 
 	// MARK: - Header View
 	private var headerView: some View {
-		HStack {
-			// Back button
-			if let onBack = onBack {
-				ActivityBackButton {
-					onBack()
-				}
-			}
-
-			Spacer()
-
-			// Title
-			Text("Confirm")
-				.font(.onestSemiBold(size: 20))
-				.foregroundColor(adaptiveTextColor)
-
-			Spacer()
-
-			// Invisible chevron to balance the back button
-			Image(systemName: "chevron.left")
-				.font(.system(size: 20, weight: .semibold))
-				.foregroundColor(.clear)
-		}
-		.padding(.horizontal, screenEdgePadding)
-		.padding(.vertical, 12)
+		ActivityCreationCenteredTitleHeader(
+			title: "Confirm",
+			titleColor: adaptiveTextColor,
+			onBack: onBack
+		)
 	}
 }
 
