@@ -9,10 +9,12 @@ import SwiftUI
 /// Unified back button with consistent styling and behavior
 struct UnifiedBackButton: View {
 	let title: String?
+	let foregroundColor: Color
 	let action: () -> Void
 
-	init(title: String? = nil, action: @escaping () -> Void) {
+	init(title: String? = nil, foregroundColor: Color = universalAccentColor, action: @escaping () -> Void) {
 		self.title = title
+		self.foregroundColor = foregroundColor
 		self.action = action
 	}
 
@@ -30,7 +32,7 @@ struct UnifiedBackButton: View {
 						.font(.system(size: 17))
 				}
 			}
-			.foregroundColor(universalAccentColor)
+			.foregroundColor(foregroundColor)
 		}
 		.buttonStyle(PlainButtonStyle())
 	}
