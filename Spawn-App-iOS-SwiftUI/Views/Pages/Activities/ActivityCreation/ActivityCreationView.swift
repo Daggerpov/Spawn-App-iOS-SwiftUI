@@ -218,6 +218,8 @@ struct ActivityCreationView: View {
 			// If we're at activityType step and an activity type gets selected, skip to dateTime
 			if currentStep == .activityType && newActivityType != nil {
 				currentStep = .dateTime
+				// Progress tutorial from activityTypeSelection → activityCreation so other tabs become enabled
+				tutorialViewModel.handleActivityTypeSelection(newActivityType!)
 			}
 		}
 	}
