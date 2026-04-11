@@ -13,6 +13,9 @@ import UIKit
 
 @MainActor
 final class UserAuthViewModel: NSObject, ObservableObject {
+	/// Google Sign-In URL scheme — must match `CFBundleURLSchemes` in Info.plist.
+	static let googleIOSURLScheme = "com.googleusercontent.apps.822760465266-hl53d2rku66uk4cljschig9ld0ur57na"
+
 	static let shared: UserAuthViewModel = UserAuthViewModel(
 		apiService: MockAPIService.isMocking ? MockAPIService() : APIService())  // Singleton instance
 	@Published var errorMessage: String?
