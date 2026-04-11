@@ -1215,6 +1215,9 @@ final class APIService: IAPIService, @unchecked Sendable {
 			// Store the error message for the view model to use
 			self.errorMessage = message
 			AppLog.warning("API error \(statusCode): \(message)", category: "API")
+			if statusCode == 400 || statusCode == 422 {
+				return APIError.validationError(message: message)
+			}
 		} else {
 			AppLog.warning("API error \(statusCode): (no message)", category: "API")
 		}
