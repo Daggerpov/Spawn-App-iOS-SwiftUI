@@ -229,6 +229,17 @@ struct LoginInputView: View {
 			// Reset any previous error state
 			userAuth.errorMessage = nil
 		}
+		.alert(item: $userAuth.authAlert) { alertType in
+			Alert(
+				title: Text(alertType.title),
+				message: Text(alertType.message),
+				dismissButton: .default(Text("OK")) {
+					if case .providerMismatch = alertType {
+						userAuth.resetState()
+					}
+				}
+			)
+		}
 		.alert("Login Error", isPresented: $showErrorAlert) {
 			Button("OK", role: .cancel) {}
 		} message: {

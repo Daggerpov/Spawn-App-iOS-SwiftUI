@@ -114,7 +114,16 @@ enum AuthAlertType: Identifiable, Equatable {
 
 	/// Converts raw error messages into user-friendly alternatives
 	private func formatUserFriendlyError(_ rawMessage: String) -> String {
-		let lowercased = rawMessage.lowercased()
+		let trimmed = rawMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+		let lowercased = trimmed.lowercased()
+
+		// Already user-facing copy from our auth flow (e.g. account not found after OAuth)
+		if lowercased.contains("couldn't find your account")
+			|| lowercased.contains("account not found")
+			|| lowercased.contains("check your credentials or create")
+		{
+			return trimmed
+		}
 
 		// Network-related errors
 		if lowercased.contains("network") || lowercased.contains("connection") || lowercased.contains("timeout") {

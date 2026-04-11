@@ -636,12 +636,19 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 					self.spawnUser = nil
 					if case .invalidStatusCode(let statusCode) = error {
 						if statusCode == 404 {
-							// User doesn't exist in Spawn database - show friendly error message
-							print("📍 User not found in Spawn database (404) - showing user-friendly error")
-							self.authAlert = .unknownError(
-								"We couldn't find your account. Please check your credentials or create a new account.")
-							self.errorMessage =
-								"We couldn't find your account. Please check your credentials or create a new account."
+							if self.isOnboarding {
+								// New OAuth user not yet in Spawn — expected during registration
+								print("📍 User not in Spawn database yet (404) during onboarding — expected")
+							} else {
+								// Login with Apple/Google: provider OK but no Spawn account
+								print("📍 User not found in Spawn database (404) - showing user-friendly error")
+								self.isLoggedIn = false
+								self.authAlert = .unknownError(
+									"We couldn't find your account. Please check your credentials or create a new account."
+								)
+								self.errorMessage =
+									"We couldn't find your account. Please check your credentials or create a new account."
+							}
 						} else {
 							// Other status codes (401, 500, etc.) - show appropriate error without navigation
 							print("❌ Authentication error (\(statusCode)) during OAuth sign-in")
