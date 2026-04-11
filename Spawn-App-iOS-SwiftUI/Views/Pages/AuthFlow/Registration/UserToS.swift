@@ -48,7 +48,6 @@ struct UserToS: View {
 						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
 						.multilineTextAlignment(.center)
 				}
-				.padding(.horizontal, 40)
 
 				// Onboarding graphic
 				Image("onboarding_terms")
@@ -102,7 +101,6 @@ struct UserToS: View {
 						.buttonStyle(PlainButtonStyle())
 					}
 				}
-				.padding(.horizontal, 40)
 
 				// Error Message Display
 				if let errorMessage = userAuth.errorMessage {
@@ -110,7 +108,6 @@ struct UserToS: View {
 						.font(.onestRegular(size: 14))
 						.foregroundColor(.red)
 						.multilineTextAlignment(.center)
-						.padding(.horizontal, 40)
 						.padding(.top, 16)
 				}
 
@@ -139,9 +136,8 @@ struct UserToS: View {
 				}
 				.buttonStyle(PlainButtonStyle())
 				.disabled(!agreed || isSubmitting)
-				.padding(.horizontal, -22)
 			}
-			.padding(.horizontal, 40)
+			.padding(.horizontal, 24)
 
 			Spacer()
 		}
