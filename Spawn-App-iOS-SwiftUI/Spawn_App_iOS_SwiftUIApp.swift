@@ -19,6 +19,8 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 	@Environment(\.scenePhase) private var scenePhase
 
 	init() {
+		// Verbose logs: set `AppLog.minimumLevel` to `.debug` or `.info` while investigating (default is `.warning`).
+
 		// Register custom fonts
 		Font.registerFonts()
 
@@ -50,58 +52,57 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 			], for: .normal)
 	}
 
+	@ViewBuilder
 	private var rootView: some View {
-		Group {
-			if !userAuth.hasCheckedSpawnUserExistence {
-				// Show loading screen while checking user existence
-				LoadingView()
-					.onAppear {
-						// Connect the app delegate to the app
-						appDelegate.app = self
+		if !userAuth.hasCheckedSpawnUserExistence {
+			// Show loading screen while checking user existence
+			LoadingView()
+				.onAppear {
+					// Connect the app delegate to the app
+					appDelegate.app = self
+				}
+				.task {
+					// If we're mocking, simulate a login with mock user
+					if MockAPIService.isMocking {
+						await userAuth.setMockUser()
 					}
-					.task {
-						// If we're mocking, simulate a login with mock user
-						if MockAPIService.isMocking {
-							await userAuth.setMockUser()
-						}
-					}
-					.onOpenURL { url in
+				}
+				.onOpenURL { url in
+					GIDSignIn.sharedInstance.handle(url)
+				}
+				.onestFontTheme()
+		} else if userAuth.isLoggedIn, let spawnUser = userAuth.spawnUser, userAuth.hasCompletedOnboarding {
+			// User is logged in, has user data, and has completed onboarding - go to main content
+			ContentView(user: spawnUser, deepLinkManager: deepLinkManager)
+				.task {
+					// Initialize and validate the cache
+					await appCache.validateCache()
+					// Clean up any expired activities after cache validation
+					appCache.cleanupExpiredActivities()
+				}
+				.onOpenURL { url in
+					AppLog.debug("App received URL: \(url.absoluteString)", category: "DeepLink")
+					// Handle Google Sign-In URLs
+					if url.scheme == UserAuthViewModel.googleIOSURLScheme {
 						GIDSignIn.sharedInstance.handle(url)
 					}
-					.onestFontTheme()
-			} else if userAuth.isLoggedIn, let spawnUser = userAuth.spawnUser, userAuth.hasCompletedOnboarding {
-				// User is logged in, has user data, and has completed onboarding - go to main content
-				ContentView(user: spawnUser, deepLinkManager: deepLinkManager)
-					.task {
-						// Initialize and validate the cache
-						await appCache.validateCache()
-						// Clean up any expired activities after cache validation
-						appCache.cleanupExpiredActivities()
+					// Handle Spawn deep links (both custom URL schemes and Universal Links)
+					else if url.scheme == "spawn" || (url.scheme == "https" && url.host == "getspawn.com") {
+						deepLinkManager.handleURL(url)
 					}
-					.onOpenURL { url in
-						print("🔗 App: Received URL: \(url.absoluteString)")
-						// Handle Google Sign-In URLs
-						if url.scheme == "com.googleusercontent.apps.822760465266-hl53d2rku66uk4cljschig9ld0ur57na" {
-							GIDSignIn.sharedInstance.handle(url)
-						}
-						// Handle Spawn deep links (both custom URL schemes and Universal Links)
-						else if url.scheme == "spawn" || (url.scheme == "https" && url.host == "getspawn.com") {
-							deepLinkManager.handleURL(url)
-						}
-					}
-					.onestFontTheme()
-			} else {
-				// User is not logged in or has no user data - show welcome screen
-				WelcomeView()
-					.onAppear {
-						// Connect the app delegate to the app
-						appDelegate.app = self
-					}
-					.onOpenURL { url in
-						GIDSignIn.sharedInstance.handle(url)
-					}
-					.onestFontTheme()
-			}
+				}
+				.onestFontTheme()
+		} else {
+			// User is not logged in or has no user data - show welcome screen
+			WelcomeView()
+				.onAppear {
+					// Connect the app delegate to the app
+					appDelegate.app = self
+				}
+				.onOpenURL { url in
+					GIDSignIn.sharedInstance.handle(url)
+				}
+				.onestFontTheme()
 		}
 	}
 

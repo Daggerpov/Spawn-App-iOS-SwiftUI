@@ -225,7 +225,6 @@ struct LoginInputView: View {
 		}
 		.background(universalBackgroundColor(from: themeService, environment: colorScheme))
 		.navigationBarHidden(true)
-		.withAuthNavigation(userAuth)
 		.onAppear {
 			// Reset any previous error state
 			userAuth.errorMessage = nil
