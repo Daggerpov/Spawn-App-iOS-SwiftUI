@@ -100,7 +100,7 @@ struct ActivityPopupDrawer: View {
 					}
 			)
 			.allowsHitTesting(true)  // Ensure buttons inside can still be tapped
-			.ignoresSafeArea(.all, edges: .bottom)  // Always extend to bottom edge
+			.ignoresSafeArea(.container, edges: .bottom)  // Extend past home indicator; keyboard handled in ChatroomContentView
 			.zIndex(isExpanded ? 1000 : 1)  // Ensure expanded popup appears above tab bar
 		}
 		.transition(.move(edge: .bottom))

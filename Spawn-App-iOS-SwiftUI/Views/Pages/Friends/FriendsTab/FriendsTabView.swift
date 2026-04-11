@@ -138,7 +138,7 @@ struct FriendsTabView: View {
 						navigateToProfile: { navigateToProfile = true }
 					)
 					.background(universalBackgroundColor)
-					.presentationDetents([.height(420)])
+					.presentationDetents([.height(580)])
 				}
 			}
 

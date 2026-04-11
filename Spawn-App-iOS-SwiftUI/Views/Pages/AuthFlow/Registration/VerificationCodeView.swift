@@ -22,6 +22,12 @@ struct VerificationCodeView: View {
 
 	var body: some View {
 		VStack(spacing: 0) {
+			Spacer()
+			mainContent
+			Spacer()
+		}
+		.background(universalBackgroundColor(from: themeService, environment: colorScheme))
+		.safeAreaInset(edge: .top, spacing: 0) {
 			HStack {
 				UnifiedBackButton {
 					userAuthViewModel.clearAllErrors()
@@ -30,13 +36,9 @@ struct VerificationCodeView: View {
 				Spacer()
 			}
 			.padding(.horizontal, 25)
-			.padding(.top, 16)
-
-			Spacer()
-			mainContent
-			Spacer()
+			.padding(.vertical, 16)
+			.background(universalBackgroundColor(from: themeService, environment: colorScheme))
 		}
-		.background(universalBackgroundColor(from: themeService, environment: colorScheme))
 		.onAppear {
 			viewModel.initialize()
 			focusedIndex = viewModel.focusedIndex
