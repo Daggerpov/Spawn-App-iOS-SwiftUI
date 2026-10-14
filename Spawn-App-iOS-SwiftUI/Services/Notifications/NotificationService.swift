@@ -106,31 +106,31 @@ final class NotificationService: NSObject, ObservableObject {
 			}
 			return granted
 		} catch {
-			print("Error requesting notification permission: \(error.localizedDescription)")
+			AppLog.warning("Error requesting notification permission: \(error.localizedDescription)", category: "Push")
 			return false
 		}
 	}
 
 	// Store device token when received from Apple
 	func registerDeviceToken(_ deviceToken: String) {
-		print("[PUSH DEBUG] Device token received: \(deviceToken)")
+		AppLog.debug("Device token received: \(deviceToken)", category: "Push")
 
 		// Store the token for later use
 		storedDeviceToken = deviceToken
 
 		// Only try to register with backend if user is already logged in
 		if UserAuthViewModel.shared.isLoggedIn {
-			print("[PUSH DEBUG] User is logged in, registering token with backend immediately")
+			AppLog.debug("User is logged in, registering token with backend immediately", category: "Push")
 			registerStoredTokenWithBackend()
 		} else {
-			print("[PUSH DEBUG] User not logged in yet. Token stored for later registration")
+			AppLog.debug("User not logged in yet. Token stored for later registration", category: "Push")
 		}
 	}
 
 	// Register the stored token with the backend
 	func registerStoredTokenWithBackend() {
 		guard let token = storedDeviceToken else {
-			print("No device token available to register")
+			AppLog.debug("No device token available to register", category: "Push")
 			return
 		}
 		sendTokenToBackend(token)
@@ -157,30 +157,31 @@ final class NotificationService: NSObject, ObservableObject {
 						to: url,
 						parameters: nil
 					)
-					print("[PUSH DEBUG] Successfully registered device token with backend")
+					AppLog.debug("Successfully registered device token with backend", category: "Push")
 				} catch let error as APIError {
 					// Check if it's a 404 error (endpoint doesn't exist yet)
 					if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
-						print(
-							"[PUSH DEBUG] Device token registration endpoint not available (404): Backend may not support push notifications yet"
+						AppLog.debug(
+							"Device token registration endpoint not available (404): Backend may not support push notifications yet",
+							category: "Push"
 						)
 					} else {
-						print("[PUSH DEBUG] Failed to register device token: \(error.localizedDescription)")
-						print("[PUSH DEBUG] API Error details: \(error)")
+						AppLog.debug("Failed to register device token: \(error.localizedDescription)", category: "Push")
+						AppLog.debug("API Error details: \(error)", category: "Push")
 					}
 				} catch {
-					print("[PUSH DEBUG] Failed to register device token: \(error.localizedDescription)")
-					print("[PUSH DEBUG] Error details: \(error)")
+					AppLog.debug("Failed to register device token: \(error.localizedDescription)", category: "Push")
+					AppLog.debug("Error details: \(error)", category: "Push")
 				}
 			}
 		} else {
-			print("[PUSH DEBUG] Cannot register device token: user not logged in or missing ID")
+			AppLog.debug("Cannot register device token: user not logged in or missing ID", category: "Push")
 			if UserAuthViewModel.shared.spawnUser == nil {
-				print("[PUSH DEBUG] User not logged in (spawnUser is nil)")
+				AppLog.debug("User not logged in (spawnUser is nil)", category: "Push")
 			} else if let user = UserAuthViewModel.shared.spawnUser {
-				print("[PUSH DEBUG] User logged in but ID is nil. Username: \(user.username ?? "N/A")")
+				AppLog.debug("User logged in but ID is nil. Username: \(user.username ?? "N/A")", category: "Push")
 			}
-			print("[PUSH DEBUG] APIService baseURL: \(APIService.baseURL)")
+			AppLog.debug("APIService baseURL: \(APIService.baseURL)", category: "Push")
 		}
 	}
 
@@ -214,7 +215,7 @@ final class NotificationService: NSObject, ObservableObject {
 		// Add to notification center
 		UNUserNotificationCenter.current().add(request) { error in
 			if let error = error {
-				print("Error scheduling notification: \(error.localizedDescription)")
+				AppLog.warning("Error scheduling notification: \(error.localizedDescription)", category: "Push")
 			}
 		}
 	}
@@ -257,7 +258,8 @@ final class NotificationService: NSObject, ObservableObject {
 					options: [UNNotificationAttachmentOptionsThumbnailHiddenKey: false]
 				)
 			} catch {
-				print("Error creating notification attachment: \(error.localizedDescription)")
+				AppLog.warning(
+					"Error creating notification attachment: \(error.localizedDescription)", category: "Push")
 			}
 		}
 
@@ -272,7 +274,10 @@ final class NotificationService: NSObject, ObservableObject {
 					options: [UNNotificationAttachmentOptionsThumbnailHiddenKey: false]
 				)
 			} catch {
-				print("Error creating notification attachment from bundle: \(error.localizedDescription)")
+				AppLog.warning(
+					"Error creating notification attachment from bundle: \(error.localizedDescription)",
+					category: "Push"
+				)
 			}
 		}
 
@@ -281,17 +286,17 @@ final class NotificationService: NSObject, ObservableObject {
 
 	// Handle different notification types
 	func handleNotification(userInfo: [AnyHashable: Any]) {
-		print("[PUSH DEBUG] Handling notification with payload: \(userInfo)")
+		AppLog.debug("Handling notification with payload: \(userInfo)", category: "Push")
 
 		guard let typeString = userInfo["type"] as? String,
 			let notificationType = NotificationType(rawValue: typeString)
 		else {
-			print("[PUSH DEBUG] Error: Notification missing or invalid type info")
-			print("[PUSH DEBUG] Available keys in payload: \(userInfo.keys)")
+			AppLog.debug("Error: Notification missing or invalid type info", category: "Push")
+			AppLog.debug("Available keys in payload: \(userInfo.keys)", category: "Push")
 			return
 		}
 
-		print("[PUSH DEBUG] Processing notification of type: \(notificationType.rawValue)")
+		AppLog.debug("Processing notification of type: \(notificationType.rawValue)", category: "Push")
 
 		// Handle different notification types
 		switch notificationType {
@@ -304,26 +309,26 @@ final class NotificationService: NSObject, ObservableObject {
 		case .chat:
 			handleChatNotification(userInfo)
 		case .welcome:
-			print("[PUSH DEBUG] Received welcome notification")
+			AppLog.debug("Received welcome notification", category: "Push")
 		// No special handling needed
 		case .error:
-			print("[PUSH DEBUG] Received error notification")
+			AppLog.debug("Received error notification", category: "Push")
 		// Error notifications are typically local app errors, not push notifications
 		case .success:
-			print("[PUSH DEBUG] Received success notification")
+			AppLog.debug("Received success notification", category: "Push")
 		// Success notifications are typically local app confirmations, not push notifications
 		}
 	}
 
 	// Handle friend request notifications
 	private func handleFriendRequestNotification(_ userInfo: [AnyHashable: Any]) {
-		print("[PUSH DEBUG] Processing friend request notification with data: \(userInfo)")
+		AppLog.debug("Processing friend request notification with data: \(userInfo)", category: "Push")
 
 		guard let senderId = userInfo["senderId"] as? String,
 			let requestId = userInfo["requestId"] as? String
 		else {
-			print("[PUSH DEBUG] Error: Missing required fields in friend request notification")
-			print("[PUSH DEBUG] Available keys: \(userInfo.keys)")
+			AppLog.debug("Error: Missing required fields in friend request notification", category: "Push")
+			AppLog.debug("Available keys: \(userInfo.keys)", category: "Push")
 			return
 		}
 
@@ -332,56 +337,57 @@ final class NotificationService: NSObject, ObservableObject {
 			let user = UserAuthViewModel.shared.spawnUser,
 			user.id == userId
 		{
-			print(
-				"[PUSH DEBUG] Friend request from user \(senderId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown")), request ID: \(requestId)"
+			AppLog.debug(
+				"Friend request from user \(senderId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown")), request ID: \(requestId)",
+				category: "Push"
 			)
 		} else {
-			print("[PUSH DEBUG] Friend request from user \(senderId), request ID: \(requestId)")
+			AppLog.debug("Friend request from user \(senderId), request ID: \(requestId)", category: "Push")
 		}
 		// Navigate to friend requests view (implementation will depend on your navigation setup)
 	}
 
 	// Handle activity invite notifications
 	private func handleActivityInviteNotification(_ userInfo: [AnyHashable: Any]) {
-		print("[PUSH DEBUG] Processing activity invite notification with data: \(userInfo)")
+		AppLog.debug("Processing activity invite notification with data: \(userInfo)", category: "Push")
 
 		guard let activityId = userInfo["activityId"] as? String,
 			let activityName = userInfo["activityName"] as? String
 		else {
-			print("[PUSH DEBUG] Error: Missing required fields in activity invite notification")
-			print("[PUSH DEBUG] Available keys: \(userInfo.keys)")
+			AppLog.debug("Error: Missing required fields in activity invite notification", category: "Push")
+			AppLog.debug("Available keys: \(userInfo.keys)", category: "Push")
 			return
 		}
 
-		print("[PUSH DEBUG] Invited to activity \(activityName), ID: \(activityId)")
+		AppLog.debug("Invited to activity \(activityName), ID: \(activityId)", category: "Push")
 		// Navigate to activity details (implementation will depend on your navigation setup)
 	}
 
 	// Handle activity update notifications
 	private func handleActivityUpdateNotification(_ userInfo: [AnyHashable: Any]) {
-		print("[PUSH DEBUG] Processing activity update notification with data: \(userInfo)")
+		AppLog.debug("Processing activity update notification with data: \(userInfo)", category: "Push")
 
 		guard let activityId = userInfo["activityId"] as? String,
 			let updateType = userInfo["updateType"] as? String
 		else {
-			print("[PUSH DEBUG] Error: Missing required fields in activity update notification")
-			print("[PUSH DEBUG] Available keys: \(userInfo.keys)")
+			AppLog.debug("Error: Missing required fields in activity update notification", category: "Push")
+			AppLog.debug("Available keys: \(userInfo.keys)", category: "Push")
 			return
 		}
 
-		print("[PUSH DEBUG] Activity update (\(updateType)) for activity ID: \(activityId)")
+		AppLog.debug("Activity update (\(updateType)) for activity ID: \(activityId)", category: "Push")
 		// Navigate to updated activity (implementation will depend on your navigation setup)
 	}
 
 	// Handle chat message notifications
 	private func handleChatNotification(_ userInfo: [AnyHashable: Any]) {
-		print("[PUSH DEBUG] Processing chat notification with data: \(userInfo)")
+		AppLog.debug("Processing chat notification with data: \(userInfo)", category: "Push")
 
 		guard let activityId = userInfo["activityId"] as? String,
 			let senderId = userInfo["senderId"] as? String
 		else {
-			print("[PUSH DEBUG] Error: Missing required fields in chat notification")
-			print("[PUSH DEBUG] Available keys: \(userInfo.keys)")
+			AppLog.debug("Error: Missing required fields in chat notification", category: "Push")
+			AppLog.debug("Available keys: \(userInfo.keys)", category: "Push")
 			return
 		}
 
@@ -390,11 +396,12 @@ final class NotificationService: NSObject, ObservableObject {
 			let user = UserAuthViewModel.shared.spawnUser,
 			user.id == userId
 		{
-			print(
-				"[PUSH DEBUG] New chat message in activity \(activityId) from user \(senderId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))"
+			AppLog.debug(
+				"New chat message in activity \(activityId) from user \(senderId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))",
+				category: "Push"
 			)
 		} else {
-			print("[PUSH DEBUG] New chat message in activity \(activityId) from user \(senderId)")
+			AppLog.debug("New chat message in activity \(activityId) from user \(senderId)", category: "Push")
 		}
 		// Navigate to chat (implementation will depend on your navigation setup)
 	}
@@ -419,7 +426,7 @@ final class NotificationService: NSObject, ObservableObject {
 
 	private func savePreferencesToUserDefaults() {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id.uuidString else {
-			print("Cannot save notification preferences: no user logged in")
+			AppLog.debug("Cannot save notification preferences: no user logged in", category: "Push")
 			return
 		}
 
@@ -444,13 +451,13 @@ final class NotificationService: NSObject, ObservableObject {
 	@MainActor
 	func fetchNotificationPreferences() async {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-			print("Cannot fetch notification preferences: user not logged in")
+			AppLog.debug("Cannot fetch notification preferences: user not logged in", category: "Push")
 			return
 		}
 
 		// Don't fetch from backend if in mock mode
 		if MockAPIService.isMocking {
-			print("Using default notification preferences in mock mode")
+			AppLog.debug("Using default notification preferences in mock mode", category: "Push")
 			return
 		}
 
@@ -476,13 +483,17 @@ final class NotificationService: NSObject, ObservableObject {
 			} catch let error as APIError {
 				// Check if it's a 404 error (endpoint doesn't exist yet)
 				if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
-					print("Notification preferences endpoint not available (404): Using UserDefaults values")
+					AppLog.debug(
+						"Notification preferences endpoint not available (404): Using UserDefaults values",
+						category: "Push")
 					// Continue using the UserDefaults values that were loaded in init()
 				} else {
-					print("Failed to fetch notification preferences: \(error.localizedDescription)")
+					AppLog.warning(
+						"Failed to fetch notification preferences: \(error.localizedDescription)", category: "Push")
 				}
 			} catch {
-				print("Failed to fetch notification preferences: \(error.localizedDescription)")
+				AppLog.warning(
+					"Failed to fetch notification preferences: \(error.localizedDescription)", category: "Push")
 			}
 		}
 	}
@@ -490,14 +501,14 @@ final class NotificationService: NSObject, ObservableObject {
 	// Update notification preferences on the backend
 	func updateNotificationPreferences() async {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-			print("Cannot update notification preferences: user not logged in")
+			AppLog.debug("Cannot update notification preferences: user not logged in", category: "Push")
 			return
 		}
 
-		// Log user details
 		if let user = UserAuthViewModel.shared.spawnUser {
-			print(
-				"Updating notification preferences for user ID: \(userId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))"
+			AppLog.debug(
+				"Updating notification preferences for user ID: \(userId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))",
+				category: "Push"
 			)
 		}
 
@@ -506,7 +517,7 @@ final class NotificationService: NSObject, ObservableObject {
 
 		// Don't update backend if in mock mode
 		if MockAPIService.isMocking {
-			print("Skipping backend update for notification preferences in mock mode")
+			AppLog.debug("Skipping backend update for notification preferences in mock mode", category: "Push")
 			return
 		}
 
@@ -529,13 +540,18 @@ final class NotificationService: NSObject, ObservableObject {
 			} catch let error as APIError {
 				// Check if it's a 404 error (endpoint doesn't exist yet)
 				if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
-					print("Notification preferences endpoint not available (404): Values saved to UserDefaults only")
+					AppLog.debug(
+						"Notification preferences endpoint not available (404): Values saved to UserDefaults only",
+						category: "Push"
+					)
 					// We've already saved to UserDefaults above, so just continue
 				} else {
-					print("Failed to update notification preferences: \(error.localizedDescription)")
+					AppLog.warning(
+						"Failed to update notification preferences: \(error.localizedDescription)", category: "Push")
 				}
 			} catch {
-				print("Failed to update notification preferences: \(error.localizedDescription)")
+				AppLog.warning(
+					"Failed to update notification preferences: \(error.localizedDescription)", category: "Push")
 			}
 		}
 	}
@@ -546,13 +562,13 @@ final class NotificationService: NSObject, ObservableObject {
 	// Handle notification data and update cache accordingly
 	func handleNotificationData(_ userInfo: [AnyHashable: Any]) {
 		guard let type = userInfo["type"] as? String else {
-			print("Notification missing type")
+			AppLog.debug("Notification missing type", category: "Push")
 			return
 		}
 
 		// Get the current user ID for DataService calls
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-			print("Cannot handle notification - no logged in user")
+			AppLog.debug("Cannot handle notification - no logged in user", category: "Push")
 			return
 		}
 
@@ -560,7 +576,6 @@ final class NotificationService: NSObject, ObservableObject {
 			switch type {
 			case "friend-accepted":
 				// When a friend request is accepted, refresh friends and friend requests
-				print("🔄 [CACHE] Friend request accepted - refreshing friends and friend requests")
 				let _: DataResult<[FullFriendUserDTO]> = await DataService.shared.read(
 					.friends(userId: userId), cachePolicy: .apiOnly)
 				let _: DataResult<[FetchFriendRequestDTO]> = await DataService.shared.read(
@@ -570,13 +585,11 @@ final class NotificationService: NSObject, ObservableObject {
 
 			case "activity-updated":
 				// When an activity is updated, refresh activities
-				print("🔄 [CACHE] Activity updated - refreshing activities")
 				let _: DataResult<[FullFeedActivityDTO]> = await DataService.shared.read(
 					.activities(userId: userId), cachePolicy: .apiOnly)
 
 			case "friend-request":
 				// When a new friend request is received/sent, refresh both incoming and sent friend requests
-				print("🔄 [CACHE] Friend request received/sent - refreshing friend requests")
 				let _: DataResult<[FetchFriendRequestDTO]> = await DataService.shared.read(
 					.friendRequests(userId: userId), cachePolicy: .apiOnly)
 				let _: DataResult<[FetchSentFriendRequestDTO]> = await DataService.shared.read(
@@ -589,13 +602,12 @@ final class NotificationService: NSObject, ObservableObject {
 				{
 					// Check if this is a profile we already have cached
 					if appCache.otherProfiles[uuid] != nil {
-						print("🔄 [CACHE] Profile updated - refreshing other profiles")
 						await appCache.refreshOtherProfiles()
 					}
 				}
 
 			default:
-				print("Unknown notification type: \(type) - triggering full cache validation")
+				AppLog.debug("Unknown notification type: \(type) - triggering full cache validation", category: "Push")
 				// For unknown notification types, validate the entire cache
 				await appCache.validateCache()
 			}
@@ -605,18 +617,18 @@ final class NotificationService: NSObject, ObservableObject {
 	// Add a method to unregister the device token when signing out
 	func unregisterDeviceToken() async {
 		guard let token = storedDeviceToken ?? Messaging.messaging().fcmToken else {
-			print("[PUSH DEBUG] No device token to unregister")
+			AppLog.debug("No device token to unregister", category: "Push")
 			return
 		}
 
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-			print("[PUSH DEBUG] Cannot unregister token: no user ID available - clearing token locally")
+			AppLog.debug("Cannot unregister token: no user ID available - clearing token locally", category: "Push")
 			// Clear the stored token locally since we can't unregister from backend
 			storedDeviceToken = nil
 			return
 		}
 
-		print("[PUSH DEBUG] Preparing to unregister device token: \(token)")
+		AppLog.debug("Preparing to unregister device token: \(token)", category: "Push")
 
 		if let url = URL(string: "\(APIService.baseURL)notifications/device-tokens") {
 			do {
@@ -634,11 +646,11 @@ final class NotificationService: NSObject, ObservableObject {
 					object: deviceTokenDTO
 				)
 
-				print("[PUSH DEBUG] Successfully unregistered device token")
+				AppLog.debug("Successfully unregistered device token", category: "Push")
 				// Clear the stored token after successful unregistration
 				storedDeviceToken = nil
 			} catch {
-				print("[PUSH DEBUG] Failed to unregister device token: \(error.localizedDescription)")
+				AppLog.debug("Failed to unregister device token: \(error.localizedDescription)", category: "Push")
 				// Clear the stored token locally even if backend unregistration failed
 				storedDeviceToken = nil
 			}
@@ -651,14 +663,13 @@ extension NotificationService {
 	func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
 		let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
 		let token = tokenParts.joined()
-		print("Device Token: \(token)")
+		AppLog.debug("Device token (APNs): \(token)", category: "Push")
 
-		// Here you would send the token to your server
 		sendDeviceTokenToServer(token)
 	}
 
 	func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-		print("Failed to register for notifications: \(error.localizedDescription)")
+		AppLog.warning("Failed to register for notifications: \(error.localizedDescription)", category: "Push")
 	}
 
 	private func sendDeviceTokenToServer(_ token: String) {
@@ -674,9 +685,9 @@ extension NotificationService {
 				let tokenData = ["deviceToken": token]
 				_ = try await apiService.patchData(from: url, with: tokenData) as EmptyResponse
 
-				print("Device token successfully sent to server")
+				AppLog.debug("Device token successfully sent to server", category: "Push")
 			} catch {
-				print("Failed to send device token: \(error)")
+				AppLog.warning("Failed to send device token: \(error)", category: "Push")
 			}
 		}
 	}

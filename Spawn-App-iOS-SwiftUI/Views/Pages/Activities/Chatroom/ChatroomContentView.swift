@@ -3,6 +3,7 @@ import SwiftUI
 // MARK: - Embedded Chatroom Content View (for use within drawers)
 struct ChatroomContentView: View {
 	@State private var messageText = ""
+	@StateObject private var keyboardOverlap = KeyboardOverlapHeight()
 
 	var user: BaseUserDTO = UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov
 	@ObservedObject var activity: FullFeedActivityDTO
@@ -48,9 +49,9 @@ struct ChatroomContentView: View {
 						headerView
 							.padding(.top, geometry.safeAreaInsets.top + 16)
 
-						// Messages area - fixed size based on expansion state
+						// Messages fill remaining space (flexible when keyboard overlaps)
 						messagesScrollView
-							.frame(height: expandedMessagesHeight)
+							.frame(maxHeight: .infinity)
 							.clipped()
 
 						// Input area - always anchored at bottom with no spacing below
@@ -86,6 +87,7 @@ struct ChatroomContentView: View {
 				.frame(height: minimizedContentHeight)  // Fixed total height to match drawer
 			}
 		}
+		.keyboardOverlapPadding(keyboardOverlap)
 		.onAppear {
 			Task {
 				await viewModel.refreshChat()
@@ -98,45 +100,21 @@ struct ChatroomContentView: View {
 	// But we need to account for the drawer offset (20% of screen), so visible content is less
 	// Using a fixed total height ensures consistent sizing that matches main card content
 	private let minimizedContentHeight: CGFloat = 600  // Total height for chatroom when minimized
-	private let expandedMessagesHeight: CGFloat = 710
 
 	// MARK: - View Components
 
 	private var headerView: some View {
 		HStack {
-			backButton
+			UnifiedBackButton(foregroundColor: .white.opacity(0.6), action: onBack)
 			Spacer()
-			titleText
+			Text("Chatroom")
+				.font(Font.custom("Onest", size: 20).weight(.semibold))
+				.foregroundColor(.white)
 			Spacer()
-			invisibleBalanceButton
+			InvisibleBalanceButton()
 		}
 		.padding(.horizontal, 24)
 		.padding(.bottom, 8)  // Reduced from 16 to fit content better
-	}
-
-	private var backButton: some View {
-		Button(action: {
-			onBack()
-		}) {
-			Image(systemName: "chevron.left")
-				.font(.system(size: 20, weight: .semibold))
-				.foregroundColor(.white.opacity(0.6))
-		}
-	}
-
-	private var titleText: some View {
-		Text("Chatroom")
-			.font(Font.custom("Onest", size: 20).weight(.semibold))
-			.foregroundColor(.white)
-	}
-
-	private var invisibleBalanceButton: some View {
-		Button(action: {}) {
-			Image(systemName: "chevron.left")
-				.font(.system(size: 20, weight: .semibold))
-				.foregroundColor(.clear)
-		}
-		.disabled(true)
 	}
 
 	private var messagesScrollView: some View {

@@ -25,7 +25,7 @@ struct ActivityCardView: View {
 		locationManager: LocationManager,
 		callback: @escaping (FullFeedActivityDTO, Color) -> Void,
 		selectedTab: Binding<TabType?> = .constant(nil),
-		horizontalPadding: CGFloat = screenEdgePadding
+		horizontalPadding: CGFloat = screenEdgePadding()
 	) {
 		self.activity = activity
 		self.color = color

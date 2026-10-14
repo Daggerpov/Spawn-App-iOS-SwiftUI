@@ -13,6 +13,9 @@ import UIKit
 
 @MainActor
 final class UserAuthViewModel: NSObject, ObservableObject {
+	/// Google Sign-In URL scheme — must match `CFBundleURLSchemes` in Info.plist.
+	static let googleIOSURLScheme = "com.googleusercontent.apps.822760465266-hl53d2rku66uk4cljschig9ld0ur57na"
+
 	static let shared: UserAuthViewModel = UserAuthViewModel(
 		apiService: MockAPIService.isMocking ? MockAPIService() : APIService())  // Singleton instance
 	@Published var errorMessage: String?
@@ -633,12 +636,19 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 					self.spawnUser = nil
 					if case .invalidStatusCode(let statusCode) = error {
 						if statusCode == 404 {
-							// User doesn't exist in Spawn database - show friendly error message
-							print("📍 User not found in Spawn database (404) - showing user-friendly error")
-							self.authAlert = .unknownError(
-								"We couldn't find your account. Please check your credentials or create a new account.")
-							self.errorMessage =
-								"We couldn't find your account. Please check your credentials or create a new account."
+							if self.isOnboarding {
+								// New OAuth user not yet in Spawn — expected during registration
+								print("📍 User not in Spawn database yet (404) during onboarding — expected")
+							} else {
+								// Login with Apple/Google: provider OK but no Spawn account
+								print("📍 User not found in Spawn database (404) - showing user-friendly error")
+								self.isLoggedIn = false
+								self.authAlert = .unknownError(
+									"We couldn't find your account. Please check your credentials or create a new account."
+								)
+								self.errorMessage =
+									"We couldn't find your account. Please check your credentials or create a new account."
+							}
 						} else {
 							// Other status codes (401, 500, etc.) - show appropriate error without navigation
 							print("❌ Authentication error (\(statusCode)) during OAuth sign-in")
@@ -851,9 +861,14 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 		}
 
 		if status != .active {
-			// Navigate to the "Continue Onboarding" view first
-			// The user will see this view and can choose to continue or return to login
-			navigateTo(.onboardingContinuation)
+			// Only show the "Welcome back / continue where you left off" screen when the user
+			// is resuming mid-flow (past email verification). Brand-new email signups are
+			// `emailVerified` and should go straight into account setup like OAuth registration.
+			if status == .emailVerified {
+				navigateOnStatus()
+			} else {
+				navigateTo(.onboardingContinuation)
+			}
 		} else {
 			// For active users, navigate directly to feed
 			navigateOnStatus()

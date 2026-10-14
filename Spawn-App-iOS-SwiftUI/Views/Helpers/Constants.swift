@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - Dimensions and Spacing
 let dimensionScale: CGFloat = 2
@@ -16,8 +17,20 @@ let dimensionLG: CGFloat = 32
 let dimensionXL: CGFloat = 64
 
 /// Horizontal padding from screen edges for main content (home feed, activity creation).
-/// Increased for physical devices (e.g. iPhone 11) where 32pt felt cramped.
-let screenEdgePadding: CGFloat = 40
+/// Scales down on narrower widths so content is not over-inset toward the center.
+func screenEdgePadding(for width: CGFloat) -> CGFloat {
+	switch width {
+	case ..<376: return 16
+	case ..<400: return 20
+	case ..<430: return 28
+	default: return 36
+	}
+}
+
+@MainActor
+func screenEdgePadding() -> CGFloat {
+	screenEdgePadding(for: UIScreen.main.bounds.width)
+}
 
 let spacingXS: CGFloat = dimensionXS
 let spacingSM: CGFloat = dimensionSM

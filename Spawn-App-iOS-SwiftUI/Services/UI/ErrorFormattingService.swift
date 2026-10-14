@@ -35,7 +35,8 @@ final class ErrorFormattingService: Sendable {
 		case .invalidStatusCode(let statusCode):
 			return formatStatusCodeError(statusCode)
 		case .validationError(let message):
-			return formatGenericError(message)
+			let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+			return trimmed.isEmpty ? "Please check your information and try again." : trimmed
 		case .failedJSONParsing:
 			return "We're having trouble processing the server response. Please try again."
 		case .invalidData:
@@ -144,6 +145,9 @@ final class ErrorFormattingService: Sendable {
 		case "phone verification", "verification":
 			return "We're having trouble verifying your phone number. Please check the number and try again."
 		case "profile setup":
+			if let apiError = error as? APIError, case .validationError = apiError {
+				return baseMessage
+			}
 			if isNetworkRelatedMessage(baseMessage) || isAuthRelatedMessage(baseMessage) {
 				return baseMessage
 			}

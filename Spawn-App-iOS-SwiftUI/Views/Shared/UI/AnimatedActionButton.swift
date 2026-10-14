@@ -33,8 +33,8 @@ enum FriendActionButtonStyle {
 
 	var activeColor: Color {
 		switch self {
-		case .accept: return .white
-		case .remove, .cancel, .add: return figmaGreen
+		case .accept, .add: return .white
+		case .remove, .cancel: return figmaGreen
 		}
 	}
 
@@ -42,11 +42,11 @@ enum FriendActionButtonStyle {
 		return { isActive in
 			switch self {
 			case .accept:
-				return isActive ? Color(hex: colorsIndigo800) : universalSecondaryColor
+				return universalSecondaryColor
 			case .remove, .cancel:
 				return Color.clear
 			case .add:
-				return Color.clear
+				return isActive ? universalSecondaryColor : Color.clear
 			}
 		}
 	}
@@ -57,7 +57,7 @@ enum FriendActionButtonStyle {
 			case .accept:
 				return Color.clear
 			case .add:
-				return isActive ? figmaGreen : universalSecondaryTextColor
+				return isActive ? Color.clear : universalSecondaryTextColor
 			case .remove, .cancel:
 				return isActive ? figmaGreen : universalSecondaryTextColor
 			}
@@ -74,7 +74,7 @@ enum FriendActionButtonStyle {
 }
 
 /// Animated action button with consistent behavior across friend-related actions
-/// - Shows checkmark animation
+/// - Shows checkmark animation (except for cancel style)
 /// - Fades out smoothly
 /// - Calls completion handler after animation
 struct AnimatedActionButton: View {
@@ -130,7 +130,7 @@ struct AnimatedActionButton: View {
 			}
 		}) {
 			HStack(spacing: 6) {
-				if isActive {
+				if isActive && style != .cancel {
 					Image(systemName: "checkmark")
 						.foregroundColor(style.activeColor)
 						.font(.system(size: 14, weight: style == .add ? .regular : .semibold))

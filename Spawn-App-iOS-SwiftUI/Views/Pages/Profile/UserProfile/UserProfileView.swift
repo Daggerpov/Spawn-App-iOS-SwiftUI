@@ -117,7 +117,7 @@ struct UserProfileView: View {
 			)
 
 			// Fetch activities if they're friends OR if viewing own profile
-			if let currentUserId = currentUserId {
+			if currentUserId != nil {
 				if profileViewModel.friendshipStatus == .friends || profileViewModel.friendshipStatus == .themself {
 					await profileViewModel.fetchProfileActivities(
 						profileUserId: user.id
@@ -520,7 +520,9 @@ struct UserProfileView: View {
 			shareProfile: shareProfile
 		)
 		.background(universalBackgroundColor)
-		.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 364 : 276)])
+		.presentationDetents([
+			.height(profileViewModel.friendshipStatus == .friends ? 520 : 380)
+		])
 	}
 
 	private var removeFriendConfirmationAlert: some View {

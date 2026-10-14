@@ -175,21 +175,13 @@ extension UnifiedButton {
 @available(iOS 17, *)
 #Preview {
 	VStack(spacing: 20) {
-		UnifiedButton.primary("Primary Button") {
-			print("Primary tapped")
-		}
+		UnifiedButton.primary("Primary Button") {}
 
-		UnifiedButton.secondary("Secondary Button") {
-			print("Secondary tapped")
-		}
+		UnifiedButton.secondary("Secondary Button") {}
 
-		UnifiedButton.outline("Outline Button") {
-			print("Outline tapped")
-		}
+		UnifiedButton.outline("Outline Button") {}
 
-		UnifiedButton.primary("Disabled Button", isEnabled: false) {
-			print("Should not print")
-		}
+		UnifiedButton.primary("Disabled Button", isEnabled: false) {}
 	}
 	.padding()
 	.background(universalBackgroundColor)

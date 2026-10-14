@@ -1,8 +1,19 @@
 {
   "images" : [
     {
-      "filename" : "whatsapp_logo.png",
-      "idiom" : "universal"
+      "filename" : "whatsapp-1x.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "whatsapp-2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "whatsapp-3x.png",
+      "idiom" : "universal",
+      "scale" : "3x"
     }
   ],
   "info" : {

@@ -48,7 +48,6 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 	/// Get friends for the current user
 	func getCurrentUserFriends() -> [FullFriendUserDTO] {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-			print("⚠️ [FRIENDSHIP-CACHE] getCurrentUserFriends: No user ID")
 			return []
 		}
 		let userFriends = friends[userId] ?? []
@@ -150,7 +149,6 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 		let startTime = Date()
 
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-			print("Cannot refresh friends: No logged in user")
 			return
 		}
 
@@ -161,7 +159,7 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 
 		let duration = Date().timeIntervalSince(startTime)
 		if duration > 0.5 {
-			print("⏱️ [FRIENDSHIP-CACHE] refreshFriends took \(String(format: "%.2f", duration))s")
+			AppLog.debug("refreshFriends took \(String(format: "%.2f", duration))s", category: "FriendshipCache")
 		}
 	}
 
@@ -211,7 +209,6 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 	/// Refresh recommended friends from the backend
 	func refreshRecommendedFriends() async {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-			print("Cannot refresh recommended friends: No logged in user")
 			return
 		}
 
@@ -233,12 +230,9 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 	/// Get friend requests for the current user
 	func getCurrentUserFriendRequests() -> [FetchFriendRequestDTO] {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-			print("⚠️ [FRIENDSHIP-CACHE] getCurrentUserFriendRequests: No user ID")
 			return []
 		}
 		let requests = friendRequests[userId] ?? []
-		print(
-			"📦 [FRIENDSHIP-CACHE] getCurrentUserFriendRequests returned \(requests.count) requests for user \(userId)")
 		return requests
 	}
 
@@ -297,21 +291,16 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 	/// Refresh friend requests from the backend
 	func refreshFriendRequests() async {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-			print("🔄 [FRIENDSHIP-CACHE] Cannot refresh friend requests: No logged in user")
 			return
 		}
 
 		guard UserAuthViewModel.shared.isLoggedIn else {
-			print("🔄 [FRIENDSHIP-CACHE] Cannot refresh friend requests: User is not logged in")
 			return
 		}
-
-		print("🔄 [FRIENDSHIP-CACHE] Refreshing incoming friend requests for user: \(userId)")
 
 		await genericRefresh(endpoint: "friend-requests/incoming/\(userId)") {
 			[weak self] (fetchedFriendRequests: [FetchFriendRequestDTO]) in
 			guard let self = self else { return }
-			print("🔄 [FRIENDSHIP-CACHE] Retrieved \(fetchedFriendRequests.count) incoming friend requests from API")
 			self.updateFriendRequestsForUser(fetchedFriendRequests, userId: userId)
 		}
 	}
@@ -327,22 +316,14 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 	/// Get sent friend requests for the current user
 	func getCurrentUserSentFriendRequests() -> [FetchSentFriendRequestDTO] {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-			print("⚠️ [FRIENDSHIP-CACHE] getCurrentUserSentFriendRequests: No user ID")
 			return []
 		}
 		let requests = sentFriendRequests[userId] ?? []
-		print(
-			"📦 [FRIENDSHIP-CACHE] getCurrentUserSentFriendRequests returned \(requests.count) requests for user \(userId)"
-		)
 		return requests
 	}
 
 	/// Update sent friend requests for a specific user
 	func updateSentFriendRequestsForUser(_ newSentFriendRequests: [FetchSentFriendRequestDTO], userId: UUID) {
-		print(
-			"💾 [FRIENDSHIP-CACHE] Updating sent friend requests cache for user \(userId): \(newSentFriendRequests.count) requests"
-		)
-
 		// Normalize: remove zero UUIDs and unique by id
 		let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
 		var seen = Set<UUID>()
@@ -395,21 +376,16 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 	/// Refresh sent friend requests from the backend
 	func refreshSentFriendRequests() async {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-			print("🔄 [FRIENDSHIP-CACHE] Cannot refresh sent friend requests: No logged in user")
 			return
 		}
 
 		guard UserAuthViewModel.shared.isLoggedIn else {
-			print("🔄 [FRIENDSHIP-CACHE] Cannot refresh sent friend requests: User is not logged in")
 			return
 		}
-
-		print("🔄 [FRIENDSHIP-CACHE] Refreshing sent friend requests for user: \(userId)")
 
 		await genericRefresh(endpoint: "friend-requests/sent/\(userId)") {
 			[weak self] (fetchedSentFriendRequests: [FetchSentFriendRequestDTO]) in
 			guard let self = self else { return }
-			print("🔄 [FRIENDSHIP-CACHE] Retrieved \(fetchedSentFriendRequests.count) sent friend requests from API")
 			self.updateSentFriendRequestsForUser(fetchedSentFriendRequests, userId: userId)
 		}
 	}
@@ -422,7 +398,6 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 
 	/// Force refresh both incoming and sent friend requests
 	func forceRefreshAllFriendRequests() async {
-		print("🔄 [FRIENDSHIP-CACHE] Force refreshing all friend request data")
 		async let incomingTask: () = refreshFriendRequests()
 		async let sentTask: () = refreshSentFriendRequests()
 
@@ -452,7 +427,6 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 	/// Refresh recently spawned with users from the backend
 	func refreshRecentlySpawnedWith() async {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-			print("Cannot refresh recently spawned with: No logged in user")
 			return
 		}
 
@@ -500,7 +474,6 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 		// Clear cache timestamps for this user
 		clearLastCheckedForUser(userId)
 
-		print("💾 [FRIENDSHIP-CACHE] Cleared all cached data for user \(userId)")
 		saveToDisk()
 	}
 
@@ -509,7 +482,6 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 	}
 
 	func forceRefreshAll() async {
-		print("🔄 [FRIENDSHIP-CACHE] Force refreshing all friendship data")
 		async let friendsTask: () = refreshFriends()
 		async let recommendedTask: () = refreshRecommendedFriends()
 		async let requestsTask: () = refreshFriendRequests()
@@ -526,26 +498,18 @@ final class FriendshipCacheService: BaseCacheService, CacheService, ObservableOb
 	/// Diagnostic method to force refresh all data with detailed logging
 	func diagnosticForceRefresh() async {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-			print("❌ [DIAGNOSTIC] Cannot run diagnostic: No user ID available")
 			return
 		}
 
-		print("🔍 [DIAGNOSTIC] Starting diagnostic refresh for user: \(userId)")
-		print("🔍 [DIAGNOSTIC] Current state before refresh:")
-		print("   - Friends: \(friends[userId]?.count ?? 0)")
-		print("   - Friend requests: \(friendRequests[userId]?.count ?? 0)")
-		print("   - Sent friend requests: \(sentFriendRequests[userId]?.count ?? 0)")
-		print("   - Recommended friends: \(recommendedFriends[userId]?.count ?? 0)")
-		print("   - Recently spawned with: \(recentlySpawnedWith[userId]?.count ?? 0)")
-
+		AppLog.debug(
+			"diagnostic refresh: friends=\(friends[userId]?.count ?? 0) incoming=\(friendRequests[userId]?.count ?? 0) sent=\(sentFriendRequests[userId]?.count ?? 0)",
+			category: "FriendshipCache"
+		)
 		await forceRefreshAll()
-
-		print("🔍 [DIAGNOSTIC] State after refresh:")
-		print("   - Friends: \(friends[userId]?.count ?? 0)")
-		print("   - Friend requests: \(friendRequests[userId]?.count ?? 0)")
-		print("   - Sent friend requests: \(sentFriendRequests[userId]?.count ?? 0)")
-		print("   - Recommended friends: \(recommendedFriends[userId]?.count ?? 0)")
-		print("   - Recently spawned with: \(recentlySpawnedWith[userId]?.count ?? 0)")
+		AppLog.debug(
+			"diagnostic after: friends=\(friends[userId]?.count ?? 0) incoming=\(friendRequests[userId]?.count ?? 0) sent=\(sentFriendRequests[userId]?.count ?? 0)",
+			category: "FriendshipCache"
+		)
 	}
 
 	// MARK: - Persistence

@@ -12,6 +12,8 @@ struct UserToS: View {
 	@ObservedObject private var userAuth = UserAuthViewModel.shared
 	@State private var agreed: Bool = false
 	@State private var isSubmitting: Bool = false
+	@State private var showTermsSheet: Bool = false
+	@State private var showPrivacySheet: Bool = false
 	@ObservedObject var themeService = ThemeService.shared
 	@Environment(\.colorScheme) var colorScheme
 
@@ -46,7 +48,6 @@ struct UserToS: View {
 						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
 						.multilineTextAlignment(.center)
 				}
-				.padding(.horizontal, 40)
 
 				// Onboarding graphic
 				Image("onboarding_terms")
@@ -77,22 +78,29 @@ struct UserToS: View {
 					}
 					.buttonStyle(PlainButtonStyle())
 
-					Text("I agree to the ")
-						.font(.onestMedium(size: 14))
-						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-						+ Text("Terms")
-						.font(.onestMedium(size: 14))
-						.underline()
-						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-						+ Text(" & ")
-						.font(.onestMedium(size: 14))
-						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-						+ Text("Privacy Policy")
-						.font(.onestMedium(size: 14))
-						.underline()
-						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+					HStack(spacing: 0) {
+						Text("I agree to the ")
+							.font(.onestMedium(size: 14))
+							.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+						Button(action: { showTermsSheet = true }) {
+							Text("Terms")
+								.font(.onestMedium(size: 14))
+								.underline()
+								.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+						}
+						.buttonStyle(PlainButtonStyle())
+						Text(" & ")
+							.font(.onestMedium(size: 14))
+							.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+						Button(action: { showPrivacySheet = true }) {
+							Text("Privacy Policy")
+								.font(.onestMedium(size: 14))
+								.underline()
+								.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+						}
+						.buttonStyle(PlainButtonStyle())
+					}
 				}
-				.padding(.horizontal, 40)
 
 				// Error Message Display
 				if let errorMessage = userAuth.errorMessage {
@@ -100,7 +108,6 @@ struct UserToS: View {
 						.font(.onestRegular(size: 14))
 						.foregroundColor(.red)
 						.multilineTextAlignment(.center)
-						.padding(.horizontal, 40)
 						.padding(.top, 16)
 				}
 
@@ -129,9 +136,8 @@ struct UserToS: View {
 				}
 				.buttonStyle(PlainButtonStyle())
 				.disabled(!agreed || isSubmitting)
-				.padding(.horizontal, -22)
 			}
-			.padding(.horizontal, 40)
+			.padding(.horizontal, 24)
 
 			Spacer()
 		}
@@ -140,6 +146,12 @@ struct UserToS: View {
 		.onAppear {
 			// Clear any previous error state when this view appears
 			userAuth.clearAllErrors()
+		}
+		.sheet(isPresented: $showTermsSheet) {
+			TermsAndConditionsView()
+		}
+		.sheet(isPresented: $showPrivacySheet) {
+			PrivacyPolicyPlaceholderView()
 		}
 	}
 }

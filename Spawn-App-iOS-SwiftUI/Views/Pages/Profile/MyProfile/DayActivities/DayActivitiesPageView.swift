@@ -139,8 +139,15 @@ struct DayActivitiesPageView: View {
 							activity: fullActivity,
 							color: getColorForActivity(activity),
 							locationManager: locationManager,
-							callback: { _, _ in
-								onActivitySelected(activity)
+							callback: { tappedActivity, activityColor in
+								// Post notification directly with full activity - we already have it,
+								// avoiding the parent's fetch flow which could show a blank drawer
+								NotificationCenter.default.post(
+									name: .showGlobalActivityPopup,
+									object: nil,
+									userInfo: ["activity": tappedActivity, "color": activityColor]
+								)
+								onDismiss()
 							},
 							horizontalPadding: 16
 						)

@@ -158,10 +158,14 @@ final class TutorialViewModel {
 
 	/// Handle activity creation completion during tutorial
 	func handleActivityCreationComplete() {
-		guard case .activityCreation = tutorialState else { return }
-
-		// Complete the tutorial
-		completeTutorial()
+		// Complete tutorial when user finishes creating an activity - handle both activityCreation
+		// (normal flow) and activityTypeSelection (user selected type directly in activities tab)
+		switch tutorialState {
+		case .activityCreation, .activityTypeSelection:
+			completeTutorial()
+		case .notStarted, .completed:
+			break
+		}
 	}
 
 	// MARK: - Server Sync Methods

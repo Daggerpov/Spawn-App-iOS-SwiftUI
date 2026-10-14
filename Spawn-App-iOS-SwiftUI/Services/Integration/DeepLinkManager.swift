@@ -23,11 +23,13 @@ final class DeepLinkManager: ObservableObject {
 
 	// MARK: - URL Handling
 	func handleURL(_ url: URL) {
-		print("🔗 DeepLinkManager: Handling incoming URL: \(url.absoluteString)")
+		AppLog.debug("🔗 DeepLinkManager: Handling incoming URL: \(url.absoluteString)", category: "DeepLink")
 
 		// Handle both custom URL schemes (spawn://) and Universal Links (https://)
 		guard url.scheme == "spawn" || (url.scheme == "https" && url.host == "getspawn.com") else {
-			print("❌ DeepLinkManager: Invalid URL scheme or host: \(url.scheme ?? "nil")://\(url.host ?? "nil")")
+			AppLog.warning(
+				"❌ DeepLinkManager: Invalid URL scheme or host: \(url.scheme ?? "nil")://\(url.host ?? "nil")",
+				category: "DeepLink")
 			return
 		}
 
@@ -40,8 +42,9 @@ final class DeepLinkManager: ObservableObject {
 		let host = url.host ?? ""
 		let pathComponents = url.pathComponents.filter { $0 != "/" }
 
-		print(
-			"🔗 DeepLinkManager: Parsing URL - Scheme: \(url.scheme ?? "nil"), Host: \(host), Path components: \(pathComponents)"
+		AppLog.debug(
+			"🔗 DeepLinkManager: Parsing URL - Scheme: \(url.scheme ?? "nil"), Host: \(host), Path components: \(pathComponents)",
+			category: "DeepLink"
 		)
 
 		// Handle Universal Links: https://getspawn.com/activity/{activityId} or https://getspawn.com/profile/{profileId}
@@ -54,19 +57,21 @@ final class DeepLinkManager: ObservableObject {
 			return parseCustomURLScheme(host: host, pathComponents: pathComponents)
 		}
 
-		print("❌ DeepLinkManager: Unknown URL format")
+		AppLog.warning("❌ DeepLinkManager: Unknown URL format", category: "DeepLink")
 		return .unknown
 	}
 
 	// MARK: - Universal Link Parsing
 	private func parseUniversalLink(pathComponents: [String]) -> DeepLinkType {
-		print("🔗 DeepLinkManager: Parsing Universal Link with path components: \(pathComponents)")
+		AppLog.debug(
+			"🔗 DeepLinkManager: Parsing Universal Link with path components: \(pathComponents)", category: "DeepLink")
 
 		// Universal Link format: https://getspawn.com/activity/{activityId} or https://getspawn.com/profile/{profileId}
 		// Share code format: https://getspawn.com/activity/{shareCode} or https://getspawn.com/profile/{shareCode}
 
 		guard pathComponents.count >= 2 else {
-			print("❌ DeepLinkManager: Invalid Universal Link - not enough path components")
+			AppLog.warning(
+				"❌ DeepLinkManager: Invalid Universal Link - not enough path components", category: "DeepLink")
 			return .unknown
 		}
 
@@ -79,7 +84,7 @@ final class DeepLinkManager: ObservableObject {
 				return .activity(activityId)
 			} else {
 				// New share code format: https://getspawn.com/activity/{shareCode}
-				print("🔗 DeepLinkManager: Detected activity share code: \(identifier)")
+				AppLog.debug("🔗 DeepLinkManager: Detected activity share code: \(identifier)", category: "DeepLink")
 				resolveActivityShareCode(shareCode: identifier)
 				return .unknown  // Return unknown for now, will be handled by resolution
 			}
@@ -89,19 +94,21 @@ final class DeepLinkManager: ObservableObject {
 				return .profile(profileId)
 			} else {
 				// New share code format: https://getspawn.com/profile/{shareCode}
-				print("🔗 DeepLinkManager: Detected profile share code: \(identifier)")
+				AppLog.debug("🔗 DeepLinkManager: Detected profile share code: \(identifier)", category: "DeepLink")
 				resolveProfileShareCode(shareCode: identifier)
 				return .unknown  // Return unknown for now, will be handled by resolution
 			}
 		} else {
-			print("❌ DeepLinkManager: Unknown Universal Link type: \(type)")
+			AppLog.warning("❌ DeepLinkManager: Unknown Universal Link type: \(type)", category: "DeepLink")
 		}
 
 		return .unknown
 	}
 
 	private func parseCustomURLScheme(host: String, pathComponents: [String]) -> DeepLinkType {
-		print("🔗 DeepLinkManager: Parsing custom URL scheme with host: \(host), path components: \(pathComponents)")
+		AppLog.debug(
+			"🔗 DeepLinkManager: Parsing custom URL scheme with host: \(host), path components: \(pathComponents)",
+			category: "DeepLink")
 
 		// Custom URL scheme format: spawn://activity/{activityId} or spawn://profile/{profileId}
 		if host == "activity" {
@@ -113,8 +120,9 @@ final class DeepLinkManager: ObservableObject {
 			{
 				return .activity(activityId)
 			} else {
-				print(
-					"❌ DeepLinkManager: Failed to parse custom URL scheme activity ID from: \(activityIdString ?? "nil")"
+				AppLog.warning(
+					"❌ DeepLinkManager: Failed to parse custom URL scheme activity ID from: \(activityIdString ?? "nil")",
+					category: "DeepLink"
 				)
 			}
 		} else if host == "profile" {
@@ -126,8 +134,10 @@ final class DeepLinkManager: ObservableObject {
 			{
 				return .profile(profileId)
 			} else {
-				print(
-					"❌ DeepLinkManager: Failed to parse custom URL scheme profile ID from: \(profileIdString ?? "nil")")
+				AppLog.warning(
+					"❌ DeepLinkManager: Failed to parse custom URL scheme profile ID from: \(profileIdString ?? "nil")",
+					category: "DeepLink"
+				)
 			}
 		} else if pathComponents.count >= 2 {
 			let type = pathComponents[0]
@@ -137,19 +147,24 @@ final class DeepLinkManager: ObservableObject {
 				if let activityId = UUID(uuidString: idString) {
 					return .activity(activityId)
 				} else {
-					print("❌ DeepLinkManager: Failed to parse custom URL scheme path activity ID from: \(idString)")
+					AppLog.warning(
+						"❌ DeepLinkManager: Failed to parse custom URL scheme path activity ID from: \(idString)",
+						category: "DeepLink")
 				}
 			} else if type == "profile" {
 				if let profileId = UUID(uuidString: idString) {
 					return .profile(profileId)
 				} else {
-					print("❌ DeepLinkManager: Failed to parse custom URL scheme path profile ID from: \(idString)")
+					AppLog.warning(
+						"❌ DeepLinkManager: Failed to parse custom URL scheme path profile ID from: \(idString)",
+						category: "DeepLink")
 				}
 			}
 		}
 
-		print(
-			"❌ DeepLinkManager: Invalid custom URL scheme format - expected spawn://activity/{activityId} or spawn://profile/{profileId}"
+		AppLog.warning(
+			"❌ DeepLinkManager: Invalid custom URL scheme format - expected spawn://activity/{activityId} or spawn://profile/{profileId}",
+			category: "DeepLink"
 		)
 		return .unknown
 	}
@@ -158,7 +173,7 @@ final class DeepLinkManager: ObservableObject {
 	private func processPendingDeepLink(_ deepLink: DeepLinkType) {
 		switch deepLink {
 		case .activity(let activityId):
-			print("🎯 DeepLinkManager: Processing activity deep link: \(activityId)")
+			AppLog.debug("🎯 DeepLinkManager: Processing activity deep link: \(activityId)", category: "DeepLink")
 			pendingDeepLink = deepLink
 			activityToShow = activityId
 			shouldShowActivity = true
@@ -174,7 +189,7 @@ final class DeepLinkManager: ObservableObject {
 			)
 
 		case .profile(let profileId):
-			print("🎯 DeepLinkManager: Processing profile deep link: \(profileId)")
+			AppLog.debug("🎯 DeepLinkManager: Processing profile deep link: \(profileId)", category: "DeepLink")
 			pendingDeepLink = deepLink
 			profileToShow = profileId
 			shouldShowProfile = true
@@ -190,7 +205,7 @@ final class DeepLinkManager: ObservableObject {
 			)
 
 		case .unknown:
-			print("❌ DeepLinkManager: Unknown deep link type, ignoring")
+			AppLog.warning("❌ DeepLinkManager: Unknown deep link type, ignoring", category: "DeepLink")
 			pendingDeepLink = nil
 			activityToShow = nil
 			shouldShowActivity = false
@@ -204,12 +219,13 @@ final class DeepLinkManager: ObservableObject {
 	private func handleActivityDeepLink(_ activityId: UUID) {
 		// If user has the app and is authenticated, open activity in-app
 		if UserAuthViewModel.shared.isLoggedIn {
-			print("🎯 DeepLinkManager: User authenticated - opening activity in-app")
+			AppLog.debug("🎯 DeepLinkManager: User authenticated - opening activity in-app", category: "DeepLink")
 			// The activity will be opened by the ContentView listening to notifications
 			// The deep link will register the user as invited to this activity
 			// and show the activity popup in the UI
 		} else {
-			print("🎯 DeepLinkManager: User not authenticated - will show activity invite page")
+			AppLog.debug(
+				"🎯 DeepLinkManager: User not authenticated - will show activity invite page", category: "DeepLink")
 			// If not authenticated, the app will show the activity invite page
 			// where users can see activity details and join/install the app
 		}
@@ -218,21 +234,23 @@ final class DeepLinkManager: ObservableObject {
 	private func handleProfileDeepLink(_ profileId: UUID) {
 		// If user has the app and is authenticated, open profile in Friends page
 		if UserAuthViewModel.shared.isLoggedIn {
-			print("🎯 DeepLinkManager: User authenticated - opening profile in Friends page")
+			AppLog.debug(
+				"🎯 DeepLinkManager: User authenticated - opening profile in Friends page", category: "DeepLink")
 			// The profile will be opened in the Friends tab by ContentView
 		} else {
-			print("🎯 DeepLinkManager: User not authenticated - will show profile invite page")
+			AppLog.debug(
+				"🎯 DeepLinkManager: User not authenticated - will show profile invite page", category: "DeepLink")
 			// If not authenticated, show a profile preview/invite page
 		}
 	}
 
 	// MARK: - Share Code Resolution
 	private func resolveActivityShareCode(shareCode: String) {
-		print("🔗 DeepLinkManager: Resolving activity share code: \(shareCode)")
+		AppLog.debug("🔗 DeepLinkManager: Resolving activity share code: \(shareCode)", category: "DeepLink")
 
 		let urlString = "\(ServiceConstants.URLs.apiBase)share/activity/\(shareCode)"
 		guard let url = URL(string: urlString) else {
-			print("❌ DeepLinkManager: Invalid URL for activity share code: \(shareCode)")
+			AppLog.warning("❌ DeepLinkManager: Invalid URL for activity share code: \(shareCode)", category: "DeepLink")
 			return
 		}
 
@@ -247,22 +265,24 @@ final class DeepLinkManager: ObservableObject {
 					let activityIdString = json["id"] as? String,
 					let activityId = UUID(uuidString: activityIdString)
 				else {
-					print("❌ DeepLinkManager: Failed to resolve activity share code: \(shareCode)")
+					AppLog.warning(
+						"❌ DeepLinkManager: Failed to resolve activity share code: \(shareCode)", category: "DeepLink")
 					return
 				}
 				self?.processPendingDeepLink(.activity(activityId))
 			} catch {
-				print("❌ DeepLinkManager: Network error resolving activity share code: \(error)")
+				AppLog.warning(
+					"❌ DeepLinkManager: Network error resolving activity share code: \(error)", category: "DeepLink")
 			}
 		}
 	}
 
 	private func resolveProfileShareCode(shareCode: String) {
-		print("🔗 DeepLinkManager: Resolving profile share code: \(shareCode)")
+		AppLog.debug("🔗 DeepLinkManager: Resolving profile share code: \(shareCode)", category: "DeepLink")
 
 		let urlString = "\(ServiceConstants.URLs.apiBase)share/profile/\(shareCode)"
 		guard let url = URL(string: urlString) else {
-			print("❌ DeepLinkManager: Invalid URL for profile share code: \(shareCode)")
+			AppLog.warning("❌ DeepLinkManager: Invalid URL for profile share code: \(shareCode)", category: "DeepLink")
 			return
 		}
 
@@ -277,19 +297,21 @@ final class DeepLinkManager: ObservableObject {
 					let profileIdString = json["id"] as? String,
 					let profileId = UUID(uuidString: profileIdString)
 				else {
-					print("❌ DeepLinkManager: Failed to resolve profile share code: \(shareCode)")
+					AppLog.warning(
+						"❌ DeepLinkManager: Failed to resolve profile share code: \(shareCode)", category: "DeepLink")
 					return
 				}
 				self?.processPendingDeepLink(.profile(profileId))
 			} catch {
-				print("❌ DeepLinkManager: Network error resolving profile share code: \(error)")
+				AppLog.warning(
+					"❌ DeepLinkManager: Network error resolving profile share code: \(error)", category: "DeepLink")
 			}
 		}
 	}
 
 	// MARK: - State Management
 	func clearPendingDeepLink() {
-		print("🔗 DeepLinkManager: Clearing pending deep link")
+		AppLog.debug("🔗 DeepLinkManager: Clearing pending deep link", category: "DeepLink")
 		pendingDeepLink = nil
 		activityToShow = nil
 		shouldShowActivity = false

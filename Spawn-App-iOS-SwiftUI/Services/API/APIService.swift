@@ -114,7 +114,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 				UserAuthViewModel.shared.spawnUser != nil && UserAuthViewModel.shared.isLoggedIn
 			}
 			guard isAuthenticated else {
-				print("❌ Cannot make API call to \(urlString): User is not logged in")
+				AppLog.warning("Cannot make API call to \(urlString): User is not logged in", category: "API")
 				throw APIError.invalidStatusCode(statusCode: 401)
 			}
 		}
@@ -133,7 +133,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 		// Ensure the URL is valid after adding query items
 		guard let finalURL = urlComponents?.url else {
 			errorMessage = "Invalid URL after adding query parameters"
-			print(errorMessage ?? "no error message to log")
+			AppLog.error(errorMessage ?? "Invalid URL", category: "API")
 			throw APIError.URLError
 		}
 		var request = URLRequest(url: finalURL)
@@ -158,7 +158,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(finalURL)"
-			print(errorMessage ?? "no error message to log")
+			AppLog.error(errorMessage ?? "no error message to log", category: "API")
 			throw APIError.failedHTTPRequest(
 				description: "The HTTP request has failed.")
 		}
@@ -212,33 +212,23 @@ final class APIService: IAPIService, @unchecked Sendable {
 
 			// Only attempt array handling if we're not already expecting an array type
 			if !isArrayType {
-				// Try to decode as an array of that type
-				print(
-					"Attempting to decode as array and extract the first item for entity type '\(T.self)' from URL: \(finalURL)"
-				)
-
 				do {
-					// Use JSONSerialization first to check if it's an array
 					if let jsonObject = try JSONSerialization.jsonObject(with: data) as? [Any],
 						!jsonObject.isEmpty
 					{
-
-						// It is an array, try to decode it as such and take the first element
 						if let firstItemData = try? JSONSerialization.data(withJSONObject: jsonObject[0]) {
 							let firstItem = try decoder.decode(T.self, from: firstItemData)
-							print("Successfully decoded first item from array response")
 							return firstItem
 						}
 					}
 				} catch {
-					print("Failed to extract first item from array: \(error)")
+					AppLog.debug("Failed to extract first item from array: \(error)", category: "API")
 				}
 			}
 
-			// If we got here, throw the original decoding error
-			print("JSON Decoding Error: \(decodingError)")
+			AppLog.error("JSON decoding failed for \(finalURL): \(decodingError)", category: "API")
 			if let jsonString = String(data: data, encoding: .utf8) {
-				print("Received JSON: \(jsonString)")
+				AppLog.debug("Response body: \(jsonString)", category: "API")
 			}
 			throw APIError.failedJSONParsing(url: finalURL)
 		}
@@ -258,23 +248,11 @@ final class APIService: IAPIService, @unchecked Sendable {
 			urlString.contains("/optional-details") || urlString.contains("/contacts/cross-reference")
 
 		if !isAuthEndpoint && !isWhitelistedEndpoint {
-			let (isAuthenticated, spawnUserId, isLoggedIn) = await MainActor.run {
-				(
-					UserAuthViewModel.shared.spawnUser != nil && UserAuthViewModel.shared.isLoggedIn,
-					UserAuthViewModel.shared.spawnUser?.id.uuidString,
-					UserAuthViewModel.shared.isLoggedIn
-				)
+			let isAuthenticated = await MainActor.run {
+				UserAuthViewModel.shared.spawnUser != nil && UserAuthViewModel.shared.isLoggedIn
 			}
 			guard isAuthenticated else {
-				print("❌ Cannot make API call to \(urlString): User is not logged in")
-
-				// DEBUG: Extra logging for blocking endpoints
-				if urlString.contains("blocked-users") {
-					print("🚫 DEBUG: ❌ CRITICAL - User not logged in when attempting to block user!")
-					print("🚫 DEBUG: spawnUser: \(spawnUserId ?? "nil")")
-					print("🚫 DEBUG: isLoggedIn: \(isLoggedIn)")
-				}
-
+				AppLog.warning("Cannot make API call to \(urlString): User is not logged in", category: "API")
 				throw APIError.invalidStatusCode(statusCode: 401)
 			}
 		}
@@ -293,7 +271,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 		// Ensure the URL is valid after adding query items
 		guard let finalURL = urlComponents?.url else {
 			errorMessage = "Invalid URL after adding query parameters"
-			print(errorMessage ?? "no error message to log")
+			AppLog.error(errorMessage ?? "no error message to log", category: "API")
 			throw APIError.URLError
 		}
 
@@ -321,7 +299,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(finalURL)"
-			print(errorMessage ?? "no error message to log")
+			AppLog.error(errorMessage ?? "no error message to log", category: "API")
 			throw APIError.failedHTTPRequest(
 				description: "The HTTP request has failed.")
 		}
@@ -332,35 +310,13 @@ final class APIService: IAPIService, @unchecked Sendable {
 			if httpResponse.statusCode == 401
 				&& !(urlString.contains("/auth/sign-in") || urlString.contains("/auth/login"))
 			{
-				// DEBUG: Log for blocking endpoints specifically
-				if urlString.contains("blocked-users") {
-					print("🚫 DEBUG: Received 401 for blocking request, attempting token refresh...")
-				}
-
-				// Handle token refresh logic here
 				do {
 					let newAccessToken: String = try await handleRefreshToken()
-					// Retry the request with the new access token
 					let newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
-
-					// DEBUG: Log for blocking endpoints specifically
-					if urlString.contains("blocked-users") {
-						print("🚫 DEBUG: ✅ Token refresh successful, blocking request retried")
-					}
-
 					return try APIService.makeDecoder().decode(U.self, from: newData)
 				} catch {
-					// DEBUG: Log for blocking endpoints specifically
-					if urlString.contains("blocked-users") {
-						print("🚫 DEBUG: ❌ Token refresh failed for blocking request: \(error)")
-					}
 					throw error
 				}
-			}
-
-			// DEBUG: Log for blocking endpoints specifically
-			if urlString.contains("blocked-users") {
-				print("🚫 DEBUG: ❌ Blocking request failed with status code: \(httpResponse.statusCode)")
 			}
 
 			throw createAPIError(statusCode: httpResponse.statusCode, data: data)
@@ -391,7 +347,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 				errorMessage =
 					APIError.failedJSONParsing(url: finalURL)
 					.localizedDescription
-				print(errorMessage ?? "no error message to log")
+				AppLog.error(errorMessage ?? "no error message to log", category: "API")
 				throw APIError.failedJSONParsing(url: finalURL)
 			}
 		}
@@ -420,7 +376,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 		// Ensure the URL is valid after adding query items
 		guard let finalURL = urlComponents?.url else {
 			errorMessage = "Invalid URL after adding query parameters"
-			print(errorMessage ?? "no error message to log")
+			AppLog.error(errorMessage ?? "no error message to log", category: "API")
 			throw APIError.URLError
 		}
 
@@ -448,7 +404,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			let message = "HTTP request failed for \(finalURL)"
-			print(message)
+			AppLog.error(message, category: "API")
 			throw APIError.failedHTTPRequest(description: message)
 		}
 
@@ -463,7 +419,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 			errorStatusCode = httpResponse.statusCode
 			let message =
 				"Invalid status code \(httpResponse.statusCode) for \(finalURL)"
-			print(message)
+			AppLog.error(message, category: "API")
 			throw APIError.invalidStatusCode(
 				statusCode: httpResponse.statusCode)
 		}
@@ -493,13 +449,10 @@ final class APIService: IAPIService, @unchecked Sendable {
 			components.queryItems = parameters.map { URLQueryItem(name: $0.key, value: $0.value) }
 			guard let urlWithParams = components.url else {
 				errorMessage = "Invalid URL after adding query parameters"
-				print(errorMessage ?? "no error message to log")
+				AppLog.error(errorMessage ?? "no error message to log", category: "API")
 				throw APIError.URLError
 			}
 			finalUrl = urlWithParams
-			print("🔓 [APIService] DELETE URL with parameters: \(finalUrl.absoluteString)")
-		} else {
-			print("🔓 [APIService] DELETE URL (no parameters): \(finalUrl.absoluteString)")
 		}
 
 		var request = URLRequest(url: finalUrl)
@@ -510,9 +463,6 @@ final class APIService: IAPIService, @unchecked Sendable {
 			let encoder = APIService.makeEncoder()
 			request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 			request.httpBody = try encoder.encode(object)
-			print("🔓 [APIService] DELETE with body")
-		} else {
-			print("🔓 [APIService] DELETE without body")
 		}
 
 		let response: URLResponse
@@ -524,20 +474,17 @@ final class APIService: IAPIService, @unchecked Sendable {
 				// For cancelled DELETE requests, just return without logging
 				return
 			}
-			print("🔓 [APIService] DELETE request failed with error: \(error)")
-			print("🔓 [APIService] Error details: \(error.localizedDescription)")
+			AppLog.warning("DELETE request failed: \(error.localizedDescription)", category: "API")
 			// Re-throw non-cancellation errors
 			throw error
 		}
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(url)"
-			print(errorMessage ?? "no error message to log")
+			AppLog.error(errorMessage ?? "no error message to log", category: "API")
 			throw APIError.failedHTTPRequest(
 				description: "The HTTP request has failed.")
 		}
-
-		print("🔓 [APIService] DELETE response status code: \(httpResponse.statusCode)")
 
 		// Check for a successful status code (204 is commonly used for successful deletions)
 		guard httpResponse.statusCode == 204 || httpResponse.statusCode == 200
@@ -552,7 +499,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 			errorStatusCode = httpResponse.statusCode
 			errorMessage =
 				"invalid status code \(httpResponse.statusCode) for \(url)"
-			print(errorMessage ?? "no error message to log")
+			AppLog.error(errorMessage ?? "no error message to log", category: "API")
 			throw APIError.invalidStatusCode(
 				statusCode: httpResponse.statusCode)
 		}
@@ -595,19 +542,16 @@ final class APIService: IAPIService, @unchecked Sendable {
 			if let imageData = image.jpegData(compressionQuality: 0.9) {
 				let base64String = imageData.base64EncodedString()
 				userCreationDTO["profilePictureData"] = base64String
-				print("Including profile picture data of size: \(imageData.count) bytes")
 			} else if let pngData = image.pngData() {
 				// Try PNG as a fallback
 				let base64String = pngData.base64EncodedString()
 				userCreationDTO["profilePictureData"] = base64String
-				print("Including PNG profile picture data of size: \(pngData.count) bytes")
 			}
 		} else if let profilePicUrl = parameters?["profilePicUrl"], !profilePicUrl.isEmpty {
 			// If we have a URL from Google/Apple but no selected image, include it
 			// Try both field names that the backend might be expecting
 			userCreationDTO["profilePictureUrl"] = profilePicUrl
 			userCreationDTO["profilePicture"] = profilePicUrl  // Try this field name as well
-			print("Including profile picture URL from provider: \(profilePicUrl)")
 
 			// Try to download the image from the URL and convert to base64
 			if let url = URL(string: profilePicUrl) {
@@ -615,9 +559,9 @@ final class APIService: IAPIService, @unchecked Sendable {
 					let (data, _) = try await URLSession.shared.data(from: url)
 					let base64String = data.base64EncodedString()
 					userCreationDTO["profilePictureData"] = base64String
-					print("Successfully downloaded and included Google profile picture data: \(data.count) bytes")
 				} catch {
-					print("Failed to download Google profile picture: \(error.localizedDescription)")
+					AppLog.warning(
+						"Failed to download provider profile picture: \(error.localizedDescription)", category: "API")
 				}
 			}
 		}
@@ -681,7 +625,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 			let accessToken = response.allHeaderFields["Authorization"] as? String ?? response.allHeaderFields[
 				"authorization"] as? String
 		else {
-			print("⚠️ WARNING: No access token found in response headers")
+			AppLog.warning("No access token found in response headers", category: "API")
 			return
 		}
 
@@ -691,7 +635,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 			as? String
 
 		if refreshToken == nil {
-			print("⚠️ WARNING: No refresh token found in response headers")
+			AppLog.debug("No refresh token found in response headers", category: "API")
 			// Don't throw error here - some endpoints might only return access tokens
 		}
 
@@ -708,7 +652,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 				saveSuccessful = KeychainService.shared.save(key: "accessToken", data: accessTokenData)
 				if !saveSuccessful {
 					saveAttempts += 1
-					print("⚠️ Access token save attempt \(saveAttempts) failed")
+					AppLog.warning("Access token save attempt \(saveAttempts) failed", category: "API")
 					if saveAttempts < maxSaveAttempts {
 						// Brief delay before retry
 						Thread.sleep(forTimeInterval: 0.1)
@@ -717,7 +661,8 @@ final class APIService: IAPIService, @unchecked Sendable {
 			}
 
 			if !saveSuccessful {
-				print("❌ ERROR: Failed to save access token to keychain after \(maxSaveAttempts) attempts")
+				AppLog.error(
+					"Failed to save access token to keychain after \(maxSaveAttempts) attempts", category: "API")
 				throw APIError.failedTokenSaving(tokenType: "accessToken")
 			}
 		}
@@ -734,7 +679,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 				saveSuccessful = KeychainService.shared.save(key: "refreshToken", data: refreshTokenData)
 				if !saveSuccessful {
 					saveAttempts += 1
-					print("⚠️ Refresh token save attempt \(saveAttempts) failed")
+					AppLog.warning("Refresh token save attempt \(saveAttempts) failed", category: "API")
 					if saveAttempts < maxSaveAttempts {
 						// Brief delay before retry
 						Thread.sleep(forTimeInterval: 0.1)
@@ -743,7 +688,8 @@ final class APIService: IAPIService, @unchecked Sendable {
 			}
 
 			if !saveSuccessful {
-				print("❌ ERROR: Failed to save refresh token to keychain after \(maxSaveAttempts) attempts")
+				AppLog.error(
+					"Failed to save refresh token to keychain after \(maxSaveAttempts) attempts", category: "API")
 				throw APIError.failedTokenSaving(tokenType: "refreshToken")
 			}
 		}
@@ -751,7 +697,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 
 	fileprivate func setAuthHeader(request: inout URLRequest) {
 		guard let url = request.url else {
-			print("❌ ERROR: URL is nil")
+			AppLog.error("URLRequest URL is nil", category: "API")
 			return
 		}
 
@@ -770,22 +716,12 @@ final class APIService: IAPIService, @unchecked Sendable {
 			return
 		}
 
-		// DEBUG: Log for blocking endpoints specifically
-		if url.absoluteString.contains("blocked-users") {
-			print("🚫 DEBUG: Setting auth header for blocking endpoint: \(url.absoluteString)")
-		}
-
 		// Get the access token from keychain
 		guard
 			let accessTokenData = KeychainService.shared.load(key: "accessToken"),
 			let accessToken = String(data: accessTokenData, encoding: .utf8)
 		else {
-			print("⚠️ Missing access token for authenticated endpoint: \(url.absoluteString)")
-
-			// DEBUG: Extra logging for blocking endpoints
-			if url.absoluteString.contains("blocked-users") {
-				print("🚫 DEBUG: ❌ CRITICAL - No access token available for blocking request!")
-			}
+			AppLog.debug("Missing access token for authenticated endpoint: \(url.absoluteString)", category: "API")
 
 			// Check if we have a refresh token available
 			if let refreshTokenData = KeychainService.shared.load(key: "refreshToken"),
@@ -793,19 +729,16 @@ final class APIService: IAPIService, @unchecked Sendable {
 			{
 				// We have a refresh token, but we'll let the API call handle the refresh
 				// This will happen in the 401 handler in fetchData/sendData methods
-				print("🔄 Missing access token but refresh token exists - will refresh during API call")
+				AppLog.debug(
+					"Missing access token but refresh token exists - will refresh during API call", category: "API")
 			} else {
-				print("❌ ERROR: Missing both access token and refresh token in Keychain")
-				print("🔄 Will let API call fail and higher-level error handling manage re-authentication")
+				AppLog.warning(
+					"Missing both access token and refresh token in Keychain for \(url.absoluteString)", category: "API"
+				)
 				// Don't immediately sign out - let the API call fail and higher-level error handling
 				// manage re-authentication. This preserves OAuth credentials during onboarding.
 			}
 			return
-		}
-
-		// DEBUG: Log for blocking endpoints specifically
-		if url.absoluteString.contains("blocked-users") {
-			print("🚫 DEBUG: ✅ Successfully set Authorization header for blocking request")
 		}
 
 		// Set the auth headers
@@ -821,9 +754,8 @@ final class APIService: IAPIService, @unchecked Sendable {
 		let encoder = APIService.makeEncoder()
 		let encodedData = try encoder.encode(object)
 
-		// Debug: Log the request details
-		print("🔍 PATCH REQUEST: \(url.absoluteString)")
-		print("🔍 REQUEST BODY: \(String(data: encodedData, encoding: .utf8) ?? "Unable to convert to string")")
+		AppLog.debug(
+			"PATCH \(url.absoluteString) body: \(String(data: encodedData, encoding: .utf8) ?? "")", category: "API")
 
 		var request = URLRequest(url: url)
 		request.httpMethod = "PATCH"
@@ -844,13 +776,11 @@ final class APIService: IAPIService, @unchecked Sendable {
 			throw error
 		}
 
-		// Debug: Log the response details
-		print("🔍 RESPONSE: \(response)")
-		print("🔍 RESPONSE DATA: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
+		AppLog.debug("PATCH response status: \((response as? HTTPURLResponse)?.statusCode ?? -1)", category: "API")
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(url)"
-			print("❌ ERROR: HTTP request failed for \(url)")
+			AppLog.error("HTTP request failed for \(url)", category: "API")
 			throw APIError.failedHTTPRequest(
 				description: "The HTTP request has failed.")
 		}
@@ -864,10 +794,10 @@ final class APIService: IAPIService, @unchecked Sendable {
 
 			errorMessage =
 				"invalid status code \(httpResponse.statusCode) for \(url)"
-			print("❌ ERROR: Invalid status code \(httpResponse.statusCode) for \(url)")
+			AppLog.error("Invalid status code \(httpResponse.statusCode) for \(url)", category: "API")
 
 			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-				print("❌ ERROR DETAILS: \(errorJson)")
+				AppLog.debug("Error details: \(errorJson)", category: "API")
 
 				if httpResponse.statusCode == 400,
 					let message = errorJson["message"] as? String
@@ -891,10 +821,8 @@ final class APIService: IAPIService, @unchecked Sendable {
 		} catch {
 			errorMessage =
 				APIError.failedJSONParsing(url: url).localizedDescription
-			print("❌ ERROR: JSON parsing failed for \(url): \(error)")
-
-			print(
-				"❌ DATA THAT FAILED TO PARSE: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
+			AppLog.error("JSON parsing failed for \(url): \(error)", category: "API")
+			AppLog.debug("Response body: \(String(data: data, encoding: .utf8) ?? "")", category: "API")
 
 			throw APIError.failedJSONParsing(url: url)
 		}
@@ -927,12 +855,11 @@ final class APIService: IAPIService, @unchecked Sendable {
 
 	func updateProfilePicture(_ imageData: Data, userId: UUID) async throws -> BaseUserDTO {
 		guard let url = URL(string: APIService.baseURL + "users/\(userId)/profile-picture") else {
-			print("❌ ERROR: Failed to create URL for profile picture update")
+			AppLog.error("Failed to create URL for profile picture update", category: "API")
 			throw APIError.URLError
 		}
 
-		print("🔍 UPDATING PROFILE PICTURE: Starting request to \(url.absoluteString)")
-		print("🔍 REQUEST DATA SIZE: \(imageData.count) bytes")
+		AppLog.debug("Profile picture PATCH \(url.absoluteString) size: \(imageData.count) bytes", category: "API")
 
 		// Create the request
 		var request = URLRequest(url: url)
@@ -940,10 +867,8 @@ final class APIService: IAPIService, @unchecked Sendable {
 		request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
 		request.httpBody = imageData
 		setAuthHeader(request: &request)  // Set auth headers if needed
-		// Log request headers
-		print("🔍 REQUEST HEADERS: \(request.allHTTPHeaderFields ?? [:])")
 
-		// Perform the request with detailed logging
+		// Perform the request
 		let (data, response): (Data, URLResponse)
 		do {
 			(data, response) = try await URLSession.shared.data(for: request)
@@ -956,18 +881,9 @@ final class APIService: IAPIService, @unchecked Sendable {
 			throw error
 		}
 
-		print("🔍 RESPONSE RECEIVED: \(response)")
-
-		// Check if we can read the response as JSON or text
-		if let responseString = String(data: data, encoding: .utf8) {
-			print("🔍 RESPONSE DATA: \(responseString)")
-		} else {
-			print("🔍 RESPONSE DATA: Unable to convert to string (binary data of \(data.count) bytes)")
-		}
-
 		// Check the HTTP response
 		guard let httpResponse = response as? HTTPURLResponse else {
-			print("❌ ERROR: Failed HTTP request - unable to get HTTP response")
+			AppLog.error("Profile picture update: no HTTP response", category: "API")
 			throw APIError.failedHTTPRequest(description: "HTTP request failed")
 		}
 
@@ -979,11 +895,10 @@ final class APIService: IAPIService, @unchecked Sendable {
 				let newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
 				return try JSONDecoder().decode(BaseUserDTO.self, from: newData)
 			}
-			print("❌ ERROR: Invalid status code \(httpResponse.statusCode)")
+			AppLog.error("Profile picture update: invalid status \(httpResponse.statusCode)", category: "API")
 
-			// Try to parse error details
 			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-				print("❌ ERROR DETAILS: \(errorJson)")
+				AppLog.debug("Error details: \(errorJson)", category: "API")
 			}
 
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
@@ -995,9 +910,8 @@ final class APIService: IAPIService, @unchecked Sendable {
 			let updatedUser = try decoder.decode(BaseUserDTO.self, from: data)
 			return updatedUser
 		} catch {
-			print("❌ ERROR: Failed to decode user data after profile picture update: \(error)")
-			print(
-				"❌ DATA THAT FAILED TO PARSE: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
+			AppLog.error("Failed to decode user after profile picture update: \(error)", category: "API")
+			AppLog.debug("Response body: \(String(data: data, encoding: .utf8) ?? "")", category: "API")
 			throw APIError.failedJSONParsing(url: url)
 		}
 	}
@@ -1065,7 +979,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(url)"
-			print(errorMessage ?? "no error message to log")
+			AppLog.error(errorMessage ?? "no error message to log", category: "API")
 			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
 		}
 
@@ -1081,7 +995,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 			}
 
 			errorMessage = "Invalid status code \(httpResponse.statusCode) for \(url)"
-			print(errorMessage ?? "no error message to log")
+			AppLog.error(errorMessage ?? "no error message to log", category: "API")
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
 		}
 
@@ -1090,9 +1004,9 @@ final class APIService: IAPIService, @unchecked Sendable {
 
 	/// Refresh Token
 	fileprivate func handleRefreshToken() async throws -> String {
-		print("🔄 Attempting to refresh access token...")
+		AppLog.debug("Attempting to refresh access token", category: "API")
 		guard let url = URL(string: APIService.baseURL + "auth/refresh-token") else {
-			print("❌ ERROR: Failed to create refresh token URL")
+			AppLog.error("Failed to create refresh token URL", category: "API")
 			throw APIError.URLError
 		}
 
@@ -1100,8 +1014,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 			let refreshTokenData = KeychainService.shared.load(key: "refreshToken"),
 			let refreshToken = String(data: refreshTokenData, encoding: .utf8)
 		else {
-			print("❌ ERROR: Missing refresh token in Keychain - cannot refresh")
-			print("🔄 Logging out user due to missing refresh token")
+			AppLog.error("Missing refresh token in Keychain — signing out", category: "API")
 			// If refresh token is missing, immediately log out the user to prevent endless retry loops
 			await MainActor.run {
 				UserAuthViewModel.shared.signOut()
@@ -1109,7 +1022,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 			throw APIError.failedTokenSaving(tokenType: "refreshToken")
 		}
 
-		print("🔄 Making refresh token request...")
+		AppLog.debug("Making refresh token request", category: "API")
 		var request = URLRequest(url: url)
 		request.httpMethod = "POST"
 		request.addValue("Bearer \(refreshToken)", forHTTPHeaderField: "Authorization")
@@ -1128,16 +1041,14 @@ final class APIService: IAPIService, @unchecked Sendable {
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			let message = "HTTP request failed for refresh token endpoint"
-			print("❌ ERROR: \(message)")
+			AppLog.error(message, category: "API")
 			throw APIError.failedHTTPRequest(description: message)
 		}
 
-		print("🔄 Refresh token response status: \(httpResponse.statusCode)")
+		AppLog.debug("Refresh token response status: \(httpResponse.statusCode)", category: "API")
 
 		if httpResponse.statusCode == 401 {
-			// Refresh token is invalid/expired
-			print("❌ ERROR: Refresh token invalid (401) - token may be expired")
-			print("🔄 Clearing invalid tokens but preserving OAuth credentials for potential re-authentication")
+			AppLog.warning("Refresh token invalid (401)", category: "API")
 
 			// Clear the invalid tokens
 			let _ = KeychainService.shared.delete(key: "accessToken")
@@ -1154,48 +1065,46 @@ final class APIService: IAPIService, @unchecked Sendable {
 				?? httpResponse.allHeaderFields["authorization"] as? String
 			{
 				let cleanAccessToken = newAccessToken.replacingOccurrences(of: "Bearer ", with: "")
-				print("🔐 Received new access token, saving to keychain...")
+				AppLog.debug("Received new access token, saving to keychain", category: "API")
 
 				if let accessTokenData = cleanAccessToken.data(using: .utf8) {
 					if !KeychainService.shared.save(key: "accessToken", data: accessTokenData) {
-						print("❌ ERROR: Failed to save refreshed access token to keychain")
+						AppLog.error("Failed to save refreshed access token to keychain", category: "API")
 						throw APIError.failedTokenSaving(tokenType: "accessToken")
 					}
 					return "Bearer \(cleanAccessToken)"
 				} else {
-					print("❌ ERROR: Failed to convert access token to data")
+					AppLog.error("Failed to convert access token to data", category: "API")
 					throw APIError.failedTokenSaving(tokenType: "accessToken")
 				}
 			} else {
-				print("❌ ERROR: No access token found in refresh response headers")
+				AppLog.error("No access token in refresh response headers", category: "API")
 				throw APIError.failedHTTPRequest(description: "No access token in refresh response")
 			}
 		}
 
-		print("❌ ERROR: Unexpected status code \(httpResponse.statusCode) from refresh endpoint")
+		AppLog.error("Unexpected status code \(httpResponse.statusCode) from refresh endpoint", category: "API")
 
-		// Log response body for debugging
 		if let responseBody = String(data: data, encoding: .utf8) {
-			print("🔍 Refresh response body: \(responseBody)")
+			AppLog.debug("Refresh response body: \(responseBody)", category: "API")
 		}
 
 		throw APIError.failedHTTPRequest(description: "Failed to refresh token - status \(httpResponse.statusCode)")
 	}
 
 	fileprivate func retryRequest(request: inout URLRequest, bearerAccessToken: String) async throws -> Data {
-		// Retry the request with the new access token
-		print("🔄 Retrying request with new access token")
+		AppLog.debug("Retrying request with new access token", category: "API")
 		request.setValue(bearerAccessToken, forHTTPHeaderField: "Authorization")
 		let (newData, newResponse) = try await URLSession.shared.data(for: request)
 		guard let newHttpResponse = newResponse as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(request.url?.absoluteString ?? "unknown URL")"
-			print(errorMessage ?? "no error message to log")
+			AppLog.error(errorMessage ?? "no error message to log", category: "API")
 			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
 		}
 		guard (200...299).contains(newHttpResponse.statusCode) else {
 			errorMessage =
 				"Invalid status code \(newHttpResponse.statusCode) for \(request.url?.absoluteString ?? "unknown URL")"
-			print(errorMessage ?? "no error message to log")
+			AppLog.error(errorMessage ?? "no error message to log", category: "API")
 			throw APIError.invalidStatusCode(statusCode: newHttpResponse.statusCode)
 		}
 		return newData
@@ -1206,7 +1115,6 @@ final class APIService: IAPIService, @unchecked Sendable {
 
 		// Don't send validation request if there are no cached items to validate
 		if cachedItems.isEmpty {
-			print("No cached items to validate, returning empty response")
 			return [:]
 		}
 
@@ -1256,7 +1164,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 		// Validate the response
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(url)"
-			print(errorMessage ?? "no error message to log")
+			AppLog.error(errorMessage ?? "no error message to log", category: "API")
 			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
 		}
 
@@ -1266,7 +1174,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 		} else if httpResponse.statusCode != 200 {
 			errorStatusCode = httpResponse.statusCode
 			errorMessage = "invalid status code \(httpResponse.statusCode) for \(url)"
-			print(errorMessage ?? "no error message to log")
+			AppLog.error(errorMessage ?? "no error message to log", category: "API")
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
 		}
 
@@ -1306,9 +1214,12 @@ final class APIService: IAPIService, @unchecked Sendable {
 		if let message = errorMessage {
 			// Store the error message for the view model to use
 			self.errorMessage = message
-			print("API Error (\(statusCode)): \(message)")
+			AppLog.warning("API error \(statusCode): \(message)", category: "API")
+			if statusCode == 400 || statusCode == 422 {
+				return APIError.validationError(message: message)
+			}
 		} else {
-			print("API Error (\(statusCode)): No message available")
+			AppLog.warning("API error \(statusCode): (no message)", category: "API")
 		}
 
 		return APIError.invalidStatusCode(statusCode: statusCode)

@@ -174,7 +174,6 @@ struct CoreInputView: View {
 			.background(universalBackgroundColor(from: themeService, environment: colorScheme))
 		}
 		.navigationBarHidden(true)
-		.withAuthNavigation(viewModel)
 	}
 }
 

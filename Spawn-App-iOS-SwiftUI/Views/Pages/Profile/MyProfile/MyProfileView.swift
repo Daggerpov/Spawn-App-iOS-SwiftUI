@@ -382,7 +382,7 @@ struct MyProfileView: View {
 		let currentName = userAuth.spawnUser?.name ?? ""
 		let currentUsername = userAuth.spawnUser?.username ?? ""
 		if username != currentUsername || name != currentName {
-			await userAuth.spawnEditProfile(
+			let _ = await userAuth.spawnEditProfile(
 				username: username,
 				name: name
 			)

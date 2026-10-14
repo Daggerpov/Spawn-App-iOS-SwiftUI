@@ -386,7 +386,7 @@ struct FriendRowView: View {
 				shareProfile: { shareProfile(for: userForProfile) }
 			)
 			.background(universalBackgroundColor)
-			.presentationDetents([.height(364)])
+			.presentationDetents([.height(520)])
 		}
 		.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation) {
 			Button("Cancel", role: .cancel) {}

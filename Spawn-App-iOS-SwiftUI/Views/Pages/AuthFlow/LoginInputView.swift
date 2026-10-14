@@ -225,10 +225,20 @@ struct LoginInputView: View {
 		}
 		.background(universalBackgroundColor(from: themeService, environment: colorScheme))
 		.navigationBarHidden(true)
-		.withAuthNavigation(userAuth)
 		.onAppear {
 			// Reset any previous error state
 			userAuth.errorMessage = nil
+		}
+		.alert(item: $userAuth.authAlert) { alertType in
+			Alert(
+				title: Text(alertType.title),
+				message: Text(alertType.message),
+				dismissButton: .default(Text("OK")) {
+					if case .providerMismatch = alertType {
+						userAuth.resetState()
+					}
+				}
+			)
 		}
 		.alert("Login Error", isPresented: $showErrorAlert) {
 			Button("OK", role: .cancel) {}

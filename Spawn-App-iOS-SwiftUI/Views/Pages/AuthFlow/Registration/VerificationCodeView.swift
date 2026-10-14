@@ -22,46 +22,41 @@ struct VerificationCodeView: View {
 
 	var body: some View {
 		VStack(spacing: 0) {
-			// Navigation Bar - matches activity creation flow positioning
+			Spacer()
+			mainContent
+			Spacer()
+		}
+		.background(universalBackgroundColor(from: themeService, environment: colorScheme))
+		.safeAreaInset(edge: .top, spacing: 0) {
 			HStack {
 				UnifiedBackButton {
-					// Clear any error states when going back
 					userAuthViewModel.clearAllErrors()
 					dismiss()
 				}
 				Spacer()
 			}
 			.padding(.horizontal, 25)
-			.padding(.top, 16)
-			Spacer()
-			mainContent
-			Spacer()
+			.padding(.vertical, 16)
+			.background(universalBackgroundColor(from: themeService, environment: colorScheme))
 		}
-		.background(universalBackgroundColor(from: themeService, environment: colorScheme))
 		.onAppear {
 			viewModel.initialize()
 			focusedIndex = viewModel.focusedIndex
-			// Clear any previous error state when this view appears
 			userAuthViewModel.clearAllErrors()
 		}
 		.onDisappear {
 			viewModel.stopTimer()
 		}
-		.navigationBarHidden(true)
-	}
-
-	private var navigationBar: some View {
-		HStack {
-			UnifiedBackButton {
-				// Go back one step in the onboarding flow
-				dismiss()
+		.toolbar {
+			ToolbarItemGroup(placement: .keyboard) {
+				Spacer()
+				Button("Done") {
+					focusedIndex = nil
+					viewModel.focusedIndex = nil
+				}
 			}
-			Spacer()
 		}
-		.padding(.horizontal, 25)
-		.padding(.top, 16)
-		.background(universalBackgroundColor(from: themeService, environment: colorScheme))
-		.zIndex(1)
+		.navigationBarHidden(true)
 	}
 
 	private var mainContent: some View {
@@ -152,7 +147,6 @@ struct VerificationCodeView: View {
 		Binding(
 			get: { viewModel.code[index] },
 			set: { newValue in
-				// The custom text field handles validation, so just update the value
 				viewModel.code[index] = newValue
 			}
 		)
@@ -164,13 +158,25 @@ struct VerificationCodeView: View {
 				await viewModel.verifyCode()
 			}
 		}) {
-			OnboardingButtonCoreView("Verify") {
-				viewModel.isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
+			HStack {
+				Spacer()
+				Text("Verify")
+					.font(.onestSemiBold(size: 20))
+					.foregroundColor(.white)
+				Spacer()
 			}
+			.padding(.vertical, 16)
+			.background(
+				RoundedRectangle(cornerRadius: 16)
+					.fill(viewModel.isFormValid ? figmaIndigo : Color.gray.opacity(0.6))
+			)
+			.shadow(
+				color: Color.black.opacity(0.15),
+				radius: 8,
+				x: 0,
+				y: 4
+			)
 		}
-		.padding(.top, -16)
-		.padding(.bottom, -30)
-		.padding(.horizontal, -22)
 		.disabled(!viewModel.isFormValid)
 	}
 

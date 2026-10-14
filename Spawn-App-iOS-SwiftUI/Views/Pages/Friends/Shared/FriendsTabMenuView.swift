@@ -19,20 +19,12 @@ struct FriendsTabMenuView: View {
 	@Environment(\.dismiss) private var dismiss
 	@State private var isLoading: Bool = true
 
-	private var firstName: String {
-		if let name = user.name, !name.isEmpty {
-			return name.components(separatedBy: " ").first ?? user.username ?? "User"
-		}
-		return user.username ?? "User"
-	}
-
 	var body: some View {
-		FriendsTabMenuContainer {
+		SheetMenuContainer {
 			if isLoading {
 				loadingContent
 			} else {
 				FriendsTabMenuContent(
-					user: user,
 					showReportDialog: $showReportDialog,
 					showBlockDialog: $showBlockDialog,
 					showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
@@ -53,57 +45,12 @@ struct FriendsTabMenuView: View {
 	}
 
 	private var loadingContent: some View {
-		VStack(spacing: 16) {
-			ForEach(0..<4) { _ in
-				HStack {
-					RoundedRectangle(cornerRadius: 4)
-						.fill(Color.gray.opacity(0.2))
-						.frame(height: 20)
-				}
-				.padding(.horizontal, 16)
-				.padding(.vertical, 8)
-			}
-
-			Divider()
-
-			Button(action: { dismiss() }) {
-				Text("Cancel")
-					.font(.headline)
-					.foregroundColor(universalAccentColor)
-					.frame(maxWidth: .infinity)
-					.padding(.vertical, 16)
-			}
-			.background(universalBackgroundColor)
-			.cornerRadius(12)
-		}
-		.background(universalBackgroundColor)
-		.redacted(reason: .placeholder)
-		.shimmering()
-	}
-}
-
-// Container view that provides the background and layout
-private struct FriendsTabMenuContainer<Content: View>: View {
-	let content: Content
-
-	init(@ViewBuilder content: () -> Content) {
-		self.content = content()
-	}
-
-	var body: some View {
-		VStack(spacing: 8) {
-			content
-				.background(universalBackgroundColor)
-				.cornerRadius(12)
-		}
-		.fixedSize(horizontal: false, vertical: true)
-		.background(universalBackgroundColor)
+		SheetMenuLoadingPlaceholder(rowCount: 4, dismiss: dismiss)
 	}
 }
 
 // Content view that contains the actual menu items
 private struct FriendsTabMenuContent: View {
-	let user: Nameable
 	@Binding var showReportDialog: Bool
 	@Binding var showBlockDialog: Bool
 	@Binding var showRemoveFriendConfirmation: Bool
@@ -113,15 +60,8 @@ private struct FriendsTabMenuContent: View {
 	let navigateToProfile: () -> Void
 	let dismiss: DismissAction
 
-	private var firstName: String {
-		if let name = user.name, !name.isEmpty {
-			return name.components(separatedBy: " ").first ?? user.username ?? "User"
-		}
-		return user.username ?? "User"
-	}
-
 	var body: some View {
-		VStack(spacing: 0) {
+		VStack(spacing: 16) {
 			menuItems
 				.background(universalBackgroundColor)
 
@@ -132,7 +72,7 @@ private struct FriendsTabMenuContent: View {
 
 	private var menuItems: some View {
 		VStack(spacing: 0) {
-			menuItem(
+			SheetMenuRow(
 				icon: "person.crop.circle",
 				text: "View Profile",
 				color: universalAccentColor
@@ -144,7 +84,7 @@ private struct FriendsTabMenuContent: View {
 
 			Divider()
 
-			menuItem(
+			SheetMenuRow(
 				icon: "tag",
 				text: "Add to Activity Type",
 				color: universalAccentColor
@@ -156,7 +96,7 @@ private struct FriendsTabMenuContent: View {
 
 			Divider()
 
-			menuItem(
+			SheetMenuRow(
 				icon: "link",
 				text: "Copy profile URL",
 				color: universalAccentColor
@@ -168,7 +108,7 @@ private struct FriendsTabMenuContent: View {
 
 			Divider()
 
-			menuItem(
+			SheetMenuRow(
 				icon: "square.and.arrow.up",
 				text: "Share this Profile",
 				color: universalAccentColor
@@ -180,7 +120,7 @@ private struct FriendsTabMenuContent: View {
 
 			Divider()
 
-			menuItem(
+			SheetMenuRow(
 				icon: "exclamationmark.triangle",
 				text: "Report",
 				color: .red
@@ -192,7 +132,7 @@ private struct FriendsTabMenuContent: View {
 
 			Divider()
 
-			menuItem(
+			SheetMenuRow(
 				icon: "hand.raised.slash",
 				text: "Block",
 				color: .red
@@ -204,7 +144,7 @@ private struct FriendsTabMenuContent: View {
 
 			Divider()
 
-			menuItem(
+			SheetMenuRow(
 				icon: "person.badge.minus",
 				text: "Remove Friend",
 				color: .red
@@ -218,36 +158,7 @@ private struct FriendsTabMenuContent: View {
 	}
 
 	private var cancelButton: some View {
-		Button(action: { dismiss() }) {
-			Text("Cancel")
-				.font(.headline)
-				.foregroundColor(universalAccentColor)
-				.frame(maxWidth: .infinity)
-				.padding(.vertical, 16)
-		}
-		.background(universalBackgroundColor)
-		.cornerRadius(12)
-	}
-
-	private func menuItem(
-		icon: String,
-		text: String,
-		color: Color,
-		action: @escaping () -> Void
-	) -> some View {
-		Button(action: action) {
-			HStack {
-				Image(systemName: icon)
-					.foregroundColor(color)
-
-				Text(text)
-					.foregroundColor(color)
-
-				Spacer()
-			}
-			.padding(.vertical, 16)
-			.padding(.horizontal, 16)
-		}
+		SheetMenuCancelRow(dismiss: dismiss)
 	}
 }
 

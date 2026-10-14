@@ -127,11 +127,10 @@ struct ActivityCardPopupView: View {
 		.cornerRadius(isExpanded ? 0 : 20)
 		.shadow(radius: isExpanded ? 0 : 20)
 		.ignoresSafeArea(
-			(showingChatroom || showingParticipants) && isExpanded
-				? .all : .container,
+			.container,  // Not .all—respect keyboard so text input stays visible when typing
 			edges: (showingChatroom || showingParticipants) && isExpanded
 				? .all : .bottom
-		)  // Fill entire screen when chatroom/participants are maximized
+		)
 		.frame(maxWidth: .infinity, maxHeight: isExpanded ? .infinity : nil)  // Only expand to fill when expanded
 		.sheet(isPresented: $showActivityMenu) {
 			ActivityMenuView(
