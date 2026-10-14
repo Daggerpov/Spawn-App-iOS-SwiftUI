@@ -861,9 +861,14 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 		}
 
 		if status != .active {
-			// Navigate to the "Continue Onboarding" view first
-			// The user will see this view and can choose to continue or return to login
-			navigateTo(.onboardingContinuation)
+			// Only show the "Welcome back / continue where you left off" screen when the user
+			// is resuming mid-flow (past email verification). Brand-new email signups are
+			// `emailVerified` and should go straight into account setup like OAuth registration.
+			if status == .emailVerified {
+				navigateOnStatus()
+			} else {
+				navigateTo(.onboardingContinuation)
+			}
 		} else {
 			// For active users, navigate directly to feed
 			navigateOnStatus()

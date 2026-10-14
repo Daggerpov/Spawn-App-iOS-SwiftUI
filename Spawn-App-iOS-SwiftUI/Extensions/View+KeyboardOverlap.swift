@@ -1,10 +1,10 @@
-import Combine
 import SwiftUI
 import UIKit
 
 /// Tracks how much of the screen bottom is covered by the keyboard (screen coordinates).
 /// Use when ancestors apply `.ignoresSafeArea(.keyboard)` so system avoidance does not run.
-final class KeyboardOverlapHeight: ObservableObject {
+/// `ObservableObject` updates and notification handlers run on the main queue only.
+final class KeyboardOverlapHeight: ObservableObject, @unchecked Sendable {
 	@Published var value: CGFloat = 0
 
 	private var observers: [NSObjectProtocol] = []
@@ -14,36 +14,44 @@ final class KeyboardOverlapHeight: ObservableObject {
 		observers.append(
 			center.addObserver(forName: UIResponder.keyboardWillChangeFrameNotification, object: nil, queue: .main) {
 				[weak self] notification in
-				self?.update(from: notification)
+				let (frame, duration) = Self.keyboardFrameValues(from: notification)
+				// `queue: .main` runs on the main queue; only Sendable values cross into MainActor work.
+				MainActor.assumeIsolated {
+					self?.applyKeyboardFrame(frame: frame, animationDuration: duration)
+				}
 			}
 		)
 		observers.append(
 			center.addObserver(forName: UIResponder.keyboardWillHideNotification, object: nil, queue: .main) {
 				[weak self] notification in
-				self?.update(from: notification)
+				let (frame, duration) = Self.keyboardFrameValues(from: notification)
+				MainActor.assumeIsolated {
+					self?.applyKeyboardFrame(frame: frame, animationDuration: duration)
+				}
 			}
 		)
+	}
+
+	private static func keyboardFrameValues(from notification: Notification) -> (frame: CGRect?, duration: Double) {
+		let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect
+		let duration =
+			(notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue
+			?? 0.25
+		return (frame, duration)
 	}
 
 	deinit {
 		observers.forEach { NotificationCenter.default.removeObserver($0) }
 	}
 
-	private func update(from notification: Notification) {
-		guard
-			let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect
-		else {
-			return
-		}
+	@MainActor
+	private func applyKeyboardFrame(frame: CGRect?, animationDuration: Double) {
+		guard let frame else { return }
 
 		let screenHeight = UIScreen.main.bounds.height
 		let overlap = max(0, screenHeight - frame.minY)
 
-		let duration =
-			(notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue
-			?? 0.25
-
-		withAnimation(.easeOut(duration: duration)) {
+		withAnimation(.easeOut(duration: animationDuration)) {
 			value = overlap
 		}
 	}

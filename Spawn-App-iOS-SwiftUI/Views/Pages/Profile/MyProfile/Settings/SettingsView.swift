@@ -4,6 +4,10 @@ struct SettingsView: View {
 	@Environment(\.presentationMode) var presentationMode
 	@ObservedObject var userAuth = UserAuthViewModel.shared
 
+	/// Extra scroll padding below the last row so it clears the floating tab bar (layout only reserves
+	/// 92pt; the overlaid pill sits higher). Tuned so scrolling works without a large empty gap.
+	private static let tabBarScrollClearance: CGFloat = 48
+
 	var body: some View {
 		VStack(spacing: 0) {
 			// Header
@@ -28,7 +32,8 @@ struct SettingsView: View {
 			.padding(.horizontal, 25)
 			.padding(.vertical, 12)
 
-			// Settings sections
+			// Settings sections — `maxHeight: .infinity` is required so the scroll view is
+			// bounded by the screen; otherwise it sizes to content height, clips, and does not scroll.
 			ScrollView {
 				VStack(spacing: 24) {
 					// Account Settings
@@ -152,6 +157,40 @@ struct SettingsView: View {
 						}
 					}
 
+					// Contact Us
+					SettingsSection(title: "Contact Us") {
+						if let userId = userAuth.spawnUser?.id, let email = userAuth.spawnUser?.email {
+							NavigationLink(destination: FeedbackView(userId: userId, email: email)) {
+								HStack {
+									Image(systemName: "message")
+										.font(.system(size: 18))
+										.foregroundColor(universalAccentColor)
+										.frame(width: 24, height: 24)
+
+									Text("Send us feedback")
+										.font(.body)
+										.foregroundColor(universalAccentColor)
+
+									Spacer()
+
+									Image(systemName: "chevron.right")
+										.font(.system(size: 14))
+										.foregroundColor(.gray)
+								}
+								.padding(.horizontal)
+								.frame(height: 44)
+							}
+						} else {
+							SettingsRow(icon: "message", title: "Send us feedback", showDisclosure: true) {
+								// Fallback if user data not available
+							}
+						}
+
+						SettingsRow(icon: "star", title: "Rate Spawn", showDisclosure: false) {
+							// Navigate to rate app
+						}
+					}
+
 					// Legal
 					SettingsSection(title: "Legal") {
 						NavigationLink(destination: TermsAndConditionsView()) {
@@ -197,40 +236,6 @@ struct SettingsView: View {
 						}
 					}
 
-					// Contact Us
-					SettingsSection(title: "Contact Us") {
-						if let userId = userAuth.spawnUser?.id, let email = userAuth.spawnUser?.email {
-							NavigationLink(destination: FeedbackView(userId: userId, email: email)) {
-								HStack {
-									Image(systemName: "message")
-										.font(.system(size: 18))
-										.foregroundColor(universalAccentColor)
-										.frame(width: 24, height: 24)
-
-									Text("Send us feedback")
-										.font(.body)
-										.foregroundColor(universalAccentColor)
-
-									Spacer()
-
-									Image(systemName: "chevron.right")
-										.font(.system(size: 14))
-										.foregroundColor(.gray)
-								}
-								.padding(.horizontal)
-								.frame(height: 44)
-							}
-						} else {
-							SettingsRow(icon: "message", title: "Send us feedback", showDisclosure: true) {
-								// Fallback if user data not available
-							}
-						}
-
-						SettingsRow(icon: "star", title: "Rate Spawn", showDisclosure: false) {
-							// Navigate to rate app
-						}
-					}
-
 					// Socials
 					SettingsSection(title: "Socials") {
 						SettingsRow(
@@ -245,8 +250,11 @@ struct SettingsView: View {
 
 				}
 				.padding(.horizontal)
+				.padding(.bottom, Self.tabBarScrollClearance)
 			}
+			.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 		}
+		.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 		.background(universalBackgroundColor)
 		.navigationBarHidden(true)
 		.alert(item: $userAuth.activeAlert) { alertType in
