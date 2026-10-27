@@ -634,7 +634,13 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 				await MainActor.run {
 					// Handle specific API errors - during onboarding, NEVER navigate away, only show alerts
 					self.spawnUser = nil
-					if case .invalidStatusCode(let statusCode) = error {
+					if case .serviceUnavailable = error {
+						// Railway fallback 404: back-end is offline, not a missing account
+						print("❌ Spawn back-end unavailable during OAuth sign-in")
+						self.isLoggedIn = false
+						self.authAlert = .serverUnavailable
+						self.errorMessage = AuthAlertType.serverUnavailable.message
+					} else if case .invalidStatusCode(let statusCode) = error {
 						if statusCode == 404 {
 							if self.isOnboarding {
 								// New OAuth user not yet in Spawn — expected during registration
@@ -685,8 +691,14 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 
 	// Helper method to handle API errors consistently without navigation during onboarding
 	private func handleApiError(_ error: APIError) {
-		// For 404 errors (user doesn't exist), show user-friendly error without navigation
-		if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
+		if case .serviceUnavailable = error {
+			// Back-end is offline (hosting fallback 404) - don't claim the account is missing
+			self.spawnUser = nil
+			self.authAlert = .serverUnavailable
+			self.errorMessage = AuthAlertType.serverUnavailable.message
+			print("Spawn back-end unavailable - showing server unavailable error")
+		} else if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
+			// For 404 errors (user doesn't exist), show user-friendly error without navigation
 			self.spawnUser = nil
 			self.authAlert = .unknownError(
 				"We couldn't find your account. Please check your credentials or create a new account.")

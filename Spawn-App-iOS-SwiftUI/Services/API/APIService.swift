@@ -168,6 +168,12 @@ final class APIService: IAPIService, @unchecked Sendable {
 
 		// Special handling for 404 in auth endpoints
 		if httpResponse.statusCode == 404 {
+			// Railway's edge 404s when the back-end is offline; don't mistake that for "not found"
+			if isServiceUnavailable(httpResponse, data: data) {
+				errorStatusCode = 404
+				throw createAPIError(for: httpResponse, data: data)
+			}
+
 			// If this is an auth endpoint and we get a 404, this likely means the user doesn't exist yet
 			if finalURL.absoluteString.contains("/auth/") {
 				errorStatusCode = 404
@@ -187,7 +193,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 			// Retry the request with the new access token
 			data = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
 		} else if httpResponse.statusCode != 200 {
-			throw createAPIError(statusCode: httpResponse.statusCode, data: data)
+			throw createAPIError(for: httpResponse, data: data)
 		}
 
 		// Handle empty responses
@@ -319,7 +325,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 				}
 			}
 
-			throw createAPIError(statusCode: httpResponse.statusCode, data: data)
+			throw createAPIError(for: httpResponse, data: data)
 		}
 		// Handle auth tokens if present
 		try handleAuthTokens(from: httpResponse, for: finalURL)
@@ -598,7 +604,7 @@ final class APIService: IAPIService, @unchecked Sendable {
 		// Check for success - 200 OK or 201 Created
 		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
 			errorStatusCode = httpResponse.statusCode
-			throw createAPIError(statusCode: httpResponse.statusCode, data: data)
+			throw createAPIError(for: httpResponse, data: data)
 		}
 
 		// Parse the response
@@ -1208,7 +1214,25 @@ final class APIService: IAPIService, @unchecked Sendable {
 		return nil
 	}
 
-	private func createAPIError(statusCode: Int, data: Data) -> APIError {
+	/// Railway's edge answers with a 404 (`x-railway-fallback: true`, body "Application not found")
+	/// when no deployment is serving our domain, i.e. the back-end is offline rather than the resource missing.
+	private func isServiceUnavailable(_ response: HTTPURLResponse, data: Data) -> Bool {
+		guard response.statusCode == 404 else { return false }
+		if let fallback = response.value(forHTTPHeaderField: "x-railway-fallback"),
+			fallback.lowercased() == "true"
+		{
+			return true
+		}
+		return parseErrorMessage(from: data)?.contains("Application not found") == true
+	}
+
+	private func createAPIError(for response: HTTPURLResponse, data: Data) -> APIError {
+		let statusCode = response.statusCode
+		if isServiceUnavailable(response, data: data) {
+			AppLog.warning("API error \(statusCode): back-end unavailable (hosting fallback response)", category: "API")
+			return APIError.serviceUnavailable
+		}
+
 		let errorMessage = parseErrorMessage(from: data)
 
 		if let message = errorMessage {

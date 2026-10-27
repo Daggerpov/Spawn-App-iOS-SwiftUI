@@ -34,6 +34,7 @@ enum AuthAlertType: Identifiable, Equatable {
 	case networkError
 	case unknownError(String)
 	case accountFoundSigningIn  // New case for graceful OAuth handling
+	case serverUnavailable
 
 	var id: Int {
 		switch self {
@@ -49,6 +50,7 @@ enum AuthAlertType: Identifiable, Equatable {
 		case .networkError: return 9
 		case .unknownError: return 10
 		case .accountFoundSigningIn: return 11
+		case .serverUnavailable: return 12
 		}
 	}
 
@@ -78,6 +80,8 @@ enum AuthAlertType: Identifiable, Equatable {
 			return "Unexpected Error"
 		case .accountFoundSigningIn:
 			return "Account Found"
+		case .serverUnavailable:
+			return "Service Temporarily Unavailable"
 		}
 	}
 
@@ -109,6 +113,8 @@ enum AuthAlertType: Identifiable, Equatable {
 			return formatUserFriendlyError(message)
 		case .accountFoundSigningIn:
 			return "We found your existing account and are signing you in automatically."
+		case .serverUnavailable:
+			return "Spawn's servers are temporarily unavailable. Please try again later."
 		}
 	}
 
