@@ -38,6 +38,7 @@ struct SheetMenuRow: View {
 			HStack(spacing: 10) {
 				Image(systemName: icon)
 					.font(.system(size: 20, weight: .medium))
+					.frame(width: 24, height: 24)
 					.foregroundColor(color)
 
 				Text(text)
@@ -49,7 +50,9 @@ struct SheetMenuRow: View {
 			.padding(.horizontal, 16)
 			.padding(.vertical, 12)
 			.frame(maxWidth: .infinity, minHeight: 63, alignment: .leading)
+			.contentShape(Rectangle())
 		}
+		.buttonStyle(.plain)
 	}
 }
 
@@ -58,24 +61,10 @@ struct SheetMenuCancelRow: View {
 	let dismiss: DismissAction
 
 	var body: some View {
-		Button(action: { dismiss() }) {
-			HStack(spacing: 10) {
-				Image(systemName: "xmark")
-					.font(.system(size: 20, weight: .medium))
-					.foregroundColor(universalAccentColor)
-
-				Text("Cancel")
-					.font(.system(size: 17, weight: .medium))
-					.foregroundColor(universalAccentColor)
-
-				Spacer()
-			}
-			.padding(.horizontal, 16)
-			.padding(.vertical, 12)
-			.frame(maxWidth: .infinity, minHeight: 63, alignment: .leading)
+		SheetMenuRow(icon: "xmark", text: "Cancel", color: universalAccentColor) {
+			dismiss()
 		}
 		.background(universalBackgroundColor)
-		.cornerRadius(12)
 	}
 }
 
