@@ -17,36 +17,51 @@ struct ProfileMenuView: View {
 	let copyProfileURL: () -> Void
 	let shareProfile: () -> Void
 	@Environment(\.dismiss) private var dismiss
-	@State private var isLoading: Bool = true
+	// Measure the rows so the sheet fits both friend and non-friend menus.
+	@State private var contentHeight: CGFloat = 0
 
-	var body: some View {
-		SheetMenuContainer {
-			if isLoading {
-				loadingContent
-			} else {
-				ProfileMenuContent(
-					showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
-					showReportDialog: $showReportDialog,
-					showBlockDialog: $showBlockDialog,
-					showAddToActivityType: $showAddToActivityType,
-					isFriend: isFriend,
-					copyProfileURL: copyProfileURL,
-					shareProfile: shareProfile,
-					dismiss: dismiss
-				)
-			}
-		}
-		.background(universalBackgroundColor)
-		.task {
-			// Simulate a very brief loading state to ensure smooth animation
-			try? await Task.sleep(for: .seconds(0.1))
-			isLoading = false
-		}
-
+	private var initialHeight: CGFloat {
+		// Six actions for friends, four for other users, plus Cancel and dividers.
+		let actionCount = isFriend ? 6 : 4
+		return CGFloat(actionCount + 1) * 63 + CGFloat(actionCount)
 	}
 
-	private var loadingContent: some View {
-		SheetMenuLoadingPlaceholder(rowCount: 5, dismiss: dismiss)
+	var body: some View {
+		ScrollView {
+			ProfileMenuContent(
+				showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
+				showReportDialog: $showReportDialog,
+				showBlockDialog: $showBlockDialog,
+				showAddToActivityType: $showAddToActivityType,
+				isFriend: isFriend,
+				copyProfileURL: copyProfileURL,
+				shareProfile: shareProfile,
+				dismiss: dismiss
+			)
+			.background {
+				GeometryReader { geometry in
+					Color.clear.preference(key: ProfileMenuHeightKey.self, value: geometry.size.height)
+				}
+			}
+		}
+		.scrollBounceBehavior(.basedOnSize)
+		.background(universalBackgroundColor)
+		.presentationBackground(universalBackgroundColor)
+		.presentationDragIndicator(.hidden)
+		.presentationDetents([.height(contentHeight > 0 ? contentHeight : initialHeight)])
+		.onPreferenceChange(ProfileMenuHeightKey.self) { height in
+			if height > 0 {
+				contentHeight = height
+			}
+		}
+	}
+}
+
+private struct ProfileMenuHeightKey: PreferenceKey {
+	static var defaultValue: CGFloat { 0 }
+
+	static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+		value = max(value, nextValue())
 	}
 }
 
@@ -62,9 +77,11 @@ private struct ProfileMenuContent: View {
 	let dismiss: DismissAction
 
 	var body: some View {
-		VStack(spacing: 16) {
+		VStack(spacing: 0) {
 			menuItems
 				.background(universalBackgroundColor)
+
+			Divider()
 
 			cancelButton
 		}
