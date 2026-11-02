@@ -123,7 +123,9 @@ struct ActivityCardPopupView: View {
 				mainCardContent
 			}
 		}
-		.background(activityColor.opacity(0.80).blendMode(.multiply))
+		.background {
+			activityColor.opacity(0.80).blendMode(.multiply)
+		}
 		.cornerRadius(isExpanded ? 0 : 20)
 		.shadow(radius: isExpanded ? 0 : 20)
 		.ignoresSafeArea(
