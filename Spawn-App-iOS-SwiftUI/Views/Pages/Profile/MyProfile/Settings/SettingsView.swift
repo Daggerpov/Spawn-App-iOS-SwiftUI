@@ -92,7 +92,7 @@ struct SettingsView: View {
 					SettingsSection(title: "Notifications") {
 						NavigationLink(destination: NotificationSettingsView()) {
 							HStack {
-								Image(systemName: "bell.fill")
+								Image(systemName: "bell")
 									.font(.system(size: 18))
 									.foregroundColor(universalAccentColor)
 									.frame(width: 24, height: 24)
@@ -116,7 +116,7 @@ struct SettingsView: View {
 					SettingsSection(title: "Privacy & Safety") {
 						NavigationLink(destination: BlockedUsersView()) {
 							HStack {
-								Image(systemName: "person.crop.circle.badge.xmark")
+								Image(systemName: "person.slash")
 									.font(.system(size: 18))
 									.foregroundColor(universalAccentColor)
 									.frame(width: 24, height: 24)
@@ -186,7 +186,7 @@ struct SettingsView: View {
 							}
 						}
 
-						SettingsRow(icon: "star", title: "Rate Spawn", showDisclosure: false) {
+						SettingsRow(icon: "star", title: "Rate Spawn", showDisclosure: true) {
 							// Navigate to rate app
 						}
 					}
@@ -250,6 +250,7 @@ struct SettingsView: View {
 
 				}
 				.padding(.horizontal)
+				.padding(.top, 12)
 				.padding(.bottom, Self.tabBarScrollClearance)
 			}
 			.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
