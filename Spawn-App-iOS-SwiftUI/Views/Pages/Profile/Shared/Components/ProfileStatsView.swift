@@ -24,7 +24,7 @@ struct ProfileStatsView: View {
 	}
 
 	var body: some View {
-		HStack(spacing: 48) {
+		HStack(alignment: .top, spacing: 48) {
 			VStack(spacing: 4) {
 				HStack {
 					Image(systemName: "link")
@@ -35,7 +35,7 @@ struct ProfileStatsView: View {
 						.font(.system(size: 20, weight: .bold))
 						.foregroundColor(statsColor)
 				}
-				Text("People\nmet")
+				Text("People met")
 					.font(.caption2)
 					.multilineTextAlignment(.center)
 					.foregroundColor(statsColor)
@@ -51,7 +51,7 @@ struct ProfileStatsView: View {
 						.font(.system(size: 20, weight: .bold))
 						.foregroundColor(statsColor)
 				}
-				Text("Spawns\nmade")
+				Text("Spawns made")
 					.font(.caption2)
 					.multilineTextAlignment(.center)
 					.foregroundColor(statsColor)
@@ -67,7 +67,7 @@ struct ProfileStatsView: View {
 						.font(.system(size: 20, weight: .bold))
 						.foregroundColor(statsColor)
 				}
-				Text("Spawns\njoined")
+				Text("Spawns joined")
 					.font(.caption2)
 					.multilineTextAlignment(.center)
 					.foregroundColor(statsColor)
