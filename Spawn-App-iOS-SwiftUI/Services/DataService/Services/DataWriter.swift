@@ -17,7 +17,7 @@ import Foundation
 @MainActor
 protocol IDataWriter {
 	/// Perform a write operation with a response body
-	func write<RequestBody: Encodable & Sendable, Response: Decodable>(
+	func write<RequestBody: Encodable & Sendable, Response: Decodable & Sendable>(
 		_ operation: WriteOperation<RequestBody>,
 		invalidateCache: Bool
 	) async -> DataResult<Response>
@@ -45,7 +45,7 @@ final class DataWriter: IDataWriter {
 	}
 
 	/// Perform a write operation with a response body
-	func write<RequestBody: Encodable & Sendable, Response: Decodable>(
+	func write<RequestBody: Encodable & Sendable, Response: Decodable & Sendable>(
 		_ operation: WriteOperation<RequestBody>,
 		invalidateCache: Bool = true
 	) async -> DataResult<Response> {
@@ -126,7 +126,7 @@ final class DataWriter: IDataWriter {
 	// MARK: - Private Helper Methods
 
 	/// Perform a write operation with response
-	private func performWrite<RequestBody: Encodable & Sendable, Response: Decodable>(
+	private func performWrite<RequestBody: Encodable & Sendable, Response: Decodable & Sendable>(
 		method: HTTPMethod,
 		url: URL,
 		body: RequestBody?,

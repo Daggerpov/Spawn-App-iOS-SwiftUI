@@ -8,6 +8,7 @@
 import SwiftUI
 
 extension Circle {
+	@MainActor
 	func CircularButton(
 		systemName: String, buttonActionCallback: @escaping @Sendable @MainActor () -> Void,
 		width: CGFloat? = 17.5, height: CGFloat? = 17.5,
