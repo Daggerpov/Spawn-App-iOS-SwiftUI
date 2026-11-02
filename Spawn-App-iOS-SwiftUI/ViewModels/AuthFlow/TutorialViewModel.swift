@@ -29,7 +29,8 @@ final class TutorialViewModel {
 	private func loadTutorialState() {
 		let hasCompleted = userDefaults.bool(forKey: hasCompletedTutorialKey)
 
-		if hasCompleted {
+		// Skip the tutorial in mock mode so its overlay doesn't block navigation
+		if hasCompleted || MockAPIService.isMocking {
 			tutorialState = .completed
 		} else {
 			// Check server for tutorial completion status
