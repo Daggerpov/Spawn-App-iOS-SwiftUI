@@ -37,7 +37,10 @@ final class DataReader: IDataReader {
 	private let apiService: IAPIService
 	private let appCache: AppCache
 
-	init(apiService: IAPIService = APIService(), appCache: AppCache = AppCache.shared) {
+	init(
+		apiService: IAPIService = MockAPIService.isMocking ? MockAPIService() : APIService(),
+		appCache: AppCache = AppCache.shared
+	) {
 		self.apiService = apiService
 		self.appCache = appCache
 	}
