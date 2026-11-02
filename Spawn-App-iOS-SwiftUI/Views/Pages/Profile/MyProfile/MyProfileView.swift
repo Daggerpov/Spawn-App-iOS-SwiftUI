@@ -194,15 +194,6 @@ struct MyProfileView: View {
 				}
 			}
 			.scrollIndicators(.hidden)
-			// iOS 26 nav bars are transparent, so the avatar scrolls under the status bar and menu button
-			.if(
-				ProcessInfo.processInfo.isOperatingSystemAtLeast(
-					OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 0))
-			) { view in
-				view
-					.toolbarBackground(universalBackgroundColor, for: .navigationBar)
-					.toolbarBackground(.visible, for: .navigationBar)
-			}
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
 				ToolbarItem(placement: .principal) {

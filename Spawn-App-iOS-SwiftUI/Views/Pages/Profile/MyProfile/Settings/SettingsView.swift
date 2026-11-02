@@ -186,7 +186,7 @@ struct SettingsView: View {
 							}
 						}
 
-						SettingsRow(icon: "star", title: "Rate Spawn", showDisclosure: true) {
+						SettingsRow(icon: "star", title: "Rate Spawn", showDisclosure: false) {
 							// Navigate to rate app
 						}
 					}
