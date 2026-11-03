@@ -5,8 +5,8 @@ struct SettingsView: View {
 	@ObservedObject var userAuth = UserAuthViewModel.shared
 
 	/// Extra scroll padding below the last row so it clears the floating tab bar (layout only reserves
-	/// 92pt; the overlaid pill sits higher). Tuned so scrolling works without a large empty gap.
-	private static let tabBarScrollClearance: CGFloat = 48
+	/// 92pt; the overlaid pill sits higher). Matches the 100pt bottom padding used by My Profile.
+	private static let tabBarScrollClearance: CGFloat = 100
 
 	var body: some View {
 		VStack(spacing: 0) {

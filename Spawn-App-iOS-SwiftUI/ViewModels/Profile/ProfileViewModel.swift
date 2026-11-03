@@ -38,6 +38,9 @@ final class ProfileViewModel {
 	var profileActivities: [ProfileActivityDTO] = []
 	var isLoadingUserActivities: Bool = false
 
+	// UI state for controlling tab bar visibility (hidden while Edit Profile is open)
+	var isEditingProfile: Bool = false
+
 	private let dataService: DataService
 	private var cancellables = Set<AnyCancellable>()
 	private let notificationService = InAppNotificationService.shared

@@ -3,6 +3,7 @@ import SwiftUI
 // New version that accepts external binding
 struct WithTabBarBinding<Content>: View where Content: View {
 	@Binding var selection: Tabs
+	var profileViewModel: ProfileViewModel
 	@ViewBuilder var content: (Tabs) -> Content
 	var activityCreationViewModel = ActivityCreationViewModel.shared
 
@@ -14,10 +15,14 @@ struct WithTabBarBinding<Content>: View where Content: View {
 		return buttonHeight + tabBarPadding + extraSpacing
 	}
 
-	// Check if we should hide the tab bar (for location selection screen)
+	// Check if we should hide the tab bar (for location selection and edit profile screens)
 	private var shouldHideTabBar: Bool {
-		// Hide tab bar only when on activities tab and specifically on location selection step
-		return selection == .activities && activityCreationViewModel.isOnLocationSelectionStep
+		// Hide tab bar when on activities tab and specifically on location selection step
+		if selection == .activities && activityCreationViewModel.isOnLocationSelectionStep {
+			return true
+		}
+		// Hide tab bar while editing the profile so it doesn't cover the bottom fields
+		return selection == .profile && profileViewModel.isEditingProfile
 	}
 
 	// Calculate adaptive bottom padding based on screen size and safe area
