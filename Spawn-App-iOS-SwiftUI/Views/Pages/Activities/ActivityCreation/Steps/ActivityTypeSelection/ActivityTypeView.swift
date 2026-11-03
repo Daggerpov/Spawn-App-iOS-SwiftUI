@@ -149,20 +149,19 @@ extension ActivityTypeView {
 		HStack {
 			// Invisible chevron to balance layout (no back button on this screen)
 			Image(systemName: "chevron.left")
-				.font(.title3)
+				.font(.onestSemiBold(size: 20))
 				.foregroundColor(.clear)
 
 			Spacer()
 
 			Text("What are you up to?")
-				.font(.title3)
-				.fontWeight(.semibold)
+				.font(.onestSemiBold(size: 20))
 
 			Spacer()
 
 			// Invisible chevron to balance the left side
 			Image(systemName: "chevron.left")
-				.font(.title3)
+				.font(.onestSemiBold(size: 20))
 				.foregroundColor(.clear)
 		}
 		.padding(.horizontal, screenEdgePadding())
@@ -202,7 +201,8 @@ extension ActivityTypeView {
 
 				createNewActivityButton
 			}
-			.padding(screenEdgePadding())
+			// No top padding: the header's bottom padding and the VStack spacing already separate the grid
+			.padding([.horizontal, .bottom], screenEdgePadding())
 		}
 	}
 

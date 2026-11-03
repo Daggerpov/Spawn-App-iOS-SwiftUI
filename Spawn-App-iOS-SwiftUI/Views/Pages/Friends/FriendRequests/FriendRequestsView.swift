@@ -67,8 +67,8 @@ struct FriendRequestsView: View {
 			Spacer()
 
 			Text("Friend Requests")
-				.font(.title3)
-				.fontWeight(.semibold)
+				.font(.onestSemiBold(size: 20))
+				.foregroundColor(universalAccentColor)
 
 			Spacer()
 
