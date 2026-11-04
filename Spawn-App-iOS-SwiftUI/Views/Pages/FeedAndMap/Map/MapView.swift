@@ -33,6 +33,7 @@ struct MapView: View {
 	@State private var isMapLoaded = false
 	@State private var hasInitialized = false
 	@State private var hasCenteredOnUser = false
+	@State private var hasFitActivities = false
 	@State private var mapInitializationTask: Task<Void, Never>?
 	@State private var viewLifecycleState: ViewLifecycleState = .notAppeared
 
@@ -66,6 +67,7 @@ struct MapView: View {
 				showsUserLocation: true,
 				annotationItems: filteredActivities,
 				isLocationSelectionMode: false,
+				overlayInsets: Self.overlayInsets,
 				onMapWillChange: nil,
 				onMapDidChange: nil,
 				onActivityTap: handleActivityTap,
@@ -111,6 +113,14 @@ struct MapView: View {
 				return
 			}
 			updateFilteredActivities()
+
+			// Activities can load after the map first centers; bring them into view once when they do
+			let center = locationManager.userLocation ?? region.center
+			if !hasFitActivities && !nearbyActivityCoordinates(around: center).isEmpty {
+				withAnimation {
+					fitRegion(around: center)
+				}
+			}
 		}
 		.onChange(of: selectedTimeFilter) { _, _ in
 			guard shouldProcessUpdates else {
@@ -132,6 +142,13 @@ struct MapView: View {
 	private static let maxReasonableSpan: Double = 0.5
 	/// Default span for user-centered view
 	private static let defaultSpan: Double = 0.01
+	/// Activities farther than this are left out of the initial fit so the map stays zoomed in
+	private static let maxFitDistance: CLLocationDistance = 3_000
+	/// Room around the fitted pins so they don't sit on the edge of the visible map
+	private static let fitPaddingFactor: Double = 1.5
+	/// Space the floating UI takes over the map, from the safe area. The top clears the 3D and
+	/// location buttons; the bottom clears the tab bar and lines the Maps logo up with the filter button.
+	private static let overlayInsets = UIEdgeInsets(top: 120, left: 16, bottom: 80, right: 16)
 
 	// MARK: - Lifecycle Methods
 
@@ -176,13 +193,7 @@ struct MapView: View {
 			} else if !hasCenteredOnUser, let userLocation = locationManager.userLocation {
 				// Handle case where view reappears after location became available
 				withAnimation {
-					region = MKCoordinateRegion(
-						center: userLocation,
-						span: MKCoordinateSpan(
-							latitudeDelta: Self.defaultSpan,
-							longitudeDelta: Self.defaultSpan
-						)
-					)
+					fitRegion(around: userLocation)
 				}
 				hasCenteredOnUser = true
 				print("📍 MapView: Centered on user location (on reappear)")
@@ -247,21 +258,16 @@ struct MapView: View {
 	private func setInitialRegion() {
 		// Priority 1: User location
 		if let userLocation = locationManager.userLocation {
-			region = MKCoordinateRegion(
-				center: userLocation,
-				span: MKCoordinateSpan(
-					latitudeDelta: Self.defaultSpan,
-					longitudeDelta: Self.defaultSpan
-				)
-			)
+			fitRegion(around: userLocation)
 			hasCenteredOnUser = true
 			print(
 				"📍 MapView: Set initial region to user location (\(userLocation.latitude), \(userLocation.longitude))")
 			return
 		}
 
-		// Priority 2: Default location - wait for user location rather than zooming to activities
-		// This prevents the zoomed-out view when activities are spread across the map
+		// Priority 2: Default location - wait for user location rather than zooming out to all activities.
+		// Only activities near the default location are fit, so the map stays zoomed in
+		fitRegion(around: region.center)
 		print(
 			"📍 MapView: Using default region (user location not yet available, authorization: \(locationManager.authorizationStatus.rawValue))"
 		)
@@ -273,16 +279,45 @@ struct MapView: View {
 		guard !hasCenteredOnUser else { return }
 
 		withAnimation {
-			region = MKCoordinateRegion(
-				center: userLocation,
-				span: MKCoordinateSpan(
-					latitudeDelta: Self.defaultSpan,
-					longitudeDelta: Self.defaultSpan
-				)
-			)
+			fitRegion(around: userLocation)
 		}
 		hasCenteredOnUser = true
 		print("📍 Auto-centered to user location")
+	}
+
+	/// Shows `center` together with the activity pins near it, never tighter than the default span
+	private func fitRegion(around center: CLLocationCoordinate2D) {
+		let nearbyCoordinates = nearbyActivityCoordinates(around: center)
+		let coordinates = [center] + nearbyCoordinates
+		let latitudes = coordinates.map(\.latitude)
+		let longitudes = coordinates.map(\.longitude)
+		let minLatitude = latitudes.min() ?? center.latitude
+		let maxLatitude = latitudes.max() ?? center.latitude
+		let minLongitude = longitudes.min() ?? center.longitude
+		let maxLongitude = longitudes.max() ?? center.longitude
+
+		region = MKCoordinateRegion(
+			center: CLLocationCoordinate2D(
+				latitude: (minLatitude + maxLatitude) / 2,
+				longitude: (minLongitude + maxLongitude) / 2
+			),
+			span: MKCoordinateSpan(
+				latitudeDelta: max(Self.defaultSpan, (maxLatitude - minLatitude) * Self.fitPaddingFactor),
+				longitudeDelta: max(Self.defaultSpan, (maxLongitude - minLongitude) * Self.fitPaddingFactor)
+			)
+		)
+		hasFitActivities = !nearbyCoordinates.isEmpty
+	}
+
+	/// Coordinates of the shown activities within `maxFitDistance` of `center`
+	private func nearbyActivityCoordinates(around center: CLLocationCoordinate2D) -> [CLLocationCoordinate2D] {
+		let centerLocation = CLLocation(latitude: center.latitude, longitude: center.longitude)
+		return filteredActivities.compactMap { activity in
+			guard let location = activity.location else { return nil }
+			let activityLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
+			guard activityLocation.distance(from: centerLocation) <= Self.maxFitDistance else { return nil }
+			return activityLocation.coordinate
+		}
 	}
 
 	// MARK: - Activity Filtering

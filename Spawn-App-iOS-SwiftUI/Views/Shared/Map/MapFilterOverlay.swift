@@ -63,23 +63,9 @@ struct MapFilterOverlay: View {
 								showFilterOverlay.toggle()
 							}
 						}) {
-							HStack {
-								Circle()
-									.fill(figmaGreen)
-									.frame(width: 10, height: 10)
-								Text(selectedTimeFilter.rawValue)
-									.font(.onestMedium(size: 16))
-									.foregroundColor(universalAccentColor)
-							}
-							.frame(maxWidth: .infinity, alignment: .center)
-							.padding(.vertical, 12)
-							.padding(.horizontal, 16)
-							.background(universalBackgroundColor)
-							.cornerRadius(20)
-							.shadow(radius: 2)
+							filterLabel(for: selectedTimeFilter, isSelected: true)
 						}
 					}
-					.frame(maxWidth: 155)
 					.padding(.trailing, 20)
 				}
 				.padding(.bottom, 80)
@@ -94,16 +80,31 @@ struct MapFilterOverlay: View {
 				showFilterOverlay = false
 			}
 		}) {
-			HStack {
-				Text(filter.rawValue)
-					.font(.onestMedium(size: 16))
-					.foregroundColor(universalAccentColor)
-			}
-			.frame(maxWidth: .infinity, alignment: .center)
-			.padding(.vertical, 12)
-			.padding(.horizontal, 16)
-			.background(universalBackgroundColor)
-			.cornerRadius(20)
+			filterLabel(for: filter, isSelected: false)
 		}
+	}
+
+	/// Shared pill so every option lines up: same width, same dot column, text leading aligned
+	private func filterLabel(for filter: TimeFilter, isSelected: Bool) -> some View {
+		HStack(spacing: 8) {
+			Circle()
+				.fill(isSelected ? figmaGreen : Color.clear)
+				.frame(width: 10, height: 10)
+			// Sized for the longest option so the pills keep one width
+			ZStack(alignment: .leading) {
+				ForEach(TimeFilter.allCases, id: \.self) { option in
+					Text(option.rawValue).hidden()
+				}
+				Text(filter.rawValue)
+			}
+			.font(.onestMedium(size: 16))
+			.foregroundColor(universalAccentColor)
+			.lineLimit(1)
+		}
+		.padding(.vertical, 12)
+		.padding(.horizontal, 16)
+		.background(universalBackgroundColor)
+		.cornerRadius(20)
+		.shadow(radius: 2)
 	}
 }
