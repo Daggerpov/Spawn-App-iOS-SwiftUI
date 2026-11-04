@@ -29,86 +29,105 @@ struct NotificationSettingsView: View {
 			.padding(.horizontal, 25)
 			.padding(.vertical, 12)
 
-			// Content
-			Form {
-				Section(header: Text("Notification Status")) {
-					HStack {
-						Image(systemName: notificationService.isNotificationsEnabled ? "bell.fill" : "bell.slash.fill")
+			// Settings sections
+			ScrollView {
+				VStack(spacing: 24) {
+					SettingsSection(title: "Notification Status") {
+						HStack {
+							Image(
+								systemName: notificationService.isNotificationsEnabled ? "bell.fill" : "bell.slash.fill"
+							)
+							.font(.system(size: 18))
 							.foregroundColor(notificationService.isNotificationsEnabled ? .green : .red)
-							.font(.title2)
+							.frame(width: 24, height: 24)
 
-						VStack(alignment: .leading, spacing: 4) {
-							Text(
-								notificationService.isNotificationsEnabled
-									? "Notifications Enabled" : "Notifications Disabled"
-							)
-							.font(.headline)
+							VStack(alignment: .leading, spacing: 2) {
+								Text(
+									notificationService.isNotificationsEnabled
+										? "Notifications Enabled" : "Notifications Disabled"
+								)
+								.font(.body)
+								.foregroundColor(universalAccentColor)
 
-							Text(
-								notificationService.isNotificationsEnabled
-									? "You will receive notifications from Spawn"
-									: "Enable notifications in your device settings"
-							)
-							.font(.caption)
-							.foregroundColor(.gray)
-						}
-						.padding(.leading, 8)
-					}
-					.padding(.vertical, 8)
-
-					if !notificationService.isNotificationsEnabled {
-						Button("Enable Notifications") {
-							requestPermission()
-						}
-						.foregroundColor(universalAccentColor)
-					}
-				}
-
-				if notificationService.isNotificationsEnabled {
-					Section(header: Text("Notification Types")) {
-						if notificationService.isLoadingPreferences {
-							HStack {
-								Spacer()
-								ProgressView()
-									.progressViewStyle(CircularProgressViewStyle())
-								Spacer()
+								Text(
+									notificationService.isNotificationsEnabled
+										? "You will receive notifications from Spawn"
+										: "Enable notifications in your device settings"
+								)
+								.font(.caption)
+								.foregroundColor(.gray)
 							}
-						} else {
-							Toggle("Friend Requests", isOn: $notificationService.friendRequestsEnabled)
+
+							Spacer()
+						}
+						.padding(.horizontal)
+						.padding(.vertical, 10)
+
+						if !notificationService.isNotificationsEnabled {
+							SettingsRow(icon: "bell.badge", title: "Enable Notifications") {
+								requestPermission()
+							}
+						}
+					}
+
+					if notificationService.isNotificationsEnabled {
+						SettingsSection(title: "Notification Types") {
+							if notificationService.isLoadingPreferences {
+								ProgressView()
+									.frame(maxWidth: .infinity)
+									.frame(height: 44)
+							} else {
+								SettingsToggleRow(
+									icon: "person.badge.plus", title: "Friend Requests",
+									isOn: $notificationService.friendRequestsEnabled
+								)
 								.onChange(of: notificationService.friendRequestsEnabled) {
 									updatePreferences()
 								}
 
-							Toggle("Activity Invites", isOn: $notificationService.activityInvitesEnabled)
+								SettingsToggleRow(
+									icon: "envelope", title: "Activity Invites",
+									isOn: $notificationService.activityInvitesEnabled
+								)
 								.onChange(of: notificationService.activityInvitesEnabled) {
 									updatePreferences()
 								}
 
-							Toggle("Activity Updates", isOn: $notificationService.activityUpdatesEnabled)
+								SettingsToggleRow(
+									icon: "calendar", title: "Activity Updates",
+									isOn: $notificationService.activityUpdatesEnabled
+								)
 								.onChange(of: notificationService.activityUpdatesEnabled) {
 									updatePreferences()
 								}
 
-							Toggle("Chat Messages", isOn: $notificationService.chatMessagesEnabled)
+								SettingsToggleRow(
+									icon: "message", title: "Chat Messages",
+									isOn: $notificationService.chatMessagesEnabled
+								)
 								.onChange(of: notificationService.chatMessagesEnabled) {
 									updatePreferences()
 								}
+							}
 						}
-					}
 
-					Section(header: Text("Test Notifications")) {
-						Button("Test In-App Notification") {
-							testInAppNotification()
-						}
-						.foregroundColor(universalAccentColor)
+						#if DEBUG
+							SettingsSection(title: "Test Notifications") {
+								SettingsRow(icon: "app.badge", title: "Test In-App Notification") {
+									testInAppNotification()
+								}
 
-						Button("Test Push Notification (Local)") {
-							testPushNotification()
-						}
-						.foregroundColor(universalAccentColor)
+								SettingsRow(icon: "bell.badge", title: "Test Push Notification (Local)") {
+									testPushNotification()
+								}
+							}
+						#endif
 					}
 				}
+				.padding(.horizontal)
+				.padding(.top, 12)
 			}
+			.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 			.task {
 				notificationService.checkNotificationStatus()
 				await notificationService.fetchNotificationPreferences()
@@ -119,6 +138,7 @@ struct NotificationSettingsView: View {
 				}
 			}
 		}
+		.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 		.background(universalBackgroundColor)
 		.navigationBarHidden(true)
 		.alert(isPresented: $isShowingPermissionAlert) {
@@ -158,28 +178,30 @@ struct NotificationSettingsView: View {
 		}
 	}
 
-	private func testInAppNotification() {
-		// Test the in-app notification directly
-		InAppNotificationManager.shared.showNotification(
-			title: "Test Notification",
-			message: "This is a test in-app notification to verify the fix works!",
-			type: .success,
-			duration: 5.0
-		)
-	}
+	#if DEBUG
+		private func testInAppNotification() {
+			// Test the in-app notification directly
+			InAppNotificationManager.shared.showNotification(
+				title: "Test Notification",
+				message: "This is a test in-app notification to verify the fix works!",
+				type: .success,
+				duration: 5.0
+			)
+		}
 
-	private func testPushNotification() {
-		// Test by simulating a push notification payload
-		let testPayload: [AnyHashable: Any] = [
-			"type": "friend-request",
-			"senderName": "Test User",
-			"senderId": UUID().uuidString,
-			"requestId": UUID().uuidString,
-		]
+		private func testPushNotification() {
+			// Test by simulating a push notification payload
+			let testPayload: [AnyHashable: Any] = [
+				"type": "friend-request",
+				"senderName": "Test User",
+				"senderId": UUID().uuidString,
+				"requestId": UUID().uuidString,
+			]
 
-		// Simulate what happens when a push notification is received while app is in foreground
-		InAppNotificationManager.shared.showNotificationFromPushData(testPayload)
-	}
+			// Simulate what happens when a push notification is received while app is in foreground
+			InAppNotificationManager.shared.showNotificationFromPushData(testPayload)
+		}
+	#endif
 }
 
 @available(iOS 17, *)
