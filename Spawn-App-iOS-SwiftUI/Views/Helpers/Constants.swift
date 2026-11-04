@@ -187,20 +187,14 @@ let opacity75: CGFloat = 0.75
 let opacity90: CGFloat = 0.90
 
 // MARK: - Activity Colors (using new design system)
+// Trimmed to the four colors Figma defines gradients for (see ActivityGradient).
 let activityRedHexCode: String = colorsRed600
-let activityOrangeHexCode: String = "#FF6B35"  // Custom orange not in design system
-let activityIndigoHexCode: String = colorsIndigo600
-let activityGreenHexCode: String = colorsGreen600
 let activityPinkHexCode: String = colorsPink500
-let activityTealHexCode: String = colorsTeal500
+let activityGreenHexCode: String = colorsGreen600
 let activityBlueHexCode: String = colorsBlue600
-let activityPurpleHexCode: String = colorsPurple600
-let activityIndigoDarkHexCode: String = colorsIndigo800
 
 let activityColorHexCodes: [String] = [
-	activityRedHexCode, activityOrangeHexCode, activityIndigoHexCode,
-	activityGreenHexCode, activityPinkHexCode, activityTealHexCode,
-	activityBlueHexCode, activityPurpleHexCode, activityIndigoDarkHexCode,
+	activityRedHexCode, activityPinkHexCode, activityGreenHexCode, activityBlueHexCode,
 ]
 let activityColors = activityColorHexCodes.map { colorHexCode in
 	Color(hex: colorHexCode)

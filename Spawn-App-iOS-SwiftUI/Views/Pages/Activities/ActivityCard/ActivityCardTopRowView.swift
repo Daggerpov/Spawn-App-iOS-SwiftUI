@@ -9,8 +9,8 @@ import SwiftUI
 
 struct ActivityCardTopRowView: View {
 	@ObservedObject var activity: FullFeedActivityDTO
-	let subtitleFontSize: CGFloat = 14
-	let subtitleColor: Color = .white.opacity(0.85)
+	let subtitleFontSize: CGFloat = 13
+	let subtitleColor: Color = .white.opacity(0.8)
 	let viewModel: ActivityInfoViewModel
 
 	// Optional binding to control tab selection for current user navigation
@@ -44,7 +44,7 @@ struct ActivityCardTitleView: View {
 	var body: some View {
 		// TODO: make this title editable
 		Text(activityTitle)
-			.font(.onestBold(size: 24))
+			.font(.onestSemiBold(size: 20))
 			.foregroundColor(.white)
 	}
 }

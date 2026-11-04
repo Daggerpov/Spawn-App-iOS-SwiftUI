@@ -19,17 +19,8 @@ final class ActivityColorService: ObservableObject {
 	private var nextColorIndex: Int = 0
 
 	// MARK: - Constants
-	private let availableColors: [Color] = [
-		Color(hex: "#FD4E4C"),  // Red
-		Color(hex: "#FF6B35"),  // Orange
-		Color(hex: "#536AEE"),  // Indigo
-		Color(hex: "#1AB979"),  // Green
-		Color(hex: "#ED64A6"),  // Pink
-		Color(hex: "#38B2AC"),  // Teal
-		Color(hex: "#1D85E7"),  // Blue
-		Color(hex: "#703CE5"),  // Purple
-		Color(hex: "#242CBB"),  // Dark Indigo
-	]
+	// Red, pink, green and blue: the four colors Figma defines gradients for (see ActivityGradient).
+	private let availableColors: [Color] = activityColorHexCodes.map { Color(hex: $0) }
 
 	private enum CacheKeys {
 		static let activityColors = "activityColors"
@@ -135,7 +126,8 @@ final class ActivityColorService: ObservableObject {
 			let colorDict = try? JSONDecoder().decode([String: String].self, from: colorsData)
 		{
 			for (uuidString, hexString) in colorDict {
-				if let uuid = UUID(uuidString: uuidString) {
+				// Skip colors from the old 9-color palette so those activities get a current color
+				if let uuid = UUID(uuidString: uuidString), activityColorHexCodes.contains(hexString.uppercased()) {
 					activityColors[uuid] = Color(hex: hexString)
 				}
 			}
@@ -154,7 +146,7 @@ final class ActivityColorService: ObservableObject {
 		if let usageData = UserDefaults.standard.data(forKey: usageKey),
 			let usageDict = try? JSONDecoder().decode([String: Int].self, from: usageData)
 		{
-			for (hexString, count) in usageDict {
+			for (hexString, count) in usageDict where activityColorHexCodes.contains(hexString.uppercased()) {
 				colorUsageCount[Color(hex: hexString)] = count
 			}
 		}
