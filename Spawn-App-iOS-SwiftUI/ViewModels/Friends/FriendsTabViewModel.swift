@@ -830,6 +830,30 @@ final class FriendsTabViewModel {
 
 	// MARK: - User Management
 
+	/// Report a user
+	func reportUser(reporterUserId: UUID, reportedUserId: UUID, reportType: ReportType, description: String) async {
+		let reportDTO = CreateReportedContentDTO(
+			reporterUserId: reporterUserId,
+			contentId: reportedUserId,
+			contentType: .user,
+			reportType: reportType,
+			description: description
+		)
+
+		// Use DataService with WriteOperationType
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
+			.reportUser(report: reportDTO)
+		)
+
+		switch result {
+		case .success:
+			InAppNotificationService.shared.showSuccess(.userReported)
+		case .failure(let error):
+			InAppNotificationService.shared.showError(
+				error, resource: .user, operation: .report)
+		}
+	}
+
 	/// Block a user
 	func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
 		// Use DataService with WriteOperationType

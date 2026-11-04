@@ -401,24 +401,31 @@ struct FriendRowView: View {
 			ReportUserDrawer(
 				user: userForProfile,
 				onReport: { reportType, description in
-					// Handle report user action
-					// TODO: Implement report functionality
+					if let currentUserId = userAuth.spawnUser?.id {
+						Task {
+							await viewModel.reportUser(
+								reporterUserId: currentUserId,
+								reportedUserId: userForProfile.id,
+								reportType: reportType,
+								description: description
+							)
+						}
+					}
 				}
 			)
 			.presentationDetents([.medium, .large])
 			.presentationDragIndicator(.visible)
 		}
 		.alert("Block User", isPresented: $showBlockDialog) {
-			TextField("Reason for blocking", text: $blockReason)
+			TextField("Reason (optional)", text: $blockReason)
 			Button("Cancel", role: .cancel) {
 				blockReason = ""
 			}
 			Button("Block", role: .destructive) {
-				if let currentUserId = userAuth.spawnUser?.id,
-					!blockReason.isEmpty
-				{
+				if let currentUserId = userAuth.spawnUser?.id {
 					Task {
-						await blockUser(blockerId: currentUserId, blockedId: userForProfile.id, reason: blockReason)
+						await viewModel.blockUser(
+							blockerId: currentUserId, blockedId: userForProfile.id, reason: blockReason)
 						blockReason = ""
 					}
 				}
@@ -488,25 +495,6 @@ struct FriendRowView: View {
 					topController?.present(activityViewController, animated: true, completion: nil)
 				}
 			}
-		}
-	}
-
-	// Block user functionality
-	private func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
-		do {
-			let reportingService = ReportingService()
-			try await reportingService.blockUser(
-				blockerId: blockerId,
-				blockedId: blockedId,
-				reason: reason
-			)
-
-			// Refresh friends cache to remove the blocked user from friends list
-			let _: DataResult<[FullFriendUserDTO]> = await DataService.shared.read(
-				.friends(userId: blockerId), cachePolicy: .apiOnly)
-
-		} catch {
-			print("Failed to block user: \(error.localizedDescription)")
 		}
 	}
 }
