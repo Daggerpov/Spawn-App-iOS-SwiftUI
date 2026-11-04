@@ -10,6 +10,7 @@ import SwiftUI
 struct ChatMessageActionsModifier: ViewModifier {
 	let message: FullActivityChatMessageDTO
 	let isFromCurrentUser: Bool
+	let onToggleLike: () -> Void
 	let onDelete: () -> Void
 
 	@State private var showMessageMenu = false
@@ -21,8 +22,12 @@ struct ChatMessageActionsModifier: ViewModifier {
 	@ObservedObject private var userAuth = UserAuthViewModel.shared
 
 	private var actions: [ChatMessageMenuAction] {
-		// You can delete your own messages, and report everyone else's
-		isFromCurrentUser ? [.delete] : [.report]
+		// You can delete your own messages, and like or report everyone else's
+		if isFromCurrentUser {
+			return [.delete]
+		}
+		let isLiked = userAuth.spawnUser.map { message.isLiked(by: $0.id) } ?? false
+		return [.like(isLiked: isLiked), .report]
 	}
 
 	func body(content: Content) -> some View {
@@ -64,6 +69,8 @@ struct ChatMessageActionsModifier: ViewModifier {
 		pendingAction = nil
 
 		switch action {
+		case .like:
+			onToggleLike()
 		case .report:
 			showReportDialog = true
 		case .delete:
@@ -92,10 +99,16 @@ extension View {
 	func chatMessageActions(
 		for message: FullActivityChatMessageDTO,
 		isFromCurrentUser: Bool,
+		onToggleLike: @escaping () -> Void,
 		onDelete: @escaping () -> Void
 	) -> some View {
 		modifier(
-			ChatMessageActionsModifier(message: message, isFromCurrentUser: isFromCurrentUser, onDelete: onDelete)
+			ChatMessageActionsModifier(
+				message: message,
+				isFromCurrentUser: isFromCurrentUser,
+				onToggleLike: onToggleLike,
+				onDelete: onDelete
+			)
 		)
 	}
 }
