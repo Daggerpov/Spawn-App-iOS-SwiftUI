@@ -338,6 +338,11 @@ struct UnifiedMapView: UIViewRepresentable {
 				return nil
 			}
 
+			// Figma "Map View - Zoom Out" (node 333:1352): overlapping pins merge into one pin with a count
+			if let cluster = annotation as? MKClusterAnnotation {
+				return clusterView(for: cluster, in: mapView)
+			}
+
 			let identifier = "ActivityAnnotation"
 			var annotationView = mapView.dequeueReusableAnnotationView(
 				withIdentifier: identifier
@@ -350,6 +355,7 @@ struct UnifiedMapView: UIViewRepresentable {
 				)
 				annotationView?.canShowCallout = false
 				annotationView?.isEnabled = true
+				annotationView?.clusteringIdentifier = Self.activityClusterID
 			} else {
 				annotationView?.annotation = annotation
 			}
@@ -374,9 +380,36 @@ struct UnifiedMapView: UIViewRepresentable {
 			return annotationView
 		}
 
+		private static let activityClusterID = "ActivityCluster"
+
+		private func clusterView(for cluster: MKClusterAnnotation, in mapView: MKMapView) -> MKAnnotationView {
+			let identifier = "ActivityClusterAnnotation"
+			let view =
+				mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
+				?? MKAnnotationView(annotation: cluster, reuseIdentifier: identifier)
+			view.annotation = cluster
+			view.canShowCallout = false
+			view.isEnabled = true
+			view.image = MapAnnotationHelpers.createCustomPinImage(
+				icon: "\(cluster.memberAnnotations.count)",
+				color: UIColor(Color(hex: colorsIndigo600))
+			)
+			if let image = view.image {
+				view.centerOffset = CGPoint(x: 0, y: -image.size.height / 2)
+			}
+			return view
+		}
+
 		func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
 			// Handle activity selection
 			guard !parent.isLocationSelectionMode else { return }
+
+			// Tapping a cluster zooms in far enough to split it into its pins
+			if let cluster = view.annotation as? MKClusterAnnotation {
+				mapView.showAnnotations(cluster.memberAnnotations, animated: true)
+				mapView.deselectAnnotation(cluster, animated: false)
+				return
+			}
 
 			if let activityAnnotation = view.annotation as? ActivityAnnotation,
 				let activity = parent.annotationItems.first(where: {
