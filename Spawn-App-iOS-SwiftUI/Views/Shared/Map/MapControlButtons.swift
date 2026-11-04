@@ -66,8 +66,6 @@ struct MapControlButtons: View {
 							)
 					}
 					.buttonStyle(PlainButtonStyle())
-					.disabled(locationManager.userLocation == nil)
-					.opacity(locationManager.userLocation == nil ? 0.5 : 1.0)
 				}
 				.shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
 				.padding(.trailing, 16)
@@ -88,6 +86,9 @@ struct MapControlButtons: View {
 
 	private func handleCenterOnUser() {
 		guard let userLocation = locationManager.userLocation else {
+			// No fix yet: ask for one instead of showing a disabled button.
+			// The map centers on the user once the location arrives.
+			requestUserLocation()
 			return
 		}
 
@@ -122,6 +123,19 @@ struct MapControlButtons: View {
 		hapticFeedback(.medium)
 		withAnimation(.easeInOut(duration: 0.75)) {
 			region = newRegion
+		}
+	}
+
+	private func requestUserLocation() {
+		switch locationManager.authorizationStatus {
+		case .notDetermined:
+			locationManager.requestLocationPermission()
+		case .denied, .restricted:
+			if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+				UIApplication.shared.open(settingsURL)
+			}
+		default:
+			locationManager.startLocationUpdates()
 		}
 	}
 

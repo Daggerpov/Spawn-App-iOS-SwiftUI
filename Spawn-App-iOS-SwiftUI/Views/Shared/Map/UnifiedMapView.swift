@@ -18,6 +18,9 @@ struct UnifiedMapView: UIViewRepresentable {
 	let showsUserLocation: Bool
 	var annotationItems: [FullFeedActivityDTO]
 	let isLocationSelectionMode: Bool
+	/// Space taken by UI floating over the map (controls, tab bar), measured from the safe area.
+	/// Keeps the Maps logo, legal link and compass clear of that UI, and regions are framed inside it.
+	var overlayInsets: UIEdgeInsets = .zero
 
 	// MARK: - Callbacks
 	var onMapWillChange: (() -> Void)?
@@ -60,6 +63,12 @@ struct UnifiedMapView: UIViewRepresentable {
 		configuration.pointOfInterestFilter = .includingAll
 		mapView.preferredConfiguration = configuration
 
+		// MKMapView keeps its logo, legal link and compass inside the layout margins, and fits regions in them
+		if overlayInsets != .zero {
+			mapView.layoutMargins = overlayInsets
+		}
+		context.coordinator.lastOverlayInsets = overlayInsets
+
 		// Set initial region
 		let regionToSet: MKCoordinateRegion
 		if isValidRegion(region) {
@@ -77,7 +86,7 @@ struct UnifiedMapView: UIViewRepresentable {
 				)
 			)
 		}
-		mapView.setRegion(regionToSet, animated: false)
+		applyRegion(regionToSet, to: mapView, animated: false)
 		context.coordinator.lastSetRegion = regionToSet
 
 		// Force initial render and tile loading
@@ -98,6 +107,11 @@ struct UnifiedMapView: UIViewRepresentable {
 			context.coordinator.parent = self
 		}
 
+		if context.coordinator.lastOverlayInsets != overlayInsets {
+			mapView.layoutMargins = overlayInsets
+			context.coordinator.lastOverlayInsets = overlayInsets
+		}
+
 		// CRITICAL: Detect if MKMapView has zoomed out to an unreasonable level
 		// This can happen during tab switching or system memory pressure
 		let currentMapSpan = mapView.region.span.latitudeDelta
@@ -106,14 +120,14 @@ struct UnifiedMapView: UIViewRepresentable {
 		if isMapZoomedOutTooFar && isValidRegion(region) && region.span.latitudeDelta <= Self.maxReasonableSpan {
 			// Force reset to the binding's region
 			print("⚠️ UnifiedMapView: Detected MKMapView zoom anomaly (span: \(currentMapSpan)), forcing reset")
-			mapView.setRegion(region, animated: false)
+			applyRegion(region, to: mapView, animated: false)
 			context.coordinator.lastSetRegion = region
 			return
 		}
 
 		// Update region if significantly changed and valid
 		if shouldUpdateRegion(mapView: mapView, context: context) {
-			mapView.setRegion(region, animated: true)
+			applyRegion(region, to: mapView, animated: true)
 			context.coordinator.lastSetRegion = region
 		}
 
@@ -161,6 +175,17 @@ struct UnifiedMapView: UIViewRepresentable {
 			&& region.span.longitudeDelta > 0
 			&& region.span.latitudeDelta.isFinite
 			&& region.span.longitudeDelta.isFinite
+	}
+
+	/// Sets the region. MKMapView fits it inside the layout margins, which only works once the map
+	/// has a size, so a region set before layout is set again right after it
+	private func applyRegion(_ region: MKCoordinateRegion, to mapView: MKMapView, animated: Bool) {
+		mapView.setRegion(region, animated: animated)
+		guard overlayInsets != .zero, mapView.bounds.isEmpty else { return }
+		DispatchQueue.main.async { [weak mapView] in
+			guard let mapView, !mapView.bounds.isEmpty else { return }
+			mapView.setRegion(region, animated: false)
+		}
 	}
 
 	/// Determines if the region should be updated based on significant changes
@@ -251,6 +276,7 @@ struct UnifiedMapView: UIViewRepresentable {
 		var lastSetRegion: MKCoordinateRegion?
 		var last3DMode: Bool = false
 		var lastAnnotationIDs: Set<UUID> = []
+		var lastOverlayInsets: UIEdgeInsets = .zero
 		var hasReportedLoad = false
 		private var isValid: Bool = true  // Track if coordinator is still valid
 
