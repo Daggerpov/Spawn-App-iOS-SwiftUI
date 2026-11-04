@@ -55,5 +55,11 @@ struct OtherUserMessageView: View {
 			.padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
 			.background(Color.white.opacity(0.8))  // Figma: rgba(255,255,255,0.8)
 			.cornerRadius(12)
+			.overlay(alignment: .bottomTrailing) {
+				ChatMessageLikesBadge(message: message)
+					.offset(x: 6, y: 12)
+			}
+			// Leave room for the badge hanging below the bubble
+			.padding(.bottom, message.likeCount > 0 ? 8 : 0)
 	}
 }

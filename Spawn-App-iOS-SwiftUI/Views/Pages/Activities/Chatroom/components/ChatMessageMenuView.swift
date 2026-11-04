@@ -9,11 +9,13 @@ import SwiftUI
 
 /// An item in the long-press menu for a chat message
 enum ChatMessageMenuAction: Hashable {
+	case like(isLiked: Bool)
 	case report
 	case delete
 
 	var title: String {
 		switch self {
+		case .like(let isLiked): return isLiked ? "Unlike" : "Like"
 		case .report: return "Report Message"
 		case .delete: return "Delete Message"
 		}
@@ -21,6 +23,7 @@ enum ChatMessageMenuAction: Hashable {
 
 	var icon: String {
 		switch self {
+		case .like(let isLiked): return isLiked ? "heart.slash" : "heart"
 		case .report: return "exclamationmark.triangle"
 		case .delete: return "trash"
 		}
@@ -28,6 +31,7 @@ enum ChatMessageMenuAction: Hashable {
 
 	var color: Color {
 		switch self {
+		case .like: return universalAccentColor
 		case .report, .delete: return .red
 		}
 	}

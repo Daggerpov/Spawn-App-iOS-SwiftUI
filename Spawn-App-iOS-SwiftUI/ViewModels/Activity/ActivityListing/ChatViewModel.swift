@@ -110,6 +110,34 @@ final class ChatViewModel {
 		}
 	}
 
+	/// Like or unlike a message. The heart updates right away and goes back if the request fails.
+	func toggleLike(on message: FullActivityChatMessageDTO, by user: BaseUserDTO) async {
+		let wasLiked = message.isLiked(by: user.id)
+		setLike(!wasLiked, on: message.id, by: user)
+
+		let operation: WriteOperationType =
+			wasLiked
+			? .unlikeChatMessage(messageId: message.id, userId: user.id, activityId: activity.id)
+			: .likeChatMessage(messageId: message.id, userId: user.id, activityId: activity.id)
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operation)
+
+		if case .failure(let error) = result {
+			print("Error updating like: \(error)")
+			setLike(wasLiked, on: message.id, by: user)
+			notificationService.showError(error, resource: .message, operation: .update)
+		}
+	}
+
+	private func setLike(_ liked: Bool, on messageId: UUID, by user: BaseUserDTO) {
+		guard let index = activity.chatMessages?.firstIndex(where: { $0.id == messageId }) else { return }
+		var likes = activity.chatMessages?[index].likedByUsers ?? []
+		likes.removeAll { $0.id == user.id }
+		if liked {
+			likes.append(user)
+		}
+		activity.chatMessages?[index].likedByUsers = likes
+	}
+
 	func refreshChat() async {
 		// Use DataService to fetch activity chats
 		let result: DataResult<[FullActivityChatMessageDTO]> = await dataService.read(
