@@ -59,6 +59,18 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 			return FullActivityChatMessageDTO.mockChatroom as! T
 		}
 
+		// ProfileViewModel - fetchProfileActivities() expects a list, not a single activity
+		if url.absoluteString.contains(APIService.baseURL + "activities/profile/") {
+			return ProfileActivityDTO.mockActivities as! T
+		}
+
+		// ProfileViewModel - fetchUserUpcomingActivities() expects a list, not a single activity
+		if url.absoluteString.contains(APIService.baseURL + "activities/user/")
+			&& url.absoluteString.hasSuffix("/upcoming")
+		{
+			return createMockActivities() as! T
+		}
+
 		// ProfileViewModel - fetchActivityDetails
 		if url.absoluteString.contains(APIService.baseURL + "activities/")
 			&& !url.absoluteString.contains("activities/feed-activities/")
@@ -133,11 +145,14 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 
 		// fetchSearchResults() - for users/search endpoint
 		if url.absoluteString.contains("users/search") {
-			// Extract query parameters
+			// Extract query parameters (DataReader passes them separately from the URL)
 			let urlComponents = URLComponents(string: url.absoluteString)
-			let searchQuery = urlComponents?.queryItems?.first(where: { $0.name == "searchQuery" })?.value ?? ""
-			let requestingUserIdString = urlComponents?.queryItems?.first(where: { $0.name == "requestingUserId" })?
-				.value
+			let searchQuery =
+				parameters?["searchQuery"]
+				?? urlComponents?.queryItems?.first(where: { $0.name == "searchQuery" })?.value ?? ""
+			let requestingUserIdString =
+				parameters?["requestingUserId"]
+				?? urlComponents?.queryItems?.first(where: { $0.name == "requestingUserId" })?.value
 			let requestingUserId = requestingUserIdString.flatMap { UUID(uuidString: $0) }
 
 			// Start with all users
@@ -164,9 +179,30 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 			return filteredUsers as! T
 		}
 
-		// fetchFilteredResults() - for users/filtered/{userId} endpoint
+		// fetchFilteredResults() - for users/filtered/{userId}?searchQuery= endpoint, expects a SearchedUserResult
 		if url.absoluteString.contains("users/filtered/") {
-			return FullFriendUserDTO.mockUsers as! T
+			let requestingUserId = UUID(uuidString: url.lastPathComponent)
+			let searchQuery =
+				URLComponents(string: url.absoluteString)?.queryItems?
+				.first(where: { $0.name == "searchQuery" })?.value?.lowercased() ?? ""
+			// Mock friend DTOs have random IDs, so match them to mock users by username
+			let friendUsernames = Set(FullFriendUserDTO.mockUsers.compactMap { $0.username })
+
+			let results = BaseUserDTO.mockUsers
+				.filter { $0.id != requestingUserId }
+				.filter { user in
+					let name = FormatterService.shared.formatName(user: user).lowercased()
+					let username = (user.username ?? "").lowercased()
+					return searchQuery.isEmpty || name.contains(searchQuery) || username.contains(searchQuery)
+				}
+				.map { user in
+					SearchResultUserDTO(
+						user: user,
+						relationshipType: friendUsernames.contains(user.username ?? "") ? .friend : .recommendedFriend
+					)
+				}
+
+			return SearchedUserResult(users: results) as! T
 		}
 
 		// Check friendship status endpoint
@@ -329,6 +365,31 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 			&& url.absoluteString.contains("/participation")
 		{
 			return FullFeedActivityDTO.mockDinnerActivity as! T
+		}
+
+		/// ReportingService.swift:
+
+		// isUserBlocked():
+		if url.absoluteString == APIService.baseURL + "blocked-users/is-blocked" {
+			return false as! T
+		}
+
+		// getBlockedUsers() / getFullBlockedUsers(): nobody is blocked in mock mode
+		if url.absoluteString.contains(APIService.baseURL + "blocked-users/") {
+			if parameters?["returnOnlyIds"] == "true" {
+				return [UUID]() as! T
+			}
+			return [BlockedUserDTO]() as! T
+		}
+
+		// getReportsByUser():
+		if url.absoluteString.contains(APIService.baseURL + "reports/reporter/") {
+			return [FetchReportedContentDTO]() as! T
+		}
+
+		// getReportsAboutUser():
+		if url.absoluteString.contains(APIService.baseURL + "reports/content-owner/") {
+			return [ReportedContentDTO]() as! T
 		}
 
 		if T.self == UserDTO.self {
