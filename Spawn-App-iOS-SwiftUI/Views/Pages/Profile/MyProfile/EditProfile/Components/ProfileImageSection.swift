@@ -8,6 +8,7 @@ struct ProfileImageSection: View {
 
 	var body: some View {
 		HStack {
+			Spacer()
 			ZStack(alignment: .bottomTrailing) {
 				if isImageLoading {
 					ProgressView()

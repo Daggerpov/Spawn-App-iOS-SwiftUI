@@ -16,22 +16,22 @@ struct InterestsSection: View {
 
 			// Text field with placeholder overlay
 			ZStack(alignment: .leading) {
-				// Background
+				// Outline, matching the Name and Username fields
 				RoundedRectangle(cornerRadius: universalNewRectangleCornerRadius)
-					.fill(Color(hex: colorsGray200))
+					.stroke(universalAccentColor, lineWidth: 1)
 
 				// Placeholder text
 				if newInterest.isEmpty {
 					Text("Type and press enter to add...")
 						.font(.subheadline)
-						.foregroundColor(Color(hex: colorsGray500))
+						.foregroundColor(universalAccentColor.opacity(0.5))
 						.padding(.leading, 16)
 				}
 
 				// Text field
 				TextField("", text: $newInterest)
 					.font(.subheadline)
-					.foregroundColor(Color(hex: colorsGray900))
+					.foregroundColor(universalAccentColor)
 					.padding(.horizontal, 16)
 					.padding(.vertical, 14)
 					.focused($isTextFieldFocused)
