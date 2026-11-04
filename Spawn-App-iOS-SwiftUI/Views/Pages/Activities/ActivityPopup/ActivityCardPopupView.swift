@@ -375,14 +375,13 @@ struct ActivityCardPopupView: View {
 	}
 
 	var locationOverlay: some View {
-		HStack {
-			// Location info on left
-			locationInfoSection
-
-			Spacer()
-
-			// View in Maps button on right
-			viewInMapsButton
+		// The location name gets the room first: if the whole row doesn't fit, shrink the
+		// "View in Maps" button to its icon, then drop "away" from the distance, and only
+		// then let the name truncate
+		ViewThatFits(in: .horizontal) {
+			locationOverlayRow(showsAway: true, compactMapsButton: false)
+			locationOverlayRow(showsAway: true, compactMapsButton: true)
+			locationOverlayRow(showsAway: false, compactMapsButton: true)
 		}
 		.padding(.horizontal, 12)
 		.padding(.bottom, 12)
@@ -390,7 +389,20 @@ struct ActivityCardPopupView: View {
 		.allowsHitTesting(true)  // Ensure the overlay can receive touches
 	}
 
-	var locationInfoSection: some View {
+	private func locationOverlayRow(showsAway: Bool, compactMapsButton: Bool) -> some View {
+		HStack {
+			// Location info on left
+			locationInfoSection(showsAway: showsAway)
+				.layoutPriority(1)  // Location name gets space before the spacer and button
+
+			Spacer(minLength: 8)
+
+			// View in Maps button on right
+			viewInMapsButton(compact: compactMapsButton)
+		}
+	}
+
+	func locationInfoSection(showsAway: Bool) -> some View {
 		HStack(spacing: 6) {
 			Image(systemName: "mappin.and.ellipse")
 				.font(.system(size: 14, weight: .medium))
@@ -407,7 +419,7 @@ struct ActivityCardPopupView: View {
 
 				if viewModel.isDistanceAvailable() {
 					Text(
-						"• \(viewModel.getDisplayString(activityInfoType: .distance)) away"
+						"• \(viewModel.getDisplayString(activityInfoType: .distance))\(showsAway ? " away" : "")"
 					)
 					.font(Font.custom("Onest", size: 14).weight(.medium))
 					.foregroundColor(.white)
@@ -422,15 +434,17 @@ struct ActivityCardPopupView: View {
 		.cornerRadius(10)
 	}
 
-	var viewInMapsButton: some View {
+	func viewInMapsButton(compact: Bool) -> some View {
 		HStack(spacing: 6) {
 			Image(systemName: "arrow.triangle.turn.up.right.diamond")
 				.font(.system(size: 12, weight: .bold))
 				.foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
 
-			Text("View in Maps")
-				.font(.onestSemiBold(size: 14))
-				.foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
+			if !compact {
+				Text("View in Maps")
+					.font(.onestSemiBold(size: 14))
+					.foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
+			}
 		}
 		.padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
 		.background(.white)
