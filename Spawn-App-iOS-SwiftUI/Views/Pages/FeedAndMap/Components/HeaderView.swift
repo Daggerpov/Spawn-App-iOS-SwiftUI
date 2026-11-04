@@ -18,10 +18,18 @@ struct HeaderView: View {
 	}
 
 	var body: some View {
-		HStack {
+		// Figma Event Feed (node 2802:4741): avatar to the left of the greeting, navy text
+		HStack(spacing: 16) {
+			CachedProfileImage(
+				userId: currentUser.id,
+				url: URL(string: currentUser.profilePicture ?? ""),
+				imageType: .friendsListView
+			)
 			Text("Hey \(currentDisplayName)! 👋")
 				.font(.onestBold(size: 32))
-				.foregroundColor(universalAccentColor)
+				.foregroundColor(universalHeadingColor)
+				.lineLimit(1)
+				.minimumScaleFactor(0.7)
 			Spacer()
 		}
 		.onAppear {
@@ -43,18 +51,16 @@ struct HeaderView: View {
 		}
 	}
 
-	private var currentDisplayName: String {
-		// Use the most up-to-date user data
-		let userToDisplay: BaseUserDTO
-
-		// If this is the current user, always use the latest from userAuth
-		if let currentUser = userAuth.spawnUser, currentUser.id == user.id {
-			userToDisplay = currentUser
-		} else {
-			userToDisplay = displayUser
+	/// The most up-to-date user data: the latest from userAuth when this is the current user
+	private var currentUser: BaseUserDTO {
+		if let authUser = userAuth.spawnUser, authUser.id == user.id {
+			return authUser
 		}
+		return displayUser
+	}
 
-		return userToDisplay.name?.components(separatedBy: " ").first ?? userToDisplay.username ?? "User"
+	private var currentDisplayName: String {
+		currentUser.name?.components(separatedBy: " ").first ?? currentUser.username ?? "User"
 	}
 
 	private func updateDisplayUser() {
