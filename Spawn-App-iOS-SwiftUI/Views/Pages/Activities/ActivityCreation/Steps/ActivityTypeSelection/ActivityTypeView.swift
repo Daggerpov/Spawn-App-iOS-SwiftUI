@@ -25,7 +25,11 @@ struct ActivityTypeView: View {
 
 		// Get userId from UserAuthViewModel like the original code
 		let userId = UserAuthViewModel.shared.spawnUser?.id ?? UUID()
-		self._viewModel = State(wrappedValue: ActivityTypeViewModel(userId: userId))
+		let viewModel = ActivityTypeViewModel(userId: userId)
+		// Seed from the cache before the first frame. .task runs a frame later, so the empty
+		// state would flash for a frame when switching to the Activities tab.
+		viewModel.loadCachedActivityTypes()
+		self._viewModel = State(wrappedValue: viewModel)
 	}
 
 	var body: some View {
