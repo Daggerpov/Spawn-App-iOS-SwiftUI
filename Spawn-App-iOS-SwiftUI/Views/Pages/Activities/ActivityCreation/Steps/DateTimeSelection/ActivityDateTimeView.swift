@@ -329,13 +329,21 @@ struct ActivityDateTimeView: View {
 				await viewModel.validateActivityForm()
 			}
 		}) {
+			// Size the label for its bold (selected) weight so selecting it doesn't
+			// change the button width and shift the row
 			Text(duration.title)
-				.font(.custom("Onest", size: 16).weight(isSelected ? .bold : .medium))
-				.foregroundColor(isSelected ? borderColor : secondaryTextColor)
+				.font(.custom("Onest", size: 16).weight(.bold))
+				.hidden()
+				.overlay(
+					Text(duration.title)
+						.font(.custom("Onest", size: 16).weight(isSelected ? .bold : .medium))
+						.foregroundColor(isSelected ? borderColor : secondaryTextColor)
+				)
 				.padding(.horizontal, 10)
 				.padding(.vertical, 12)
 				.fixedSize(horizontal: true, vertical: false)
 				.background(durationButtonBackground(isSelected: isSelected, borderColor: borderColor))
+				.contentShape(RoundedRectangle(cornerRadius: 12))
 		}
 		.buttonStyle(PlainButtonStyle())
 	}
@@ -500,9 +508,13 @@ struct ActivityDateTimeView: View {
 							Spacer()
 						}
 
-						// Duration buttons - horizontal layout with Figma styling
-						HStack(spacing: 8) {
-							ForEach(ActivityDuration.allCases, id: \.self) { duration in
+						// Duration buttons - horizontal layout with Figma styling, spaced out
+						// to span the same width as the Title field
+						HStack(spacing: 0) {
+							ForEach(Array(ActivityDuration.allCases.enumerated()), id: \.element) { index, duration in
+								if index > 0 {
+									Spacer(minLength: 8)
+								}
 								durationButton(for: duration)
 							}
 						}
