@@ -99,11 +99,12 @@ struct ActivityPreConfirmationView: View {
 					isEnabled: !viewModel.isCreatingActivity
 				) {
 					Task {
-						if viewModel.isEditingExistingActivity {
-							await viewModel.updateActivity()
-						} else {
-							await viewModel.createActivity()
-						}
+						let didSucceed =
+							viewModel.isEditingExistingActivity
+							? await viewModel.updateActivity()
+							: await viewModel.createActivity()
+						// On failure the error toast is already showing; stay here so the user can retry
+						guard didSucceed else { return }
 						await MainActor.run {
 							onCreateActivity()
 						}

@@ -345,7 +345,7 @@ struct ActivityCreationView: View {
 		case .preConfirmation:
 			ActivityPreConfirmationView(
 				onCreateActivity: {
-					// Create the activity and move to confirmation
+					// Only called once the activity was created, so move to the Success step
 					currentStep = .confirmation
 				},
 				onBack: {
@@ -366,9 +366,6 @@ struct ActivityCreationView: View {
 
 					ActivityCreationViewModel.reInitialize()
 					closeCallback()
-				},
-				onBack: {
-					currentStep = currentStep.previous()
 				}
 			)
 		}
