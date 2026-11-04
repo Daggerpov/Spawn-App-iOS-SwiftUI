@@ -9,18 +9,28 @@ struct FeedbackTypeSelector: View {
 			Text("Feedback Type")
 				.font(.headline)
 				.foregroundColor(universalAccentColor)
+				.fixedSize()
 
-			Picker("", selection: $selectedType) {
-				ForEach(FeedbackType.allCases) { type in
-					VStack {
-						Image(systemName: type.iconName)
-						Text(type.displayName)
+			// Custom menu label: the default menu picker label wraps long names onto two lines.
+			// It takes the rest of the row, trailing-aligned, so changing the type doesn't shift the row.
+			Menu {
+				Picker("", selection: $selectedType) {
+					ForEach(FeedbackType.allCases) { type in
+						Label(type.displayName, systemImage: type.iconName)
+							.tag(type)
 					}
-					.tag(type)
 				}
+			} label: {
+				HStack(spacing: 6) {
+					Image(systemName: selectedType.iconName)
+					Text(selectedType.displayName)
+						.lineLimit(1)
+					Image(systemName: "chevron.up.chevron.down")
+						.font(.caption)
+				}
+				.foregroundColor(universalAccentColor)
 			}
-			.tint(universalAccentColor)
-			.accentColor(universalAccentColor)
+			.frame(maxWidth: .infinity, alignment: .trailing)
 		}
 		.padding(.horizontal)
 	}

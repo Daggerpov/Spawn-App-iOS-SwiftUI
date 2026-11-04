@@ -23,5 +23,7 @@ struct SettingsSection<Content: View>: View {
 			.background(Color.secondary.opacity(0.1))
 			.cornerRadius(10)
 		}
+		// Keep the title leading even when the rows are narrower than the screen
+		.frame(maxWidth: .infinity, alignment: .leading)
 	}
 }

@@ -73,10 +73,9 @@ struct AccountSettingsView: View {
 						.frame(height: 44)
 					}
 
-					// Authentication section
-					SettingsSection(title: "Authentication") {
-						// Only show change password option for email-based accounts
-						if userAuth.authProvider == .email {
+					// Authentication section (only change password for email-based accounts, so hide it otherwise)
+					if userAuth.authProvider == .email {
+						SettingsSection(title: "Authentication") {
 							NavigationLink(destination: ChangePasswordView()) {
 								HStack {
 									Image(systemName: "lock.circle")
