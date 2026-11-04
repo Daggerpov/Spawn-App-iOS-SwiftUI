@@ -72,11 +72,19 @@ struct ActivityCardView: View {
 		VStack(alignment: .leading, spacing: 16) {
 			// Top Row: Title, Participants
 			ActivityCardTopRowView(activity: activity, selectedTab: $selectedTab, locationManager: locationManager)
-			// Location Row, with the Time Status Badge inset at the trailing end
-			HStack(spacing: 8) {
-				ActivityLocationView(activity: activity, locationManager: locationManager)
-				Spacer(minLength: 0)
-				ActivityStatusView(activity: activity)
+			// Location Row, with the Time Status Badge inset at the trailing end. When the location
+			// needs the whole row, the badge moves below it instead of truncating the location.
+			ViewThatFits(in: .horizontal) {
+				HStack(spacing: 8) {
+					ActivityLocationView(activity: activity, locationManager: locationManager)
+					Spacer(minLength: 0)
+					ActivityStatusView(activity: activity)
+				}
+				VStack(alignment: .trailing, spacing: 8) {
+					ActivityLocationView(activity: activity, locationManager: locationManager)
+						.frame(maxWidth: .infinity, alignment: .leading)
+					ActivityStatusView(activity: activity)
+				}
 			}
 		}
 		.padding(14)
