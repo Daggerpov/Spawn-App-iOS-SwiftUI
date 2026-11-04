@@ -93,6 +93,23 @@ final class ChatViewModel {
 		}
 	}
 
+	/// Delete one of the current user's messages. It's removed from the chat once the server confirms.
+	func deleteMessage(_ message: FullActivityChatMessageDTO) async {
+		guard message.senderUser.id == senderUserId else { return }
+
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
+			.deleteChatMessage(messageId: message.id, activityId: activity.id)
+		)
+
+		switch result {
+		case .success:
+			activity.chatMessages?.removeAll { $0.id == message.id }
+		case .failure(let error):
+			print("Error deleting message: \(error)")
+			notificationService.showError(error, resource: .message, operation: .delete)
+		}
+	}
+
 	func refreshChat() async {
 		// Use DataService to fetch activity chats
 		let result: DataResult<[FullActivityChatMessageDTO]> = await dataService.read(

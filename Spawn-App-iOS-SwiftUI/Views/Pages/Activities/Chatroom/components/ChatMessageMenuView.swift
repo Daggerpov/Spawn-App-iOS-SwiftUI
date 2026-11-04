@@ -7,11 +7,61 @@
 
 import SwiftUI
 
+/// An item in the long-press menu for a chat message
+enum ChatMessageMenuAction: Hashable {
+	case report
+	case delete
+
+	var title: String {
+		switch self {
+		case .report: return "Report Message"
+		case .delete: return "Delete Message"
+		}
+	}
+
+	var icon: String {
+		switch self {
+		case .report: return "exclamationmark.triangle"
+		case .delete: return "trash"
+		}
+	}
+
+	var color: Color {
+		switch self {
+		case .report, .delete: return .red
+		}
+	}
+}
+
 struct ChatMessageMenuView: View {
 	let chatMessage: FullActivityChatMessageDTO
-	@Binding var showReportDialog: Bool
+	let actions: [ChatMessageMenuAction]
+	/// Called after the menu starts dismissing
+	let onSelect: (ChatMessageMenuAction) -> Void
 	@Environment(\.dismiss) private var dismiss
 	@State private var isLoading: Bool = true
+
+	init(
+		chatMessage: FullActivityChatMessageDTO,
+		actions: [ChatMessageMenuAction],
+		onSelect: @escaping (ChatMessageMenuAction) -> Void
+	) {
+		self.chatMessage = chatMessage
+		self.actions = actions
+		self.onSelect = onSelect
+	}
+
+	/// Report-only menu that sets `showReportDialog` when Report is tapped
+	init(chatMessage: FullActivityChatMessageDTO, showReportDialog: Binding<Bool>) {
+		self.init(chatMessage: chatMessage, actions: [.report]) { _ in
+			showReportDialog.wrappedValue = true
+		}
+	}
+
+	/// Sheet height that fits the preview, every action and Cancel
+	static func sheetHeight(actionCount: Int) -> CGFloat {
+		148 + CGFloat(actionCount) * 52
+	}
 
 	var body: some View {
 		ChatMessageMenuContainer {
@@ -20,7 +70,8 @@ struct ChatMessageMenuView: View {
 			} else {
 				ChatMessageMenuContent(
 					chatMessage: chatMessage,
-					showReportDialog: $showReportDialog,
+					actions: actions,
+					onSelect: onSelect,
 					dismiss: dismiss
 				)
 			}
@@ -82,7 +133,8 @@ private struct ChatMessageMenuContainer<Content: View>: View {
 
 private struct ChatMessageMenuContent: View {
 	let chatMessage: FullActivityChatMessageDTO
-	@Binding var showReportDialog: Bool
+	let actions: [ChatMessageMenuAction]
+	let onSelect: (ChatMessageMenuAction) -> Void
 	let dismiss: DismissAction
 
 	private var senderName: String {
@@ -157,15 +209,13 @@ private struct ChatMessageMenuContent: View {
 
 	private var menuItems: some View {
 		VStack(spacing: 0) {
-			menuItem(
-				icon: "exclamationmark.triangle",
-				text: "Report Message",
-				color: .red
-			) {
-				dismiss()
-				showReportDialog = true
+			ForEach(actions, id: \.self) { action in
+				menuItem(icon: action.icon, text: action.title, color: action.color) {
+					dismiss()
+					onSelect(action)
+				}
+				.background(universalBackgroundColor)
 			}
-			.background(universalBackgroundColor)
 		}
 		.background(universalBackgroundColor)
 	}

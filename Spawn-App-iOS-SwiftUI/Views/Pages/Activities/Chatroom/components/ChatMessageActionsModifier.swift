@@ -5,40 +5,39 @@
 
 import SwiftUI
 
-/// Long-press actions for a chatroom message (#144): opens `ChatMessageMenuView`, and from there
-/// the report drawer.
+/// Long-press actions for a chatroom message (#144): opens `ChatMessageMenuView`, then whatever the
+/// chosen action needs (the report drawer, or a delete confirmation).
 struct ChatMessageActionsModifier: ViewModifier {
 	let message: FullActivityChatMessageDTO
 	let isFromCurrentUser: Bool
+	let onDelete: () -> Void
 
 	@State private var showMessageMenu = false
-	/// Set by the menu's Report item. The report drawer opens once the menu has finished dismissing,
-	/// so the two sheets never try to present at the same time.
-	@State private var wantsReport = false
+	/// Set by the menu. It's handled once the menu has finished dismissing, so two sheets or a
+	/// sheet and an alert never try to present at the same time.
+	@State private var pendingAction: ChatMessageMenuAction?
 	@State private var showReportDialog = false
+	@State private var showDeleteConfirmation = false
 	@ObservedObject private var userAuth = UserAuthViewModel.shared
+
+	private var actions: [ChatMessageMenuAction] {
+		// You can delete your own messages, and report everyone else's
+		isFromCurrentUser ? [.delete] : [.report]
+	}
 
 	func body(content: Content) -> some View {
 		content
 			.contentShape(Rectangle())
 			.onLongPressGesture(minimumDuration: 0.5) {
-				// Report is the only action for now, and you can't report your own message
-				guard !isFromCurrentUser else { return }
 				UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 				showMessageMenu = true
 			}
-			.sheet(
-				isPresented: $showMessageMenu,
-				onDismiss: {
-					if wantsReport {
-						wantsReport = false
-						showReportDialog = true
-					}
+			.sheet(isPresented: $showMessageMenu, onDismiss: handlePendingAction) {
+				ChatMessageMenuView(chatMessage: message, actions: actions) { action in
+					pendingAction = action
 				}
-			) {
-				ChatMessageMenuView(chatMessage: message, showReportDialog: $wantsReport)
-					.presentationDetents([.height(200)])
-					.presentationDragIndicator(.visible)
+				.presentationDetents([.height(ChatMessageMenuView.sheetHeight(actionCount: actions.count))])
+				.presentationDragIndicator(.visible)
 			}
 			.sheet(isPresented: $showReportDialog) {
 				ReportChatMessageDrawer(
@@ -52,6 +51,24 @@ struct ChatMessageActionsModifier: ViewModifier {
 				.presentationDetents([.medium, .large])
 				.presentationDragIndicator(.visible)
 			}
+			.alert("Delete message?", isPresented: $showDeleteConfirmation) {
+				Button("Cancel", role: .cancel) {}
+				Button("Delete", role: .destructive, action: onDelete)
+			} message: {
+				Text("It will be removed from the chat for everyone.")
+			}
+	}
+
+	private func handlePendingAction() {
+		guard let action = pendingAction else { return }
+		pendingAction = nil
+
+		switch action {
+		case .report:
+			showReportDialog = true
+		case .delete:
+			showDeleteConfirmation = true
+		}
 	}
 
 	private func reportMessage(reportType: ReportType, description: String) async {
@@ -71,8 +88,14 @@ struct ChatMessageActionsModifier: ViewModifier {
 }
 
 extension View {
-	/// Adds the long-press message menu (currently Report) to a chatroom message
-	func chatMessageActions(for message: FullActivityChatMessageDTO, isFromCurrentUser: Bool) -> some View {
-		modifier(ChatMessageActionsModifier(message: message, isFromCurrentUser: isFromCurrentUser))
+	/// Adds the long-press message menu to a chatroom message
+	func chatMessageActions(
+		for message: FullActivityChatMessageDTO,
+		isFromCurrentUser: Bool,
+		onDelete: @escaping () -> Void
+	) -> some View {
+		modifier(
+			ChatMessageActionsModifier(message: message, isFromCurrentUser: isFromCurrentUser, onDelete: onDelete)
+		)
 	}
 }
