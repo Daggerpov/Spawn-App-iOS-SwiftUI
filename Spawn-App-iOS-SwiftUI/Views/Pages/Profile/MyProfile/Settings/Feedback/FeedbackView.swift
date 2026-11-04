@@ -19,6 +19,7 @@ struct FeedbackView: View {
 	@State private var selectedItem: PhotosPickerItem?
 	@State private var selectedImage: UIImage?
 	@State private var isTextFieldFocused: Bool = false
+	@StateObject private var keyboardOverlap = KeyboardOverlapHeight()
 
 	let userId: UUID?
 	let email: String?
@@ -83,6 +84,9 @@ struct FeedbackView: View {
 					}
 				}
 			}
+			// The tab bar container ignores the keyboard safe area, so shrink the scroll view by hand
+			// to keep Submit reachable (by scrolling) while the keyboard is up.
+			.keyboardOverlapPadding(keyboardOverlap)
 		}
 		.background(universalBackgroundColor)
 		.navigationBarHidden(true)
