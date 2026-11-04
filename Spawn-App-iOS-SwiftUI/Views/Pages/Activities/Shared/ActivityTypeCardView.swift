@@ -43,10 +43,10 @@ struct ActivityTypeCardView: View {
 		VStack(spacing: 4) {
 			Text(activityType.icon)
 				.font(Font.custom("Onest", size: 34).weight(.bold))
-				.foregroundColor(Color(red: 0.07, green: 0.07, blue: 0.07))
+				.foregroundColor(adaptiveTextColor)
 			Text(activityType.title)
 				.font(Font.custom("Onest", size: 14).weight(.semibold))
-				.foregroundColor(Color(red: 0.07, green: 0.07, blue: 0.07))
+				.foregroundColor(adaptiveTextColor)
 				.lineLimit(2)
 				.truncationMode(.tail)
 				.multilineTextAlignment(.center)
@@ -57,11 +57,11 @@ struct ActivityTypeCardView: View {
 			maxWidth: .infinity,
 			minHeight: 115,
 		)
-		.background(Color(red: 0.95, green: 0.93, blue: 0.93))
+		.background(adaptiveBackgroundColor)
 		.cornerRadius(12)
 		.overlay(
 			RoundedRectangle(cornerRadius: 12)
-				.stroke(Color(red: 0.95, green: 0.93, blue: 0.93), lineWidth: 1)  // "border"
+				.stroke(adaptiveBackgroundColor, lineWidth: 1)  // "border"
 				.shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: -2)  // dark shadow top
 				.clipShape(RoundedRectangle(cornerRadius: 12))
 				.shadow(color: Color.white.opacity(0.7), radius: 4, x: 0, y: 4)  // light shadow bottom

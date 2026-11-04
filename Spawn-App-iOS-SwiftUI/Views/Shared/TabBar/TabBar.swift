@@ -41,6 +41,19 @@ struct TabBar: View {
 		}
 	}
 
+	// The navy inactive color is unreadable on the dark bar, so use a lighter indigo in dark mode.
+	private var inactiveTabColor: Color {
+		Color(
+			UIColor { traitCollection in
+				switch traitCollection.userInterfaceStyle {
+				case .dark:
+					return UIColor(Color(hex: colorsIndigo300))
+				default:
+					return UIColor(Color(hex: colorsTabIconInactive))
+				}
+			})
+	}
+
 	func isTabDisabled(_ tab: Tabs) -> Bool {
 		if tutorialViewModel.tutorialState.shouldRestrictNavigation {
 			return !tutorialViewModel.canNavigateToTab(tab.toTabType)
@@ -63,7 +76,7 @@ struct TabBar: View {
 								.animation(.none, value: selection)
 						} else {
 							InActiveTabLabel(tabItem: tab.item)
-								.foregroundStyle(Color(hex: colorsTabIconInactive))
+								.foregroundStyle(inactiveTabColor)
 								.animation(.none, value: selection)
 						}
 					}
@@ -82,7 +95,7 @@ struct TabBar: View {
 								.animation(.none, value: selection)
 						} else {
 							InActiveTabLabel(tabItem: tab.item)
-								.foregroundColor(Color(hex: colorsTabIconInactive))
+								.foregroundColor(inactiveTabColor)
 								.animation(.none, value: selection)
 						}
 					}

@@ -13,7 +13,10 @@ struct InActiveTabLabel: View {
 					uiImage: resizeImage(
 						UIImage(named: tabItem.inactiveIcon)!,
 						targetSize: CGSize(width: ICON_SIZE, height: ICON_SIZE)
-					)!)
+					)!
+				)
+				// Tint with the tab bar's inactive color so the icon follows light/dark mode.
+				.renderingMode(.template)
 				Text(tabItem.title)
 					.font(.onestRegular(size: 12))
 					.fontWeight(.medium)
