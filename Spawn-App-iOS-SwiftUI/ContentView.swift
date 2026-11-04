@@ -68,7 +68,7 @@ struct ContentView: View {
 		ZStack {
 			// Show loading state while ViewModels are being initialized
 			if let feedVM = feedViewModel, let friendsVM = friendsViewModel, let profileVM = profileViewModel {
-				WithTabBarBinding(selection: $selectedTabsEnum) { selectedTab in
+				WithTabBarBinding(selection: $selectedTabsEnum, profileViewModel: profileVM) { selectedTab in
 					switch selectedTab {
 					case .home:
 						ActivityFeedView(

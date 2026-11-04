@@ -134,6 +134,9 @@ struct EditProfileView: View {
 				.ignoresSafeArea()
 		}
 		.onAppear {
+			// Hide the tab bar while editing so it doesn't cover the bottom fields
+			profileViewModel.isEditingProfile = true
+
 			// Save original interests for cancel functionality
 			profileViewModel.saveOriginalInterests()
 
@@ -143,6 +146,9 @@ struct EditProfileView: View {
 				whatsappLink = socialMedia.whatsappNumber ?? ""
 				instagramLink = socialMedia.instagramUsername ?? ""
 			}
+		}
+		.onDisappear {
+			profileViewModel.isEditingProfile = false
 		}
 		.onChange(of: profileViewModel.userSocialMedia) { _, newSocialMedia in
 			// Update text fields whenever social media data changes
