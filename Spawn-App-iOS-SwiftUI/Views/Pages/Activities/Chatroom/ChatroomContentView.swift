@@ -42,27 +42,25 @@ struct ChatroomContentView: View {
 	var body: some View {
 		Group {
 			if isExpanded {
-				// When expanded, use GeometryReader for safe area handling
-				GeometryReader { geometry in
+				VStack(spacing: 0) {
+					// Header - always visible at top. The drawer already leaves room for the
+					// status bar above this view, so only match the main card's header spacing.
+					headerView
+						.padding(.top, 8)
+
+					// Messages fill remaining space (flexible when keyboard overlaps)
+					messagesScrollView
+						.frame(maxHeight: .infinity)
+						.clipped()
+
+					// Input area - anchored at bottom, above the home indicator
 					VStack(spacing: 0) {
-						// Header - always visible at top
-						headerView
-							.padding(.top, geometry.safeAreaInsets.top + 16)
-
-						// Messages fill remaining space (flexible when keyboard overlaps)
-						messagesScrollView
-							.frame(maxHeight: .infinity)
-							.clipped()
-
-						// Input area - always anchored at bottom with no spacing below
-						VStack(spacing: 0) {
-							errorMessageView
-							messageInputView
-								.padding(.bottom, geometry.safeAreaInsets.bottom)
-						}
-						.padding(.bottom, fromMapView ?? false ? -16 : 0)
-						.background(backgroundColor.opacity(0.97))  // Match the main background
+						errorMessageView
+						messageInputView
+							.padding(.bottom, max(windowBottomSafeAreaInset - keyboardOverlap.value, 0))
 					}
+					.padding(.bottom, fromMapView ?? false ? -16 : 0)
+					.background(backgroundColor.opacity(0.97))  // Match the main background
 				}
 			} else {
 				// When minimized, don't use GeometryReader to avoid expanding to fill available space
@@ -101,6 +99,13 @@ struct ChatroomContentView: View {
 	// Using a fixed total height ensures consistent sizing that matches main card content
 	private let minimizedContentHeight: CGFloat = 600  // Total height for chatroom when minimized
 
+	// The drawer ignores the container safe area, so views inside it see a zero bottom inset.
+	// Read the home indicator inset from the window instead.
+	private var windowBottomSafeAreaInset: CGFloat {
+		let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
+		return windowScene?.windows.first?.safeAreaInsets.bottom ?? 0
+	}
+
 	// MARK: - View Components
 
 	private var headerView: some View {
@@ -132,7 +137,8 @@ struct ChatroomContentView: View {
 						}
 					}
 
-					if viewModel.chats.isEmpty {
+					// Don't claim there are no messages when they failed to load
+					if viewModel.chats.isEmpty && !viewModel.hasLoadError {
 						emptyStateView
 					}
 				}
