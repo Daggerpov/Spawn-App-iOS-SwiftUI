@@ -281,6 +281,8 @@ var universalBackgroundColor: Color {
 let figmaNavyHex: String = "#1E265A"
 // Background of Figma's round chevron button next to section headers
 let figmaChevronCircleHex: String = "#DBE0FF"
+// Figma's cool gray for activity type buttons (Activity Type Button component)
+let figmaTypeButtonHex: String = "#EDEFF6"
 
 @available(iOS 14.0, *)
 var universalHeadingColor: Color {

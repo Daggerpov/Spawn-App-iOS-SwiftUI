@@ -19,9 +19,9 @@ struct ActivityTypeCard: View {
 		case .dark:
 			return Color(red: 0.24, green: 0.23, blue: 0.23)
 		case .light:
-			return Color(red: 0.95, green: 0.93, blue: 0.93)
+			return Color(hex: figmaTypeButtonHex)
 		@unknown default:
-			return Color(red: 0.95, green: 0.93, blue: 0.93)
+			return Color(hex: figmaTypeButtonHex)
 		}
 	}
 
@@ -30,9 +30,9 @@ struct ActivityTypeCard: View {
 		case .dark:
 			return .white
 		case .light:
-			return Color(red: 0.11, green: 0.11, blue: 0.11)
+			return Color(hex: figmaNavyHex)
 		@unknown default:
-			return Color(red: 0.11, green: 0.11, blue: 0.11)
+			return Color(hex: figmaNavyHex)
 		}
 	}
 
@@ -65,7 +65,7 @@ struct ActivityTypeCard: View {
 
 					VStack(spacing: 8) {
 						Text(activityTypeDTO.title)
-							.font(.onestMedium(size: 16))
+							.font(.onestSemiBold(size: 16))
 							.foregroundColor(adaptiveTitleColor)
 							.lineLimit(2)
 							.truncationMode(.tail)

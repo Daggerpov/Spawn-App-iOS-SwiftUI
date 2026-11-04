@@ -16,7 +16,7 @@ struct ActivityTypeCardView: View {
 	@State private var scale: CGFloat = 1.0
 
 	// Title sizing: long words shrink to fit instead of breaking mid-word ("Basket / ball")
-	private let titleFontSize: CGFloat = 14
+	private let titleFontSize: CGFloat = 16
 	private let minTitleFontSize: CGFloat = 9
 	@State private var titleWidth: CGFloat = 0
 
@@ -26,9 +26,9 @@ struct ActivityTypeCardView: View {
 		case .dark:
 			return Color(hex: "#2C2C2C")
 		case .light:
-			return Color(red: 0.95, green: 0.93, blue: 0.93)
+			return Color(hex: figmaTypeButtonHex)
 		@unknown default:
-			return Color(red: 0.95, green: 0.93, blue: 0.93)
+			return Color(hex: figmaTypeButtonHex)
 		}
 	}
 
@@ -38,9 +38,9 @@ struct ActivityTypeCardView: View {
 		case .dark:
 			return Color.white
 		case .light:
-			return Color(red: 0.07, green: 0.07, blue: 0.07)
+			return Color(hex: figmaNavyHex)
 		@unknown default:
-			return Color(red: 0.07, green: 0.07, blue: 0.07)
+			return Color(hex: figmaNavyHex)
 		}
 	}
 
@@ -79,15 +79,10 @@ struct ActivityTypeCardView: View {
 		.padding(.vertical, 16)
 		.padding(.horizontal, 8)
 		.frame(maxWidth: .infinity, minHeight: 115)
-		.background(adaptiveBackgroundColor)
-		.cornerRadius(12)
-		.overlay(
+		.background(
+			// Figma Activity Type Button: #EDEFF6 with a soft inner shadow (#0000000D, y -4, blur 8)
 			RoundedRectangle(cornerRadius: 12)
-				.stroke(adaptiveBackgroundColor, lineWidth: 1)  // "border"
-				.shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: -2)  // dark shadow top
-				.clipShape(RoundedRectangle(cornerRadius: 12))
-				.shadow(color: Color.white.opacity(0.7), radius: 4, x: 0, y: 4)  // light shadow bottom
-				.clipShape(RoundedRectangle(cornerRadius: 12))
+				.fill(adaptiveBackgroundColor.shadow(.inner(color: .black.opacity(0.05), radius: 4, x: 0, y: -4)))
 		)
 		.animation(.easeInOut(duration: 0.15), value: scale)
 		.animation(.easeInOut(duration: 0.15), value: isPressed)
