@@ -118,7 +118,8 @@ struct ActivityCardPopupView: View {
 				mainCardContent
 			}
 		}
-		.background(activityColor)  // Opaque so the screen behind doesn't show through
+		// Opaque so the screen behind doesn't show through
+		.background(ActivityDrawerGradientBackground(color: activityColor))
 		.cornerRadius(isExpanded ? 0 : 20)
 		.shadow(radius: isExpanded ? 0 : 20)
 		.ignoresSafeArea(
