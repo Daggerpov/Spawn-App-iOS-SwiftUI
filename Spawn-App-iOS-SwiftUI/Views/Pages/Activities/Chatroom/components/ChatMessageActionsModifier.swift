@@ -19,15 +19,17 @@ struct ChatMessageActionsModifier: ViewModifier {
 	@State private var pendingAction: ChatMessageMenuAction?
 	@State private var showReportDialog = false
 	@State private var showDeleteConfirmation = false
+	@State private var showBlockDialog = false
+	@State private var blockReason = ""
 	@ObservedObject private var userAuth = UserAuthViewModel.shared
 
 	private var actions: [ChatMessageMenuAction] {
-		// You can delete your own messages, and like or report everyone else's
+		// You can delete your own messages, and like, block or report everyone else's
 		if isFromCurrentUser {
 			return [.delete]
 		}
 		let isLiked = userAuth.spawnUser.map { message.isLiked(by: $0.id) } ?? false
-		return [.like(isLiked: isLiked), .report]
+		return [.like(isLiked: isLiked), .block, .report]
 	}
 
 	func body(content: Content) -> some View {
@@ -62,6 +64,22 @@ struct ChatMessageActionsModifier: ViewModifier {
 			} message: {
 				Text("It will be removed from the chat for everyone.")
 			}
+			// Same block prompt as the Friends tab and profiles
+			.alert("Block User", isPresented: $showBlockDialog) {
+				TextField("Reason (optional)", text: $blockReason)
+				Button("Cancel", role: .cancel) {
+					blockReason = ""
+				}
+				Button("Block", role: .destructive) {
+					let reason = blockReason
+					blockReason = ""
+					Task { await blockSender(reason: reason) }
+				}
+			} message: {
+				Text(
+					"Blocking this user will remove them from your friends list and they won't be able to see your profile or activities."
+				)
+			}
 	}
 
 	private func handlePendingAction() {
@@ -71,10 +89,27 @@ struct ChatMessageActionsModifier: ViewModifier {
 		switch action {
 		case .like:
 			onToggleLike()
+		case .block:
+			showBlockDialog = true
 		case .report:
 			showReportDialog = true
 		case .delete:
 			showDeleteConfirmation = true
+		}
+	}
+
+	private func blockSender(reason: String) async {
+		guard let currentUserId = userAuth.spawnUser?.id else { return }
+
+		do {
+			try await ReportingService().blockUser(
+				blockerId: currentUserId,
+				blockedId: message.senderUser.id,
+				reason: reason
+			)
+			InAppNotificationService.shared.showSuccess(.userBlocked)
+		} catch {
+			InAppNotificationService.shared.showError(error, resource: .user, operation: .block)
 		}
 	}
 
