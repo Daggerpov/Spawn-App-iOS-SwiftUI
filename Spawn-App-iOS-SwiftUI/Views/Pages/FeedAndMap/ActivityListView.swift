@@ -56,7 +56,7 @@ struct ActivityListView: View {
 			}
 			.padding(.bottom, 72)  // Add bottom padding to ensure last activity shows fully above nav bar
 		}
-		.background(universalBackgroundColor)
+		// No fill of its own so the screen's background (Home's gradient) shows through
 		.refreshable {
 			// Pull to refresh - user-initiated refresh
 			// Start the API fetch in background and return quickly to prevent long spinner

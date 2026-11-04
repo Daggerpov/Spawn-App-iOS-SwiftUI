@@ -55,8 +55,7 @@ struct ActivityFeedView: View {
 
 	var body: some View {
 		ZStack {
-			// Background color
-			universalBackgroundColor
+			HomeFeedBackground()
 				.ignoresSafeArea()
 
 			VStack(alignment: .leading, spacing: 0) {
