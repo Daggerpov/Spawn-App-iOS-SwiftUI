@@ -20,6 +20,8 @@ final class ChatViewModel {
 		activity.chatMessages ?? []
 	}
 	var creationMessage: String?
+	// True when messages couldn't be loaded and there are none to show
+	var hasLoadError = false
 
 	// MARK: - Constants
 	private enum ErrorMessages {
@@ -106,11 +108,13 @@ final class ChatViewModel {
 			}
 			// Clear any error messages on successful refresh
 			creationMessage = nil
+			hasLoadError = false
 		case .failure(let error):
 			print("Error refreshing chats: \(error)")
 			// Only show refresh error if there are no existing messages
 			if activity.chatMessages?.isEmpty != false {
 				setErrorMessage(ErrorMessages.refreshError)
+				hasLoadError = true
 			}
 		}
 	}
