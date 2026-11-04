@@ -17,35 +17,21 @@ struct FriendsTabMenuView: View {
 	let shareProfile: () -> Void
 	let navigateToProfile: () -> Void
 	@Environment(\.dismiss) private var dismiss
-	@State private var isLoading: Bool = true
 
 	var body: some View {
-		SheetMenuContainer {
-			if isLoading {
-				loadingContent
-			} else {
-				FriendsTabMenuContent(
-					showReportDialog: $showReportDialog,
-					showBlockDialog: $showBlockDialog,
-					showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
-					showAddToActivityType: $showAddToActivityType,
-					copyProfileURL: copyProfileURL,
-					shareProfile: shareProfile,
-					navigateToProfile: navigateToProfile,
-					dismiss: dismiss
-				)
-			}
+		// Seven actions plus Cancel.
+		SheetMenuContainer(rowCount: 8) {
+			FriendsTabMenuContent(
+				showReportDialog: $showReportDialog,
+				showBlockDialog: $showBlockDialog,
+				showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
+				showAddToActivityType: $showAddToActivityType,
+				copyProfileURL: copyProfileURL,
+				shareProfile: shareProfile,
+				navigateToProfile: navigateToProfile,
+				dismiss: dismiss
+			)
 		}
-		.background(universalBackgroundColor)
-		.task {
-			// Simulate a very brief loading state to ensure smooth animation
-			try? await Task.sleep(for: .seconds(0.1))
-			isLoading = false
-		}
-	}
-
-	private var loadingContent: some View {
-		SheetMenuLoadingPlaceholder(rowCount: 4, dismiss: dismiss)
 	}
 }
 
@@ -61,9 +47,11 @@ private struct FriendsTabMenuContent: View {
 	let dismiss: DismissAction
 
 	var body: some View {
-		VStack(spacing: 16) {
+		VStack(spacing: 0) {
 			menuItems
 				.background(universalBackgroundColor)
+
+			Divider()
 
 			cancelButton
 		}

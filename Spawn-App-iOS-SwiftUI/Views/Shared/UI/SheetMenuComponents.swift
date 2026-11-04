@@ -7,22 +7,51 @@
 
 import SwiftUI
 
-/// Container for sheet-style menus with rounded corners and fixed vertical sizing.
+/// Container for sheet-style menus. Sizes the sheet to the measured rows so no gap or
+/// system sheet background shows around them, and scrolls if the rows outgrow the screen.
 struct SheetMenuContainer<Content: View>: View {
+	private let rowCount: Int
 	private let content: Content
+	@State private var contentHeight: CGFloat = 0
 
-	init(@ViewBuilder content: () -> Content) {
+	/// - Parameter rowCount: Number of rows including Cancel, used for the height until the rows are measured.
+	init(rowCount: Int, @ViewBuilder content: () -> Content) {
+		self.rowCount = rowCount
 		self.content = content()
 	}
 
+	private var initialHeight: CGFloat {
+		// 63pt rows separated by 1pt dividers.
+		CGFloat(rowCount) * 63 + CGFloat(rowCount - 1)
+	}
+
 	var body: some View {
-		VStack(spacing: 8) {
+		ScrollView {
 			content
-				.background(universalBackgroundColor)
-				.cornerRadius(12)
+				.background {
+					GeometryReader { geometry in
+						Color.clear.preference(key: SheetMenuHeightKey.self, value: geometry.size.height)
+					}
+				}
 		}
-		.fixedSize(horizontal: false, vertical: true)
+		.scrollBounceBehavior(.basedOnSize)
 		.background(universalBackgroundColor)
+		.presentationBackground(universalBackgroundColor)
+		.presentationDragIndicator(.hidden)
+		.presentationDetents([.height(contentHeight > 0 ? contentHeight : initialHeight)])
+		.onPreferenceChange(SheetMenuHeightKey.self) { height in
+			if height > 0 {
+				contentHeight = height
+			}
+		}
+	}
+}
+
+private struct SheetMenuHeightKey: PreferenceKey {
+	static var defaultValue: CGFloat { 0 }
+
+	static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+		value = max(value, nextValue())
 	}
 }
 
@@ -65,40 +94,5 @@ struct SheetMenuCancelRow: View {
 			dismiss()
 		}
 		.background(universalBackgroundColor)
-	}
-}
-
-/// Placeholder shimmer while menu content loads.
-struct SheetMenuLoadingPlaceholder: View {
-	let rowCount: Int
-	let dismiss: DismissAction
-
-	var body: some View {
-		VStack(spacing: 16) {
-			ForEach(0..<rowCount, id: \.self) { _ in
-				HStack {
-					RoundedRectangle(cornerRadius: 4)
-						.fill(Color.gray.opacity(0.2))
-						.frame(height: 20)
-				}
-				.padding(.horizontal, 16)
-				.padding(.vertical, 8)
-			}
-
-			Divider()
-
-			Button(action: { dismiss() }) {
-				Text("Cancel")
-					.font(.headline)
-					.foregroundColor(universalAccentColor)
-					.frame(maxWidth: .infinity)
-					.padding(.vertical, 16)
-			}
-			.background(universalBackgroundColor)
-			.cornerRadius(12)
-		}
-		.background(universalBackgroundColor)
-		.redacted(reason: .placeholder)
-		.shimmering()
 	}
 }
