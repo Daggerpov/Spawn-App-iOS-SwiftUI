@@ -19,16 +19,13 @@ struct ActivityStatusView: View {
 		Text(viewModel.status.displayText)
 			.font(.onestSemiBold(size: 11))
 			.foregroundColor(statusBadgeFontColor)
+			.lineLimit(1)
+			.fixedSize()
 			.padding(.horizontal, 12)
-			.padding(.vertical, 6)
+			.padding(.vertical, 8)  // same height as the location pill next to it
 			.background(
-				UnevenRoundedRectangle(
-					topLeadingRadius: 8,
-					bottomLeadingRadius: 2,
-					bottomTrailingRadius: 14,
-					topTrailingRadius: 2
-				)
-				.fill(viewModel.status.badgeColor)
+				Capsule()
+					.fill(viewModel.status.badgeColor)
 			)
 	}
 }

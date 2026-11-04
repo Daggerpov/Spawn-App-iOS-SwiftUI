@@ -69,100 +69,99 @@ struct ActivityCardView: View {
 	}
 
 	var body: some View {
-		ZStack(alignment: .bottomTrailing) {
-			VStack(alignment: .leading, spacing: 16) {
-				// Top Row: Title, Participants
-				ActivityCardTopRowView(activity: activity, selectedTab: $selectedTab, locationManager: locationManager)
-				// Location Row
+		VStack(alignment: .leading, spacing: 16) {
+			// Top Row: Title, Participants
+			ActivityCardTopRowView(activity: activity, selectedTab: $selectedTab, locationManager: locationManager)
+			// Location Row, with the Time Status Badge inset at the trailing end
+			HStack(spacing: 8) {
 				ActivityLocationView(activity: activity, locationManager: locationManager)
+				Spacer(minLength: 0)
+				ActivityStatusView(activity: activity)
 			}
-			.padding(14)
-			.background(
-				RoundedRectangle(cornerRadius: 14)
-					.fill(cardBackgroundColor)
-					.shadow(color: shadowColor, radius: 4, x: 0, y: 4)
-					.overlay(
-						RoundedRectangle(cornerRadius: 14)
-							.stroke(cardBorderColor, lineWidth: 1)
+		}
+		.padding(14)
+		.background(
+			RoundedRectangle(cornerRadius: 14)
+				.fill(cardBackgroundColor)
+				.shadow(color: shadowColor, radius: 4, x: 0, y: 4)
+				.overlay(
+					RoundedRectangle(cornerRadius: 14)
+						.stroke(cardBorderColor, lineWidth: 1)
+				)
+		)
+		.onAppear {
+			viewModel.fetchIsParticipating()
+		}
+		.onChange(of: activity.participationStatus) {
+			// Refresh participation status when the activity's participation status changes
+			viewModel.updateActivity(activity)
+		}
+		.onTapGesture {
+			callback(activity, color)
+		}
+		.onLongPressGesture(minimumDuration: 0.5) {
+			// Only allow reporting other users' activities
+			if viewModel.userId != activity.creatorUser.id {
+				let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+				impactFeedback.impactOccurred()
+				showActivityMenu = true
+			}
+		}
+		.contextMenu {
+			// Only show options if the current user is the creator of the activity
+			if viewModel.userId == activity.creatorUser.id {
+				Button(action: {
+					// Post notification to show global activity share drawer
+					NotificationCenter.default.post(
+						name: .showGlobalActivityShareDrawer,
+						object: nil,
+						userInfo: ["activity": activity]
 					)
+				}) {
+					Label("Share", systemImage: "square.and.arrow.up")
+				}
+
+				Button(action: {
+					showDeleteConfirmation = true
+				}) {
+					Label("Delete", systemImage: "trash")
+				}
+				.foregroundColor(.red)
+			}
+		}
+		.sheet(isPresented: $showActivityMenu) {
+			ActivityMenuView(
+				activity: activity,
+				showReportDialog: $showReportDialog
 			)
-			.onAppear {
-				viewModel.fetchIsParticipating()
-			}
-			.onChange(of: activity.participationStatus) {
-				// Refresh participation status when the activity's participation status changes
-				viewModel.updateActivity(activity)
-			}
-			.onTapGesture {
-				callback(activity, color)
-			}
-			.onLongPressGesture(minimumDuration: 0.5) {
-				// Only allow reporting other users' activities
-				if viewModel.userId != activity.creatorUser.id {
-					let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-					impactFeedback.impactOccurred()
-					showActivityMenu = true
-				}
-			}
-			.contextMenu {
-				// Only show options if the current user is the creator of the activity
-				if viewModel.userId == activity.creatorUser.id {
-					Button(action: {
-						// Post notification to show global activity share drawer
-						NotificationCenter.default.post(
-							name: .showGlobalActivityShareDrawer,
-							object: nil,
-							userInfo: ["activity": activity]
-						)
-					}) {
-						Label("Share", systemImage: "square.and.arrow.up")
-					}
-
-					Button(action: {
-						showDeleteConfirmation = true
-					}) {
-						Label("Delete", systemImage: "trash")
-					}
-					.foregroundColor(.red)
-				}
-			}
-			.sheet(isPresented: $showActivityMenu) {
-				ActivityMenuView(
-					activity: activity,
-					showReportDialog: $showReportDialog
-				)
-				.presentationDetents([.height(200)])
-				.presentationDragIndicator(.visible)
-			}
-			.sheet(isPresented: $showReportDialog) {
-				ReportActivityDrawer(
-					activity: activity,
-					onReport: { reportType, description in
-						Task {
-							await reportActivity(reportType: reportType, description: description)
-						}
-					}
-				)
-				.presentationDetents([.medium, .large])
-				.presentationDragIndicator(.visible)
-			}
-			.alert("Delete Activity", isPresented: $showDeleteConfirmation) {
-				Button("Cancel", role: .cancel) {}
-				Button("Delete", role: .destructive) {
+			.presentationDetents([.height(200)])
+			.presentationDragIndicator(.visible)
+		}
+		.sheet(isPresented: $showReportDialog) {
+			ReportActivityDrawer(
+				activity: activity,
+				onReport: { reportType, description in
 					Task {
-						do {
-							try await viewModel.deleteActivity()
-						} catch {
-							print("Failed to delete activity: \(error.localizedDescription)")
-						}
+						await reportActivity(reportType: reportType, description: description)
 					}
 				}
-			} message: {
-				Text("Are you sure you want to delete this activity? This action cannot be undone.")
+			)
+			.presentationDetents([.medium, .large])
+			.presentationDragIndicator(.visible)
+		}
+		.alert("Delete Activity", isPresented: $showDeleteConfirmation) {
+			Button("Cancel", role: .cancel) {}
+			Button("Delete", role: .destructive) {
+				Task {
+					do {
+						try await viewModel.deleteActivity()
+					} catch {
+						print("Failed to delete activity: \(error.localizedDescription)")
+					}
+				}
 			}
-
-			// Time Status Badge
-			ActivityStatusView(activity: activity)
+		} message: {
+			Text("Are you sure you want to delete this activity? This action cannot be undone.")
 		}
 		.padding(.horizontal, horizontalPadding)  // 32px spacing from feed edges
 		.padding(.vertical, 2)
