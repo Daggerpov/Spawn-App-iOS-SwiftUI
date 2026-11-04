@@ -202,28 +202,25 @@ extension FriendsView {
 			HStack {
 				HStack(spacing: 8) {
 					Text("Friend Requests")
-						.font(Font.custom("Onest", size: 17).weight(.semibold))
+						.font(.onestSemiBold(size: 17))
 						.foregroundColor(.white)
 
 					// Only show red indicator if there are friend requests
 					if viewModel.incomingFriendRequests.count > 0 {
-						VStack(spacing: 10) {
-							Text("\(viewModel.incomingFriendRequests.count)")
-								.font(Font.custom("Onest", size: 12).weight(.semibold))
-								.lineSpacing(14.40)
-								.foregroundColor(.white)
-						}
-						.padding(EdgeInsets(top: 7, leading: 11, bottom: 7, trailing: 11))
-						.frame(width: 20, height: 20)
-						.background(Color(hex: figmaSoftBlueHex))
-						.cornerRadius(16)
+						Text("\(viewModel.incomingFriendRequests.count)")
+							.font(.onestSemiBold(size: 12))
+							.foregroundColor(.white)
+							.padding(.horizontal, 6)
+							.frame(minWidth: 20, minHeight: 20)
+							.background(Color(hex: colorsRed500))
+							.clipShape(Capsule())
 					}
 				}
 
 				Spacer()
 
 				Text("View All >")
-					.font(Font.custom("Onest", size: 16).weight(.semibold))
+					.font(.onestSemiBold(size: 16))
 					.foregroundColor(Color(red: 1, green: 1, blue: 1).opacity(0.80))
 			}
 			.padding(16)
