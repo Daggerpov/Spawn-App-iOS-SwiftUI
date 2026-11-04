@@ -72,22 +72,15 @@ struct ActivityPreConfirmationView: View {
 				.multilineTextAlignment(.center)
 				.padding(.top, 24)
 
-				// Location and time
-				HStack(spacing: 4) {
-					if let location = viewModel.selectedLocation {
-						Text(location.name)
-					} else {
-						Text("Location TBD")
-					}
-
-					Text("@")
-
-					Text(formatTime(viewModel.selectedDate))
-				}
+				// Location and time as one centered line that wraps as a whole
+				// (a non-breaking space keeps "@ 8:30 PM" together)
+				Text(
+					"\(viewModel.selectedLocation?.name ?? "Location TBD") @\u{00A0}\(formatTime(viewModel.selectedDate))"
+				)
 				.font(.onestMedium(size: 20))
 				.foregroundColor(adaptiveSecondaryTextColor)
+				.multilineTextAlignment(.center)
 				.padding(.top, 12)
-				.padding(.horizontal, screenEdgePadding())
 
 				Spacer()
 
@@ -130,8 +123,9 @@ struct ActivityPreConfirmationView: View {
 					.padding(.top, 16)
 				}
 			}
+			// Pad only the content: the header already insets itself, like the other steps' headers
+			.padding(.horizontal, screenEdgePadding())
 		}
-		.padding(.horizontal, screenEdgePadding())
 		.padding(.bottom, 80)  // Standard bottom padding
 		.background(adaptiveBackgroundColor)
 	}
@@ -203,7 +197,7 @@ struct ActivityPreConfirmationView: View {
 
 	private func formatTime(_ date: Date) -> String {
 		let formatter = DateFormatter()
-		formatter.dateFormat = "h:mm a"
+		formatter.dateFormat = "h:mm\u{00A0}a"  // non-breaking space so "8:30 PM" never splits
 		return formatter.string(from: date).uppercased()
 	}
 }
