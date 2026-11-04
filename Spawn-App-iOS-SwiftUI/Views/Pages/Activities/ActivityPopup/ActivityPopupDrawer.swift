@@ -79,8 +79,7 @@ struct ActivityPopupDrawer: View {
 				isExpanded: $isExpanded,
 				selectedTab: $selectedTab,
 				fromMapView: fromMapView,
-				onDismiss: dismissPopup,
-				onMinimize: minimizePopup
+				onDismiss: dismissPopup
 			)
 			.frame(maxWidth: .infinity)
 			.frame(maxHeight: isExpanded ? .infinity : screenHeight)  // Fill to bottom when minimized
@@ -142,13 +141,6 @@ struct ActivityPopupDrawer: View {
 				// Animation will reset dragOffset to 0
 			}
 
-			dragOffset = 0
-		}
-	}
-
-	private func minimizePopup() {
-		withAnimation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0)) {
-			isExpanded = false
 			dragOffset = 0
 		}
 	}

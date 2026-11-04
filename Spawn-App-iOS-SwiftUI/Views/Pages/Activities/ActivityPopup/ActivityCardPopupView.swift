@@ -27,9 +27,6 @@ struct ActivityCardPopupView: View {
 	// Callback to dismiss the drawer
 	let onDismiss: () -> Void
 
-	// Callback to minimize the drawer
-	let onMinimize: () -> Void
-
 	// State for activity reporting
 	@State private var showActivityMenu: Bool = false
 	@State private var showReportDialog: Bool = false
@@ -45,8 +42,7 @@ struct ActivityCardPopupView: View {
 		isExpanded: Binding<Bool>,
 		selectedTab: Binding<TabType?> = .constant(nil),
 		fromMapView: Bool = false,
-		onDismiss: @escaping () -> Void = {},
-		onMinimize: @escaping () -> Void = {}
+		onDismiss: @escaping () -> Void = {}
 	) {
 		// Get the most up-to-date activity from cache to ensure correct participation status
 		let cachedActivity = AppCache.shared.getActivityById(activity.id) ?? activity
@@ -72,7 +68,6 @@ struct ActivityCardPopupView: View {
 		self._selectedTab = selectedTab
 		self.fromMapView = fromMapView
 		self.onDismiss = onDismiss
-		self.onMinimize = onMinimize
 	}
 
 	var body: some View {
@@ -123,9 +118,7 @@ struct ActivityCardPopupView: View {
 				mainCardContent
 			}
 		}
-		.background {
-			activityColor.opacity(0.80).blendMode(.multiply)
-		}
+		.background(activityColor)  // Opaque so the screen behind doesn't show through
 		.cornerRadius(isExpanded ? 0 : 20)
 		.shadow(radius: isExpanded ? 0 : 20)
 		.ignoresSafeArea(
@@ -270,7 +263,7 @@ struct ActivityCardPopupView: View {
 			HStack {
 				Button(action: {
 					if isExpanded {
-						onMinimize()
+						onDismiss()
 					} else {
 						withAnimation(.easeInOut(duration: 0.3)) {
 							isExpanded = true
@@ -346,6 +339,7 @@ struct ActivityCardPopupView: View {
 							.foregroundColor(.red)
 					}
 				}
+				.safeAreaPadding(.bottom, 44)  // Keep the Maps logo and Legal link above the location overlay
 				.frame(height: 200)
 				.clipShape(RoundedRectangle(cornerRadius: 12))
 				.background(
@@ -675,8 +669,7 @@ struct ActivityCardPopupView_Previews: PreviewProvider {
 			activity: FullFeedActivityDTO.mockDinnerActivity,
 			activityColor: figmaSoftBlue,
 			isExpanded: .constant(false),
-			onDismiss: {},
-			onMinimize: {}
+			onDismiss: {}
 		)
 
 	}
