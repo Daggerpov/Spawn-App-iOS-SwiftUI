@@ -640,7 +640,8 @@ struct ActivityCreationLocationView: View {
 
 	private func selectSearchResult(_ result: SearchResultItem) {
 		let coordinate = result.mapItem.placemark.coordinate
-		let name = result.mapItem.placemark.formattedAddress() ?? result.mapItem.name ?? "Selected Location"
+		// Prefer the place name shown in the list; fall back to the address
+		let name = result.mapItem.name ?? result.mapItem.placemark.formattedAddress() ?? "Selected Location"
 
 		let location = LocationDTO(
 			id: UUID(),
@@ -655,7 +656,8 @@ struct ActivityCreationLocationView: View {
 	private func selectPredefinedLocation(_ locationData: LocationData) {
 		let location = LocationDTO(
 			id: UUID(),
-			name: locationData.address,
+			// Prefer the place name shown in the list; fall back to the address
+			name: locationData.name.isEmpty ? locationData.address : locationData.name,
 			latitude: locationData.coordinate.latitude,
 			longitude: locationData.coordinate.longitude
 		)
