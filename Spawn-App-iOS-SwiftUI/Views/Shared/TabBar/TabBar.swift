@@ -29,9 +29,9 @@ struct TabBar: View {
 			return
 		}
 
-		withAnimation(.bouncy(duration: 0.3, extraBounce: 0.15)) {
-			selection = tab
-		}
+		// No withAnimation here: it also reached the tab content, which faded the new tab in from
+		// transparent and showed a blank screen. The pill animates via .animation(_:value:) in body.
+		selection = tab
 
 		symbolTrigger = true
 
@@ -92,6 +92,7 @@ struct TabBar: View {
 				}
 			}
 		}
+		.animation(.bouncy(duration: 0.3, extraBounce: 0.15), value: selection)
 		.padding(4)
 		.background(
 			ZStack {
