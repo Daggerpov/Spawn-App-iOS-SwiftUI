@@ -65,13 +65,6 @@ struct EditProfileView: View {
 
 				Spacer()
 
-				// Title
-				Text("Edit Profile")
-					.font(.system(size: 18, weight: .semibold))
-					.foregroundColor(universalAccentColor)
-
-				Spacer()
-
 				// Save Button
 				Button("Save") {
 					saveProfile()
@@ -85,6 +78,12 @@ struct EditProfileView: View {
 						.fill(isSaving ? Color.gray.opacity(0.3) : figmaSoftBlue)
 				)
 				.disabled(isSaving)
+			}
+			.overlay {
+				// Title is overlaid so it stays centered even though Cancel is wider than Save
+				Text("Edit Profile")
+					.font(.system(size: 18, weight: .semibold))
+					.foregroundColor(universalAccentColor)
 			}
 			.padding(.horizontal, 16)
 			.padding(.top, 8)

@@ -25,6 +25,12 @@ struct SocialMediaField: View {
 		icon == "instagram" ? instagramGradientColors : whatsappGradientColors
 	}
 
+	// The "whatsapp" asset is the tilted profile sticker with a link badge, which shows up as a
+	// stray dot at this size, so use the plain round logo instead
+	private var iconImageName: String {
+		icon == "whatsapp" ? "whatsapp_logo_for_sharing" : icon
+	}
+
 	private var gradient: LinearGradient {
 		LinearGradient(
 			colors: gradientColors,
@@ -41,9 +47,11 @@ struct SocialMediaField: View {
 				.foregroundColor(.gray)
 
 			HStack(spacing: 12) {
-				Image(icon)
+				Image(iconImageName)
 					.resizable()
 					.scaledToFit()
+					// The round logo has no built-in margin, so inset it to match the Instagram icon's size
+					.padding(icon == "whatsapp" ? 3 : 0)
 					.frame(width: 28, height: 28)
 
 				// Add @ prefix for Instagram
