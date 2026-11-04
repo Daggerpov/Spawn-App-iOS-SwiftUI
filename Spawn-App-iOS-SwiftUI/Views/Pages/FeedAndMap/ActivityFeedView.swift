@@ -66,15 +66,9 @@ struct ActivityFeedView: View {
 					.padding(.horizontal, screenEdgePadding())
 
 				// Spawn In! row
-				HStack {
-					Text("Spawn in!")
-						.font(.onestSemiBold(size: 16))
-						.foregroundColor(figmaBlack400)
-					Spacer()
-					seeAllActivityTypesButton
-				}
-				.padding(.bottom, 20)
-				.padding(.horizontal, screenEdgePadding())
+				seeAllActivityTypesButton
+					.padding(.bottom, 20)
+					.padding(.horizontal, screenEdgePadding())
 
 				// Activity Types row
 				activityTypeListView
@@ -91,15 +85,9 @@ struct ActivityFeedView: View {
 					.padding(.horizontal, screenEdgePadding())
 
 				// Activities in Your Area row
-				HStack {
-					Text("See what's happening")
-						.font(.onestSemiBold(size: 16))
-						.foregroundColor(figmaBlack400)
-					Spacer()
-					seeAllActivitiesButton
-				}
-				.padding(.bottom, 14)
-				.padding(.horizontal, screenEdgePadding())
+				seeAllActivitiesButton
+					.padding(.bottom, 14)
+					.padding(.horizontal, screenEdgePadding())
 
 				// Activities - no container padding, cards will handle their own
 				ActivityListView(
@@ -218,12 +206,12 @@ struct ActivityFeedView: View {
 			ActivityCreationViewModel.reInitialize()
 			selectedTab = TabType.activities
 		}) {
-			seeAllText
+			sectionHeader("Spawn in!")
 		}
 	}
 	var seeAllActivitiesButton: some View {
 		Button(action: { showFullActivitiesList = true }) {
-			seeAllText
+			sectionHeader("See what’s happening")
 		}
 		.fullScreenCover(isPresented: $showFullActivitiesList) {
 			FullscreenActivityListView(viewModel: viewModel, user: user) { activity, color in
@@ -233,10 +221,21 @@ struct ActivityFeedView: View {
 			}
 		}
 	}
-	var seeAllText: some View {
-		Text("See All")
-			.font(.onestRegular(size: 13))
-			.foregroundColor(universalSecondaryColor)
+	/// Figma section header (node 2802:4770): navy SemiBold 20 title followed by a round chevron.
+	/// The whole row opens the "see all" screen that the old trailing "See All" link did.
+	func sectionHeader(_ title: String) -> some View {
+		HStack(spacing: 8) {
+			Text(title)
+				.font(.onestSemiBold(size: 20))
+				.foregroundColor(universalHeadingColor)
+			Image(systemName: "chevron.right")
+				.font(.system(size: 11, weight: .bold))
+				.foregroundColor(Color(hex: figmaNavyHex))
+				.frame(width: 24, height: 24)
+				.background(Circle().fill(Color(hex: figmaChevronCircleHex)))
+			Spacer()
+		}
+		.contentShape(Rectangle())
 	}
 
 	// MARK: - Deep Link Handling

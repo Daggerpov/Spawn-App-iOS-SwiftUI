@@ -277,6 +277,24 @@ var universalBackgroundColor: Color {
 		})
 }
 
+// Figma's navy for headings on Home (Event Feed, node 2802:4741). White in dark mode so it stays readable.
+let figmaNavyHex: String = "#1E265A"
+// Background of Figma's round chevron button next to section headers
+let figmaChevronCircleHex: String = "#DBE0FF"
+
+@available(iOS 14.0, *)
+var universalHeadingColor: Color {
+	Color(
+		UIColor { traitCollection in
+			switch traitCollection.userInterfaceStyle {
+			case .dark:
+				return UIColor(Color(hex: colorsWhite))
+			default:
+				return UIColor(Color(hex: figmaNavyHex))
+			}
+		})
+}
+
 @available(iOS 14.0, *)
 var universalAccentColor: Color {
 	Color(
