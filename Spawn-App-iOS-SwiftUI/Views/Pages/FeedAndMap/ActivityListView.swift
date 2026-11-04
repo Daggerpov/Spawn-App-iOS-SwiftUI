@@ -54,6 +54,7 @@ struct ActivityListView: View {
 					}
 				}
 			}
+			.padding(.top, 12)  // Room for the first card's shadow so the scroll view doesn't clip it
 			.padding(.bottom, 72)  // Add bottom padding to ensure last activity shows fully above nav bar
 		}
 		.background(universalBackgroundColor)

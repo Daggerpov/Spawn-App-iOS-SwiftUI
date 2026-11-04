@@ -39,11 +39,6 @@ struct ActivityCardView: View {
 
 	}
 
-	// Use the same color for both light and dark modes
-	private var cardBackgroundColor: Color {
-		return color
-	}
-
 	// Border color for better definition in dark mode
 	private var cardBorderColor: Color {
 		switch colorScheme {
@@ -87,13 +82,15 @@ struct ActivityCardView: View {
 				}
 			}
 		}
-		.padding(14)
+		// Figma Activity Card (node 2802:4649): 20 top, 16 sides and bottom, radius 12
+		.padding(.top, 20)
+		.padding([.horizontal, .bottom], 16)
 		.background(
-			RoundedRectangle(cornerRadius: 14)
-				.fill(cardBackgroundColor)
-				.shadow(color: shadowColor, radius: 4, x: 0, y: 4)
+			ActivityCardGradientBackground(color: color)
+				// Figma "outer/16b 20o Black": #00000033, y 4, blur 16
+				.shadow(color: shadowColor, radius: 8, x: 0, y: 4)
 				.overlay(
-					RoundedRectangle(cornerRadius: 14)
+					RoundedRectangle(cornerRadius: 12)
 						.stroke(cardBorderColor, lineWidth: 1)
 				)
 		)
