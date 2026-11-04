@@ -115,6 +115,11 @@ extension LocationManager: CLLocationManagerDelegate {
 		Task { @MainActor [weak self] in
 			guard let self = self else { return }
 
+			// Any valid fix means an earlier error no longer applies, even if we don't publish it
+			if self.locationError != nil {
+				self.locationError = nil
+			}
+
 			// Only publish location updates if moved significantly to reduce unnecessary UI updates
 			let shouldPublish: Bool
 			if let lastLocation = self.lastPublishedLocation {
@@ -129,7 +134,6 @@ extension LocationManager: CLLocationManagerDelegate {
 				let oldLocation = self.lastPublishedLocation
 				self.userLocation = location.coordinate
 				self.locationUpdated = true
-				self.locationError = nil
 
 				if let old = oldLocation {
 					let distance = location.distance(from: CLLocation(latitude: old.latitude, longitude: old.longitude))
@@ -186,13 +190,18 @@ extension LocationManager: CLLocationManagerDelegate {
 	}
 
 	nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+		// kCLErrorLocationUnknown is transient: Core Location keeps trying and delivers a fix
+		// shortly after, so it shouldn't be surfaced as an error
+		if let clError = error as? CLError, clError.code == .locationUnknown {
+			print("📍 LocationManager: Location temporarily unknown, still trying")
+			return
+		}
+
 		Task { @MainActor [weak self] in
 			if let clError = error as? CLError {
 				switch clError.code {
 				case .denied:
 					self?.locationError = "Location access denied"
-				case .locationUnknown:
-					self?.locationError = "Location unknown"
 				case .network:
 					self?.locationError = "Network error when getting location"
 				default:

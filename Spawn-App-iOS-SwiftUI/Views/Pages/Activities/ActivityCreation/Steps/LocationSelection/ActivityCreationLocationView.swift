@@ -49,6 +49,7 @@ struct ActivityCreationLocationView: View {
 	@State private var debounceTimer: Timer?
 	@State private var is3DMode: Bool = false
 	@State private var isMapDragging: Bool = false
+	@State private var hasCenteredOnUser = false
 
 	// Location error handling
 	@State private var showLocationError = false
@@ -502,11 +503,13 @@ struct ActivityCreationLocationView: View {
 			updateCurrentLocationAddress()
 		}
 
-		// Only auto-center if we don't have a selected location and we're in search mode
-		guard viewModel.selectedLocation == nil,
+		// Auto-center once (like MapView) if we don't have a selected location and we're in search mode.
+		// The shared location manager has usually resolved a location before this view appears,
+		// so this also handles the location we already have when the view opens.
+		guard !hasCenteredOnUser,
+			viewModel.selectedLocation == nil,
 			selectionMode == .search,
 			let location = location,
-			!locationManager.locationUpdated,
 			CLLocationCoordinate2DIsValid(location),
 			location.latitude.isFinite && location.longitude.isFinite
 		else { return }
@@ -519,6 +522,7 @@ struct ActivityCreationLocationView: View {
 		withAnimation(.easeInOut(duration: 0.5)) {
 			region = newRegion
 		}
+		hasCenteredOnUser = true
 	}
 
 	private func getCurrentLocationAddress() -> String {
@@ -739,9 +743,12 @@ struct LocationListRow: View {
 							.foregroundColor(iconColor)
 
 						if let distance = distance {
+							// Shrink long distances (e.g. "4220km") to fit instead of wrapping
 							Text(distance)
 								.font(.onestSemiBold(size: 10))
 								.foregroundColor(universalSecondaryColor)
+								.lineLimit(1)
+								.minimumScaleFactor(0.6)
 						}
 					}
 					.frame(width: 32)
