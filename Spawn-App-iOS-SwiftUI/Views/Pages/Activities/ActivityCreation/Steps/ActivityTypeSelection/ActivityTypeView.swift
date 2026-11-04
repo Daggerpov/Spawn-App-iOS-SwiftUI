@@ -206,7 +206,15 @@ extension ActivityTypeView {
 				createNewActivityButton
 			}
 			// No top padding: the header's bottom padding and the VStack spacing already separate the grid
-			.padding([.horizontal, .bottom], screenEdgePadding())
+			.padding(.horizontal, screenEdgePadding())
+
+			// Figma "Spawn In" (node 1852:5988): tells people the cards have a long-press menu
+			Text("Press & hold to edit")
+				.font(.onestRegular(size: 14))
+				.foregroundColor(figmaBlack300)
+				.frame(maxWidth: .infinity)
+				.padding(.top, 16)
+				.padding(.bottom, screenEdgePadding())
 		}
 	}
 
