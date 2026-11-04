@@ -52,6 +52,15 @@ enum ActivityGradient {
 			?? [.init(color: baseColor, location: 0), .init(color: baseColor, location: 1)]
 	}
 
+	/// Location pill fill in the activity drawer (Figma node 2805:5432): a left-to-right blend from
+	/// a deep shade of the activity color to its lightest tint.
+	static func pillGradient(for baseColor: Color) -> LinearGradient {
+		let stops = stops(for: baseColor)
+		let deep = stops.first(where: { $0.location == 0.75 })?.color ?? stops.last?.color ?? baseColor
+		let light = stops.first?.color ?? baseColor
+		return LinearGradient(colors: [deep, light], startPoint: .leading, endPoint: .trailing)
+	}
+
 	/// Activity card fill (Figma node 2802:4649): radiates from the bottom-right corner and reaches
 	/// the darkest stop at the top-left corner.
 	static func cardGradient(for baseColor: Color, size: CGSize) -> RadialGradient {
