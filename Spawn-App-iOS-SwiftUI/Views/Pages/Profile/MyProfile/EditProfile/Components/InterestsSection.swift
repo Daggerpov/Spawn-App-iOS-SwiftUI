@@ -42,14 +42,8 @@ struct InterestsSection: View {
 
 			// Existing interests as chips
 			if !profileViewModel.userInterests.isEmpty {
-				// Flexible layout for interests that wraps to new lines
-				LazyVGrid(
-					columns: [
-						GridItem(.flexible()),
-						GridItem(.flexible()),
-						GridItem(.flexible()),
-					], spacing: 8
-				) {
+				// Chips size to their text and wrap to a new line when the row is full
+				FlowLayout(spacing: 8) {
 					ForEach(Array(profileViewModel.userInterests.enumerated()), id: \.offset) { index, interest in
 						InterestChipView(interest: interest) {
 							removeInterest(interest)
