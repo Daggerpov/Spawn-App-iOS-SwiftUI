@@ -130,11 +130,14 @@ struct ChatroomContentView: View {
 					ForEach(sortedMessages, id: \.id) { message in
 						let isFromCurrentUser = message.senderUser.id == user.id
 
-						if isFromCurrentUser {
-							CurrentUserMessageView(message: message)
-						} else {
-							OtherUserMessageView(message: message)
+						Group {
+							if isFromCurrentUser {
+								CurrentUserMessageView(message: message)
+							} else {
+								OtherUserMessageView(message: message)
+							}
 						}
+						.chatMessageActions(for: message, isFromCurrentUser: isFromCurrentUser)
 					}
 
 					// Don't claim there are no messages when they failed to load
