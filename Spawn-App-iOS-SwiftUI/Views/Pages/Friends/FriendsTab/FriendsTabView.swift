@@ -137,8 +137,6 @@ struct FriendsTabView: View {
 						shareProfile: { viewModel.shareProfile(for: selectedFriend) },
 						navigateToProfile: { navigateToProfile = true }
 					)
-					.background(universalBackgroundColor)
-					.presentationDetents([.height(580)])
 				}
 			}
 

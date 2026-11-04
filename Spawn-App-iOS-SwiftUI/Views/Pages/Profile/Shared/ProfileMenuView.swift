@@ -17,17 +17,10 @@ struct ProfileMenuView: View {
 	let copyProfileURL: () -> Void
 	let shareProfile: () -> Void
 	@Environment(\.dismiss) private var dismiss
-	// Measure the rows so the sheet fits both friend and non-friend menus.
-	@State private var contentHeight: CGFloat = 0
-
-	private var initialHeight: CGFloat {
-		// Six actions for friends, four for other users, plus Cancel and dividers.
-		let actionCount = isFriend ? 6 : 4
-		return CGFloat(actionCount + 1) * 63 + CGFloat(actionCount)
-	}
 
 	var body: some View {
-		ScrollView {
+		// Six actions for friends, four for other users, plus Cancel.
+		SheetMenuContainer(rowCount: isFriend ? 7 : 5) {
 			ProfileMenuContent(
 				showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
 				showReportDialog: $showReportDialog,
@@ -38,30 +31,7 @@ struct ProfileMenuView: View {
 				shareProfile: shareProfile,
 				dismiss: dismiss
 			)
-			.background {
-				GeometryReader { geometry in
-					Color.clear.preference(key: ProfileMenuHeightKey.self, value: geometry.size.height)
-				}
-			}
 		}
-		.scrollBounceBehavior(.basedOnSize)
-		.background(universalBackgroundColor)
-		.presentationBackground(universalBackgroundColor)
-		.presentationDragIndicator(.hidden)
-		.presentationDetents([.height(contentHeight > 0 ? contentHeight : initialHeight)])
-		.onPreferenceChange(ProfileMenuHeightKey.self) { height in
-			if height > 0 {
-				contentHeight = height
-			}
-		}
-	}
-}
-
-private struct ProfileMenuHeightKey: PreferenceKey {
-	static var defaultValue: CGFloat { 0 }
-
-	static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-		value = max(value, nextValue())
 	}
 }
 
