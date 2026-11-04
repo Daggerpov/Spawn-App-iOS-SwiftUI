@@ -22,9 +22,10 @@ struct MapFilterOverlay: View {
 
 	var body: some View {
 		ZStack {
-			// Dimming overlay
+			// Figma "Open Filters" (node 442:5504) blurs the map behind the menu rather than dimming it
 			if showFilterOverlay {
-				Color.black.opacity(0.3)
+				Rectangle()
+					.fill(.ultraThinMaterial)
 					.ignoresSafeArea()
 					.transition(.opacity)
 					.contentShape(Rectangle())
@@ -42,14 +43,10 @@ struct MapFilterOverlay: View {
 					Spacer()
 					VStack(spacing: 8) {
 						if showFilterOverlay {
-							// Show "All Activities" at the top if not selected
-							if selectedTimeFilter != .allActivities {
-								filterButton(for: .allActivities)
-							}
-
-							// Show all other filters except currently selected and "All Activities"
+							// Figma order, top to bottom: Late Night, Evening, Afternoon, In the next hour,
+							// Happening Now, then All Activities right above the selected filter
 							ForEach(
-								Array(TimeFilter.allCases.dropLast().filter { $0 != selectedTimeFilter }).reversed(),
+								TimeFilter.allCases.filter { $0 != selectedTimeFilter },
 								id: \.self
 							) { filter in
 								filterButton(for: filter)
