@@ -543,14 +543,12 @@ struct UserProfileView: View {
 
 	private var blockUserAlert: some View {
 		Group {
-			TextField("Reason for blocking", text: $blockReason)
+			TextField("Reason (optional)", text: $blockReason)
 			Button("Cancel", role: .cancel) {
 				blockReason = ""
 			}
 			Button("Block", role: .destructive) {
-				if let currentUserId = userAuth.spawnUser?.id,
-					!blockReason.isEmpty
-				{
+				if let currentUserId = userAuth.spawnUser?.id {
 					Task {
 						await profileViewModel.blockUser(
 							blockerId: currentUserId,

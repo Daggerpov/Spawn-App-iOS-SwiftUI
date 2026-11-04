@@ -146,22 +146,31 @@ struct FriendsTabView: View {
 				ReportUserDrawer(
 					user: selectedFriend ?? BaseUserDTO.danielAgapov,
 					onReport: { reportType, description in
-						// Handle report user action
-						// TODO: Implement report functionality
+						if let friendToReport = selectedFriend,
+							let currentUserId = UserAuthViewModel.shared.spawnUser?.id
+						{
+							Task {
+								await viewModel.reportUser(
+									reporterUserId: currentUserId,
+									reportedUserId: friendToReport.id,
+									reportType: reportType,
+									description: description
+								)
+							}
+						}
 					}
 				)
 				.presentationDetents([.medium, .large])
 				.presentationDragIndicator(.visible)
 			}
 			.alert("Block User", isPresented: $showBlockDialog) {
-				TextField("Reason for blocking", text: $blockReason)
+				TextField("Reason (optional)", text: $blockReason)
 				Button("Cancel", role: .cancel) {
 					blockReason = ""
 				}
 				Button("Block", role: .destructive) {
 					if let friendToBlock = selectedFriend,
-						let currentUserId = UserAuthViewModel.shared.spawnUser?.id,
-						!blockReason.isEmpty
+						let currentUserId = UserAuthViewModel.shared.spawnUser?.id
 					{
 						Task {
 							await viewModel.blockUser(
