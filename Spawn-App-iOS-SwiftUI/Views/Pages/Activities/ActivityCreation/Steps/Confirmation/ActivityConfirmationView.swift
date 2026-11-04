@@ -5,7 +5,6 @@ struct ActivityConfirmationView: View {
 	@ObservedObject var themeService = ThemeService.shared
 	@Environment(\.colorScheme) private var colorScheme
 	let onClose: () -> Void
-	let onBack: (() -> Void)?
 
 	// MARK: - Adaptive Colors
 	private var adaptiveBackgroundColor: Color {
@@ -75,10 +74,7 @@ struct ActivityConfirmationView: View {
 	var body: some View {
 		ZStack {
 			VStack(spacing: 0) {
-				// Header with back button and title
-				headerView
-
-				// Main content
+				// No header: the activity is already posted, so there is no going back to Confirm
 				VStack(spacing: 0) {
 					Spacer()
 
@@ -175,15 +171,6 @@ struct ActivityConfirmationView: View {
 		}
 		.background(adaptiveBackgroundColor)
 	}
-
-	// MARK: - Header View
-	private var headerView: some View {
-		ActivityCreationCenteredTitleHeader(
-			title: "Confirm",
-			titleColor: adaptiveTextColor,
-			onBack: onBack
-		)
-	}
 }
 
 @available(iOS 17, *)
@@ -193,9 +180,6 @@ struct ActivityConfirmationView: View {
 	ActivityConfirmationView(
 		onClose: {
 			print("Close tapped")
-		},
-		onBack: {
-			print("Back tapped")
 		}
 	)
 	.environmentObject(appCache)

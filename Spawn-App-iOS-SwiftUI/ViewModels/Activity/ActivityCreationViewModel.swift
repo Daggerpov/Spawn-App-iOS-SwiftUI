@@ -551,11 +551,12 @@ final class ActivityCreationViewModel {
 		}
 	}
 
-	func createActivity() async {
+	/// Creates the activity. Returns true only if the server accepted it.
+	func createActivity() async -> Bool {
 		// Check if activity creation is already in progress
 		guard !isCreatingActivity else {
 			print("🔍 DEBUG: Activity creation already in progress, returning early")
-			return
+			return false
 		}
 
 		print("🔍 DEBUG: Starting activity creation process")
@@ -573,7 +574,7 @@ final class ActivityCreationViewModel {
 		guard isFormValid else {
 			print("🔍 DEBUG: Form validation failed")
 			await setLoadingState(false)
-			return
+			return false
 		}
 
 		print("🔍 DEBUG: Form validation passed, creating activity using DataService")
@@ -583,24 +584,30 @@ final class ActivityCreationViewModel {
 		let result: DataResult<ActivityCreationResponseDTO> = await dataService.write(
 			operationType, body: activity)
 
+		let didSucceed: Bool
 		switch result {
 		case .success(let response, _):
 			NotificationCenter.default.post(name: .activityCreated, object: response.activity)
 			await setCreationMessage("Activity created successfully!")
 			notificationService.showSuccess(.activityCreated)
+			didSucceed = true
 
 		case .failure(let error):
 			print("Activity creation failed: \(error)")
 			notificationService.showError(error, resource: .activity, operation: .create)
 			await setCreationMessage("Failed to create activity. Please try again.")
+			didSucceed = false
 		}
 
 		await setLoadingState(false)
+		return didSucceed
 	}
 
-	func updateActivity() async {
+	/// Saves edits to an existing activity. Returns true only if the server accepted them.
+	@discardableResult
+	func updateActivity() async -> Bool {
 		// Check if activity update is already in progress
-		guard !isCreatingActivity else { return }
+		guard !isCreatingActivity else { return false }
 
 		await setLoadingState(true)
 
@@ -612,7 +619,7 @@ final class ActivityCreationViewModel {
 
 		guard isFormValid else {
 			await setLoadingState(false)
-			return
+			return false
 		}
 
 		// Create partial update data
@@ -623,6 +630,7 @@ final class ActivityCreationViewModel {
 		let result: DataResult<FullFeedActivityDTO> = await dataService.write(
 			operationType, body: updateData)
 
+		let didSucceed: Bool
 		switch result {
 		case .success(let updatedActivity, _):
 			await MainActor.run {
@@ -630,14 +638,17 @@ final class ActivityCreationViewModel {
 				creationMessage = "Activity updated successfully!"
 			}
 			notificationService.showSuccess(.activityUpdated)
+			didSucceed = true
 
 		case .failure(let error):
 			print("Error updating activity: \(error)")
 			notificationService.showError(error, resource: .activity, operation: .update)
 			await setCreationMessage("Failed to update activity. Please try again.")
+			didSucceed = false
 		}
 
 		await setLoadingState(false)
+		return didSucceed
 	}
 
 	/// Build partial update data for activity update
