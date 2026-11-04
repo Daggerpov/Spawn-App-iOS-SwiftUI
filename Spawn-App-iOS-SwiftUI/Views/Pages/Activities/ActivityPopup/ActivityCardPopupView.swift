@@ -431,7 +431,7 @@ struct ActivityCardPopupView: View {
 			}
 		}
 		.padding(EdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10))
-		.background(Color(red: 0.33, green: 0.42, blue: 0.93).opacity(0.80))
+		.background(ActivityGradient.pillGradient(for: activityColor))
 		.cornerRadius(10)
 	}
 
@@ -595,7 +595,7 @@ extension ActivityCardPopupView {
 				}
 			}
 			.padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
-			.background(Color(red: 0.33, green: 0.42, blue: 0.93).opacity(0.80))
+			.background(ActivityGradient.pillGradient(for: activityColor))
 			.cornerRadius(12)
 
 			// View in Maps button
