@@ -39,5 +39,6 @@ struct FullscreenActivityListView: View {
 
 			ActivityListView(viewModel: viewModel, user: user, callback: callback)
 		}
+		.background(universalBackgroundColor)
 	}
 }
