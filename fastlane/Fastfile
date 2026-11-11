@@ -1,0 +1,55 @@
+# App Store releases through the App Store Connect API.
+#
+# Setup (once per machine): create an App Store Connect API key (App Manager role),
+# save it to ~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8, and export:
+#   ASC_KEY_ID=<key id>  ASC_ISSUER_ID=<issuer id>
+#
+# Usage:
+#   fastlane release version:2.3                     # bump, build, upload, submit for review
+#   fastlane release version:2.3 submit:false        # stop after uploading the build
+#   fastlane release version:2.3 notes:"Bug fixes"   # What's New (default "Bug Fixes & UI Tweaks")
+
+default_platform(:ios)
+
+platform :ios do
+  def asc_key
+    key_id = ENV.fetch("ASC_KEY_ID")
+    app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_filepath: File.expand_path("~/.appstoreconnect/private_keys/AuthKey_#{key_id}.p8")
+    )
+  end
+
+  desc "Bump the version, build, upload to App Store Connect and submit for review"
+  lane :release do |options|
+    version = options[:version] || UI.user_error!("Pass version:, e.g. fastlane release version:2.3")
+    api_key = asc_key
+
+    increment_version_number(version_number: version, xcodeproj: "Spawn-App-iOS-SwiftUI.xcodeproj")
+    increment_build_number(
+      build_number: latest_testflight_build_number(api_key: api_key, version: version, initial_build_number: 0) + 1,
+      xcodeproj: "Spawn-App-iOS-SwiftUI.xcodeproj"
+    )
+
+    build_app(
+      project: "Spawn-App-iOS-SwiftUI.xcodeproj",
+      scheme: "Spawn-App-iOS-SwiftUI",
+      configuration: "Release",
+      export_method: "app-store",
+      xcargs: "-allowProvisioningUpdates"
+    )
+
+    upload_to_app_store(
+      api_key: api_key,
+      app_version: version,
+      skip_screenshots: true,
+      release_notes: { "en-CA" => options[:notes] || "Bug Fixes & UI Tweaks" },
+      submit_for_review: options[:submit] != false,
+      automatic_release: true,
+      force: true,
+      precheck_include_in_app_purchases: false,
+      submission_information: { add_id_info_uses_idfa: false, export_compliance_uses_encryption: false }
+    )
+  end
+end

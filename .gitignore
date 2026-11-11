@@ -57,3 +57,12 @@ fastlane/test_output
 # =========================
 .env
 Spawn-App-iOS-SwiftUI/Secrets.swift
+
+# =========================
+# fastlane
+# =========================
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/README.md
+fastlane/screenshots
+fastlane/test_output
