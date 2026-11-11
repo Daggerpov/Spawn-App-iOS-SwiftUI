@@ -100,6 +100,12 @@ enum WriteOperationType {
 	/// Delete one of your own chat messages
 	case deleteChatMessage(messageId: UUID, activityId: UUID)
 
+	/// Like a chat message
+	case likeChatMessage(messageId: UUID, userId: UUID, activityId: UUID)
+
+	/// Remove your like from a chat message
+	case unlikeChatMessage(messageId: UUID, userId: UUID, activityId: UUID)
+
 	// MARK: - Feedback Operations
 
 	/// Submit user feedback
@@ -170,12 +176,14 @@ enum WriteOperationType {
 			.deleteUser,
 			.unregisterDeviceToken,
 			.unblockUser,
-			.deleteChatMessage:
+			.deleteChatMessage,
+			.unlikeChatMessage:
 			return .delete
 
 		case .joinActivity,
 			.inviteToActivity,
-			.blockUser:
+			.blockUser,
+			.likeChatMessage:
 			return .post
 
 		case .partialUpdateActivity,
@@ -246,6 +254,9 @@ enum WriteOperationType {
 			return "chat-messages"
 		case .deleteChatMessage(let messageId, _):
 			return "chat-messages/\(messageId)"
+		case .likeChatMessage(let messageId, let userId, _),
+			.unlikeChatMessage(let messageId, let userId, _):
+			return "chat-messages/\(messageId)/likes/\(userId)"
 
 		// Feedback
 		case .submitFeedback:
@@ -355,7 +366,9 @@ enum WriteOperationType {
 		// Chats
 		case .sendChatMessage(let message):
 			return ["activityChats-\(message.activityId)"]
-		case .deleteChatMessage(_, let activityId):
+		case .deleteChatMessage(_, let activityId),
+			.likeChatMessage(_, _, let activityId),
+			.unlikeChatMessage(_, _, let activityId):
 			return ["activityChats-\(activityId)"]
 
 		// Feedback
@@ -431,6 +444,10 @@ enum WriteOperationType {
 			return "Send Chat Message"
 		case .deleteChatMessage:
 			return "Delete Chat Message"
+		case .likeChatMessage:
+			return "Like Chat Message"
+		case .unlikeChatMessage:
+			return "Unlike Chat Message"
 		case .submitFeedback:
 			return "Submit Feedback"
 		case .partialUpdateActivity:
@@ -494,7 +511,7 @@ enum WriteOperationType {
 			return EmptyRequestBody() as? T
 		case .sendChatMessage(let message):
 			return message as? T
-		case .deleteChatMessage:
+		case .deleteChatMessage, .likeChatMessage, .unlikeChatMessage:
 			return EmptyRequestBody() as? T
 		case .submitFeedback(let feedback):
 			return feedback as? T
@@ -557,7 +574,7 @@ enum WriteOperationType {
 			return AnyEncodable(EmptyRequestBody())
 		case .sendChatMessage(let message):
 			return AnyEncodable(message)
-		case .deleteChatMessage:
+		case .deleteChatMessage, .likeChatMessage, .unlikeChatMessage:
 			return AnyEncodable(EmptyRequestBody())
 		case .submitFeedback(let feedback):
 			return AnyEncodable(feedback)

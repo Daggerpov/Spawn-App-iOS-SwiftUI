@@ -137,9 +137,16 @@ struct ChatroomContentView: View {
 								OtherUserMessageView(message: message)
 							}
 						}
-						.chatMessageActions(for: message, isFromCurrentUser: isFromCurrentUser) {
-							Task { await viewModel.deleteMessage(message) }
-						}
+						.chatMessageActions(
+							for: message,
+							isFromCurrentUser: isFromCurrentUser,
+							onToggleLike: {
+								Task { await viewModel.toggleLike(on: message, by: user) }
+							},
+							onDelete: {
+								Task { await viewModel.deleteMessage(message) }
+							}
+						)
 					}
 
 					// Don't claim there are no messages when they failed to load

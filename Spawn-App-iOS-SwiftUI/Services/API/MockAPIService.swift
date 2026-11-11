@@ -598,6 +598,11 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 			return BaseUserDTO.danielAgapov as! U?
 		}
 
+		// ChatViewModel.swift - toggleLike():
+		if url.absoluteString.contains("chat-messages/") && url.absoluteString.contains("/likes/") {
+			return EmptyResponse() as? U
+		}
+
 		// Handle User Preferences update
 		if url.absoluteString.contains("users/preferences/") {
 			print("🔍 MOCK: User preferences update")

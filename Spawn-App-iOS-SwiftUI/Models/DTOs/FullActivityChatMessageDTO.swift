@@ -33,6 +33,14 @@ struct FullActivityChatMessageDTO: Identifiable, Codable, Equatable, Sendable {
 }
 
 extension FullActivityChatMessageDTO {
+	var likeCount: Int {
+		likedByUsers?.count ?? 0
+	}
+
+	func isLiked(by userId: UUID) -> Bool {
+		likedByUsers?.contains { $0.id == userId } ?? false
+	}
+
 	var formattedTimestamp: String {
 		return FormatterService.shared.timeAgo(from: timestamp)
 	}
