@@ -60,7 +60,7 @@ struct ChatroomContentView: View {
 							.padding(.bottom, max(windowBottomSafeAreaInset - keyboardOverlap.value, 0))
 					}
 					.padding(.bottom, fromMapView ?? false ? -16 : 0)
-					.background(backgroundColor.opacity(0.97))  // Match the main background
+					// No fill here: the drawer's gradient shows through, so a flat band doesn't cut across it
 				}
 			} else {
 				// When minimized, don't use GeometryReader to avoid expanding to fill available space

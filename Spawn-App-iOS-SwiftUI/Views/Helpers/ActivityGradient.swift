@@ -80,3 +80,21 @@ struct ActivityCardGradientBackground: View {
 		}
 	}
 }
+
+/// Activity drawer background (Figma node 2805:5412): the same gradient, radiating from the bottom
+/// center up to the top. Shared by the drawer, its chatroom and the participants list.
+struct ActivityDrawerGradientBackground: View {
+	let color: Color
+
+	var body: some View {
+		// Figma's ellipse has the drawer's full width and height as its radii, centered on the
+		// bottom edge. An elliptical gradient's radius fraction is relative to the view's size,
+		// so 1 matches that.
+		EllipticalGradient(
+			stops: ActivityGradient.stops(for: color),
+			center: .bottom,
+			startRadiusFraction: 0,
+			endRadiusFraction: 1
+		)
+	}
+}
