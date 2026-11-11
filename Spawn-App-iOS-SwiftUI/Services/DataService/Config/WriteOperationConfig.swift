@@ -97,6 +97,9 @@ enum WriteOperationType {
 	/// Send a chat message
 	case sendChatMessage(message: CreateChatMessageDTO)
 
+	/// Delete one of your own chat messages
+	case deleteChatMessage(messageId: UUID, activityId: UUID)
+
 	// MARK: - Feedback Operations
 
 	/// Submit user feedback
@@ -166,7 +169,8 @@ enum WriteOperationType {
 			.removeFromActivity,
 			.deleteUser,
 			.unregisterDeviceToken,
-			.unblockUser:
+			.unblockUser,
+			.deleteChatMessage:
 			return .delete
 
 		case .joinActivity,
@@ -240,6 +244,8 @@ enum WriteOperationType {
 		// Chats
 		case .sendChatMessage:
 			return "chat-messages"
+		case .deleteChatMessage(let messageId, _):
+			return "chat-messages/\(messageId)"
 
 		// Feedback
 		case .submitFeedback:
@@ -349,6 +355,8 @@ enum WriteOperationType {
 		// Chats
 		case .sendChatMessage(let message):
 			return ["activityChats-\(message.activityId)"]
+		case .deleteChatMessage(_, let activityId):
+			return ["activityChats-\(activityId)"]
 
 		// Feedback
 		case .submitFeedback:
@@ -421,6 +429,8 @@ enum WriteOperationType {
 			return "Delete User"
 		case .sendChatMessage:
 			return "Send Chat Message"
+		case .deleteChatMessage:
+			return "Delete Chat Message"
 		case .submitFeedback:
 			return "Submit Feedback"
 		case .partialUpdateActivity:
@@ -484,6 +494,8 @@ enum WriteOperationType {
 			return EmptyRequestBody() as? T
 		case .sendChatMessage(let message):
 			return message as? T
+		case .deleteChatMessage:
+			return EmptyRequestBody() as? T
 		case .submitFeedback(let feedback):
 			return feedback as? T
 		case .partialUpdateActivity(_, let update):
@@ -545,6 +557,8 @@ enum WriteOperationType {
 			return AnyEncodable(EmptyRequestBody())
 		case .sendChatMessage(let message):
 			return AnyEncodable(message)
+		case .deleteChatMessage:
+			return AnyEncodable(EmptyRequestBody())
 		case .submitFeedback(let feedback):
 			return AnyEncodable(feedback)
 		case .partialUpdateActivity(_, let update):
