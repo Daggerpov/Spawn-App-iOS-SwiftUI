@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ActivityLocationView: View {
 	@State private var viewModel: ActivityInfoViewModel
-	static let fontSize: CGFloat = 14
+	static let fontSize: CGFloat = 13
 	let font: Font = .onestSemiBold(size: fontSize)
 	@Environment(\.colorScheme) private var colorScheme
 
