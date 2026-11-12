@@ -69,7 +69,7 @@ struct ProfileNameView: View {
 
 #Preview {
 	ProfileNameView(
-		user: BaseUserDTO.danielAgapov,
+		user: BaseUserDTO.alexRivera,
 		refreshFlag: .constant(false)
 	)
 }

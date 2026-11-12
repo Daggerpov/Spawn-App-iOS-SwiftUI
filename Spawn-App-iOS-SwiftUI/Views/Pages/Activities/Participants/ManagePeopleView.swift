@@ -378,5 +378,5 @@ struct ManagePeopleView: View {
 // MARK: - Preview
 @available(iOS 17.0, *)
 #Preview {
-	ManagePeopleView(user: .danielAgapov, activityTitle: "Chill", activityTypeDTO: nil)
+	ManagePeopleView(user: .alexRivera, activityTitle: "Chill", activityTypeDTO: nil)
 }

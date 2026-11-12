@@ -202,8 +202,8 @@ final class ProfileActivityDTO: Identifiable, Codable, Equatable, ObservableObje
 				latitude: 49.26468617023799,
 				longitude: -123.25859833051356
 			),
-			creatorUser: BaseUserDTO.danielAgapov,
-			participantUsers: [BaseUserDTO.danielLee, BaseUserDTO.haley],
+			creatorUser: BaseUserDTO.alexRivera,
+			participantUsers: [BaseUserDTO.samCarter, BaseUserDTO.jamieBrooks],
 			isPastActivity: false
 		)
 	}()
@@ -229,8 +229,8 @@ final class ProfileActivityDTO: Identifiable, Codable, Equatable, ObservableObje
 				latitude: 49.26500000000000,
 				longitude: -123.25900000000000
 			),
-			creatorUser: BaseUserDTO.danielAgapov,
-			participantUsers: [BaseUserDTO.danielLee],
+			creatorUser: BaseUserDTO.alexRivera,
+			participantUsers: [BaseUserDTO.samCarter],
 			isPastActivity: false
 		)
 	}()
@@ -256,8 +256,8 @@ final class ProfileActivityDTO: Identifiable, Codable, Equatable, ObservableObje
 				latitude: 49.26400000000000,
 				longitude: -123.25800000000000
 			),
-			creatorUser: BaseUserDTO.danielAgapov,
-			participantUsers: [BaseUserDTO.danielLee, BaseUserDTO.haley],
+			creatorUser: BaseUserDTO.alexRivera,
+			participantUsers: [BaseUserDTO.samCarter, BaseUserDTO.jamieBrooks],
 			isPastActivity: true
 		)
 	}()

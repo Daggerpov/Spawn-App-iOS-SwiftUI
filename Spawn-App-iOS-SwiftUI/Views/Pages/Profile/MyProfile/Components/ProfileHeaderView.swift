@@ -130,7 +130,7 @@ struct ProfileHeaderView: View {
 
 #Preview {
 	ProfileHeaderView(
-		user: BaseUserDTO.danielAgapov,
+		user: BaseUserDTO.alexRivera,
 		selectedImage: .constant(nil),
 		showImagePicker: .constant(false),
 		isImageLoading: .constant(false),

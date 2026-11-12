@@ -185,12 +185,12 @@ extension FullFeedActivityDTO {
 			latitude: 49.26468617023799, longitude: -123.25859833051356),
 		note: "let's eat!",
 		icon: "🍽️",
-		creatorUser: BaseUserDTO.danielAgapov,
+		creatorUser: BaseUserDTO.alexRivera,
 		participantUsers: [
-			BaseUserDTO.danielLee,
-			BaseUserDTO.haley,
-			BaseUserDTO.danielAgapov,
-			BaseUserDTO.haley,
+			BaseUserDTO.samCarter,
+			BaseUserDTO.jamieBrooks,
+			BaseUserDTO.alexRivera,
+			BaseUserDTO.jamieBrooks,
 		],
 		isExpired: false
 	)
@@ -204,12 +204,12 @@ extension FullFeedActivityDTO {
 			latitude: 49.26500000000000, longitude: -123.25900000000000),
 		note: "Let's play some basketball!",
 		icon: "🏀",
-		creatorUser: BaseUserDTO.danielAgapov,
+		creatorUser: BaseUserDTO.alexRivera,
 		participantUsers: [
-			BaseUserDTO.danielLee,
-			BaseUserDTO.haley,
-			BaseUserDTO.danielAgapov,
-			BaseUserDTO.haley,
+			BaseUserDTO.samCarter,
+			BaseUserDTO.jamieBrooks,
+			BaseUserDTO.alexRivera,
+			BaseUserDTO.jamieBrooks,
 		],
 		chatMessages: [.mockChat4, .mockChat1, .mockChat2, .mockChat3],
 		isSelfOwned: true,
@@ -226,10 +226,10 @@ extension FullFeedActivityDTO {
 			latitude: 49.26400000000000, longitude: -123.25800000000000),
 		note: "Come study with us!",
 		icon: "📚",
-		creatorUser: BaseUserDTO.danielAgapov,
+		creatorUser: BaseUserDTO.alexRivera,
 		participantUsers: [
-			BaseUserDTO.danielAgapov,
-			BaseUserDTO.danielLee,
+			BaseUserDTO.alexRivera,
+			BaseUserDTO.samCarter,
 		],
 		isSelfOwned: true,
 		isExpired: false
@@ -245,9 +245,9 @@ extension FullFeedActivityDTO {
 			id: UUID(), name: "Library",
 			latitude: 49.26468617023799, longitude: -123.25859833051356),
 		note: "This should be filtered out!",
-		creatorUser: BaseUserDTO.danielAgapov,
+		creatorUser: BaseUserDTO.alexRivera,
 		participantUsers: [
-			BaseUserDTO.danielAgapov
+			BaseUserDTO.alexRivera
 		],
 		isSelfOwned: true,
 		isExpired: true  // This activity should be expired
@@ -264,10 +264,10 @@ extension FullFeedActivityDTO {
 			latitude: 49.26400000000000, longitude: -123.25800000000000),
 		note: "This meeting already happened and should be filtered out!",
 		icon: "🍽️",
-		creatorUser: BaseUserDTO.danielAgapov,
+		creatorUser: BaseUserDTO.alexRivera,
 		participantUsers: [
-			BaseUserDTO.danielAgapov,
-			BaseUserDTO.danielLee,
+			BaseUserDTO.alexRivera,
+			BaseUserDTO.samCarter,
 		],
 		isSelfOwned: true,
 		isExpired: true  // This activity should be expired

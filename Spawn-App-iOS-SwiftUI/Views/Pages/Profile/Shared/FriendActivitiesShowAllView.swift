@@ -317,7 +317,7 @@ struct CompactActivityCard: View {
 // MARK: - Preview
 #Preview {
 	FriendActivitiesShowAllView(
-		user: BaseUserDTO.danielAgapov,
+		user: BaseUserDTO.alexRivera,
 		profileViewModel: ProfileViewModel(),
 		showActivityDetails: .constant(false)
 	)

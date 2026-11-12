@@ -142,7 +142,7 @@ struct FriendsTabView: View {
 
 			.sheet(isPresented: $showReportDialog) {
 				ReportUserDrawer(
-					user: selectedFriend ?? BaseUserDTO.danielAgapov,
+					user: selectedFriend ?? BaseUserDTO.alexRivera,
 					onReport: { reportType, description in
 						if let friendToReport = selectedFriend,
 							let currentUserId = UserAuthViewModel.shared.spawnUser?.id
@@ -372,6 +372,6 @@ struct FriendsTabView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-	@Previewable @State var previewViewModel = FriendsTabViewModel(userId: BaseUserDTO.danielAgapov.id)
-	FriendsTabView(user: .danielAgapov, viewModel: previewViewModel)
+	@Previewable @State var previewViewModel = FriendsTabViewModel(userId: BaseUserDTO.alexRivera.id)
+	FriendsTabView(user: .alexRivera, viewModel: previewViewModel)
 }

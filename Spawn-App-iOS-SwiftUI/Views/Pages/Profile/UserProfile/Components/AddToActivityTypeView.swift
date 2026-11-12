@@ -347,5 +347,5 @@ final class AddToActivityTypeViewModel: ObservableObject {
 }
 
 #Preview {
-	AddToActivityTypeView(user: BaseUserDTO.danielAgapov)
+	AddToActivityTypeView(user: BaseUserDTO.alexRivera)
 }

@@ -224,9 +224,9 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 
 				// Define mock friendships
 				let friendships = [
-					"daggerpov": ["uhdlee", "haleyusername"],
-					"uhdlee": ["daggerpov", "haleyusername"],
-					"haleyusername": ["daggerpov", "uhdlee"],
+					"alexrivera": ["samcarter", "jamiebrooks"],
+					"samcarter": ["alexrivera", "jamiebrooks"],
+					"jamiebrooks": ["alexrivera", "samcarter"],
 				]
 
 				// Check if the users are friends in our mock data
@@ -258,9 +258,9 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 
 					// For demo purposes, simulate that some users have incoming friend requests
 					let incomingRequests: [String: [FetchFriendRequestDTO]] = [
-						"daggerpov": [],  // Daniel Agapov has no incoming requests
-						"uhdlee": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.danielAgapov)],  // Daniel Lee has request from Daniel Agapov
-						"haleyusername": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.danielLee)],  // Haley has request from Daniel Lee
+						"alexrivera": [],  // Alex Rivera has no incoming requests
+						"samcarter": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.alexRivera)],  // Sam Carter has request from Alex Rivera
+						"jamiebrooks": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.samCarter)],  // Jamie has request from Sam Carter
 					]
 
 					let mockRequests = incomingRequests[receiverUsername] ?? []
@@ -302,11 +302,11 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 
 					// For demo purposes, simulate that some users have sent friend requests
 					let sentRequests: [String: [FetchSentFriendRequestDTO]] = [
-						"daggerpov": [FetchSentFriendRequestDTO(id: UUID(), receiverUser: BaseUserDTO.haley)],  // Daniel Agapov sent request to Haley
-						"uhdlee": [],  // Daniel Lee has no sent requests
-						"haleyusername": [
-							FetchSentFriendRequestDTO(id: UUID(), receiverUser: BaseUserDTO.danielAgapov)
-						],  // Haley sent request to Daniel Agapov
+						"alexrivera": [FetchSentFriendRequestDTO(id: UUID(), receiverUser: BaseUserDTO.jamieBrooks)],  // Alex Rivera sent request to Jamie
+						"samcarter": [],  // Sam Carter has no sent requests
+						"jamiebrooks": [
+							FetchSentFriendRequestDTO(id: UUID(), receiverUser: BaseUserDTO.alexRivera)
+						],  // Jamie sent request to Alex Rivera
 					]
 
 					let mockSentRequests = sentRequests[senderUsername] ?? []
@@ -393,7 +393,7 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 		}
 
 		if T.self == UserDTO.self {
-			return UserDTO.danielAgapov as! T
+			return UserDTO.alexRivera as! T
 		}
 
 		/// UserAuthViewModel.swift:
@@ -401,14 +401,14 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 			if url.absoluteString == APIService.baseURL
 				+ "auth/sign-in/\(userIdForUrl)"
 			{
-				return UserDTO.danielAgapov as! T
+				return UserDTO.alexRivera as! T
 			}
 
 			// fetchUserData()
 			if url.absoluteString == APIService.baseURL
 				+ "users/\(userIdForUrl)"
 			{
-				return BaseUserDTO.danielAgapov as! T
+				return BaseUserDTO.alexRivera as! T
 			}
 
 			// Fetch user interests
@@ -423,9 +423,9 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 
 					// Return different interests for different users
 					let userInterests = [
-						"daggerpov": ["Hiking", "Photography", "Cooking", "Travel", "Music"],
-						"uhdlee": ["Basketball", "Biking", "Bouldering", "F1", "Poker", "Cooking", "Travel"],
-						"haleyusername": ["Dance", "Photography", "Travel", "Food"],
+						"alexrivera": ["Hiking", "Photography", "Cooking", "Travel", "Music"],
+						"samcarter": ["Basketball", "Biking", "Bouldering", "F1", "Poker", "Cooking", "Travel"],
+						"jamiebrooks": ["Dance", "Photography", "Travel", "Food"],
 					]
 
 					return (userInterests[username] ?? ["Basketball"]) as! T
@@ -447,9 +447,9 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 
 					// Find the corresponding mock user
 					let mockUsers = [
-						BaseUserDTO.danielAgapov,
-						BaseUserDTO.danielLee,
-						BaseUserDTO.haley,
+						BaseUserDTO.alexRivera,
+						BaseUserDTO.samCarter,
+						BaseUserDTO.jamieBrooks,
 					]
 
 					if let mockUser = mockUsers.first(where: { $0.username == username }) {
@@ -458,7 +458,7 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 				}
 
 				// Fallback for current user or unknown user
-				return BaseUserDTO.danielAgapov as! T
+				return BaseUserDTO.alexRivera as! T
 			}
 
 			// Fetch user social media
@@ -474,23 +474,23 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 
 					// Return different social media for different users
 					let userSocialMedia = [
-						"daggerpov": UserSocialMediaDTO(
+						"alexrivera": UserSocialMediaDTO(
 							id: UUID(),
 							userId: userId,
 							whatsappLink: "https://wa.me/1234567890",
-							instagramLink: "https://www.instagram.com/daggerpov"
+							instagramLink: "https://www.instagram.com/alexrivera"
 						),
-						"uhdlee": UserSocialMediaDTO(
+						"samcarter": UserSocialMediaDTO(
 							id: UUID(),
 							userId: userId,
 							whatsappLink: "https://wa.me/0987654321",
-							instagramLink: "https://www.instagram.com/uhdlee"
+							instagramLink: "https://www.instagram.com/samcarter"
 						),
-						"haleyusername": UserSocialMediaDTO(
+						"jamiebrooks": UserSocialMediaDTO(
 							id: UUID(),
 							userId: userId,
 							whatsappLink: nil,
-							instagramLink: "https://www.instagram.com/haleyusername"
+							instagramLink: "https://www.instagram.com/jamiebrooks"
 						),
 					]
 
@@ -551,7 +551,7 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 		{
 			return FetchFriendRequestDTO(
 				id: UUID(),
-				senderUser: BaseUserDTO.danielAgapov
+				senderUser: BaseUserDTO.alexRivera
 			) as! U?
 		}
 
@@ -589,13 +589,13 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 		// Handle Terms of Service acceptance
 		if url.absoluteString.contains("auth/accept-tos/") {
 			print("🔍 MOCK: Terms of Service acceptance")
-			return BaseUserDTO.danielAgapov as! U?
+			return BaseUserDTO.alexRivera as! U?
 		}
 
 		// Handle Contact Import completion
 		if url.absoluteString.contains("auth/complete-contact-import/") {
 			print("🔍 MOCK: Contact import completion")
-			return BaseUserDTO.danielAgapov as! U?
+			return BaseUserDTO.alexRivera as! U?
 		}
 
 		// ChatViewModel.swift - toggleLike():
@@ -619,7 +619,7 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 		userDTO: UserCreateDTO, profilePicture: UIImage?,
 		parameters: [String: String]?
 	) async throws -> BaseUserDTO {
-		return BaseUserDTO.danielAgapov
+		return BaseUserDTO.alexRivera
 	}
 
 	func updateData<T: Encodable, U: Decodable>(
@@ -934,9 +934,9 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
 		guard let uuid = UUID(uuidString: userId) else { return "" }
 
 		let mockUsers = [
-			BaseUserDTO.danielAgapov,
-			BaseUserDTO.danielLee,
-			BaseUserDTO.haley,
+			BaseUserDTO.alexRivera,
+			BaseUserDTO.samCarter,
+			BaseUserDTO.jamieBrooks,
 		]
 
 		return mockUsers.first { $0.id == uuid }?.username ?? ""

@@ -8,7 +8,7 @@ import SwiftUI
 
 struct ChatroomButtonView: View {
 	var user: BaseUserDTO =
-		UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov
+		UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.alexRivera
 	let activityColor: Color
 	@ObservedObject var activity: FullFeedActivityDTO
 	var viewModel: ChatViewModel
@@ -18,7 +18,7 @@ struct ChatroomButtonView: View {
 		self.activity = activity
 		self.activityColor = activityColor
 		let currentUser =
-			UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov
+			UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.alexRivera
 		viewModel = ChatViewModel(
 			senderUserId: currentUser.id,
 			activity: activity

@@ -240,7 +240,7 @@ struct FriendCalendarDayCell: View {
 	}()
 
 	UserActivitiesSection(
-		user: BaseUserDTO.danielAgapov,
+		user: BaseUserDTO.alexRivera,
 		profileViewModel: viewModel,
 		showActivityDetails: .constant(false)
 	)
@@ -258,7 +258,7 @@ struct FriendCalendarDayCell: View {
 	}()
 
 	UserActivitiesSection(
-		user: BaseUserDTO.danielAgapov,
+		user: BaseUserDTO.alexRivera,
 		profileViewModel: viewModel,
 		showActivityDetails: .constant(false)
 	)
@@ -275,7 +275,7 @@ struct FriendCalendarDayCell: View {
 	}()
 
 	UserActivitiesSection(
-		user: BaseUserDTO.danielAgapov,
+		user: BaseUserDTO.alexRivera,
 		profileViewModel: viewModel,
 		showActivityDetails: .constant(false)
 	)

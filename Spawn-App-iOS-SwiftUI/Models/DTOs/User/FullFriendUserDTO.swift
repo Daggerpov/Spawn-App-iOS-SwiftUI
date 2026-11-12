@@ -38,31 +38,31 @@ struct FullFriendUserDTO: Identifiable, Codable, Hashable, Nameable, Sendable {
 }
 
 extension FullFriendUserDTO {
-	static let danielAgapov: FullFriendUserDTO = {
+	static let alexRivera: FullFriendUserDTO = {
 		let id: UUID = UUID()
 		return FullFriendUserDTO(
 			id: id,
-			username: "daggerpov",
-			profilePicture: "Daniel_Agapov_pfp",
-			name: "Daniel Agapov",
+			username: "alexrivera",
+			profilePicture: "Alex_Rivera_pfp",
+			name: "Alex Rivera",
 			bio: "This is my bio.",
-			email: "daniel@agapov.com"
+			email: "alex@example.com"
 		)
 	}()
 
-	static let danielLee: FullFriendUserDTO = {
+	static let samCarter: FullFriendUserDTO = {
 		let id: UUID = UUID()
 		return FullFriendUserDTO(
 			id: id,
-			username: "uhdlee",
-			profilePicture: "Daniel_Lee_pfp",
-			name: "Daniel Lee",
+			username: "samcarter",
+			profilePicture: "Sam_Carter_pfp",
+			name: "Sam Carter",
 			bio: "This is my bio.",
-			email: "daniel2456@gmail.com"
+			email: "sam@example.com"
 		)
 	}()
 
 	static let mockUsers: [FullFriendUserDTO] = {
-		return [danielAgapov, danielLee]
+		return [alexRivera, samCarter]
 	}()
 }

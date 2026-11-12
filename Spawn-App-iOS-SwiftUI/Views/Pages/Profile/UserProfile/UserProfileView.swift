@@ -804,7 +804,7 @@ struct UserProfileSheetsModifier: ViewModifier {
 @available(iOS 17, *)
 #Preview("Friends with Activities") {
 	UserProfileView(
-		user: BaseUserDTO.danielAgapov,
+		user: BaseUserDTO.alexRivera,
 		previewFriendshipStatus: .friends,
 		previewActivities: ProfileActivityDTO.mockActivities
 	)
@@ -812,10 +812,10 @@ struct UserProfileSheetsModifier: ViewModifier {
 
 @available(iOS 17, *)
 #Preview("Friends (No Activities)") {
-	UserProfileView(user: BaseUserDTO.danielAgapov, previewFriendshipStatus: .friends)
+	UserProfileView(user: BaseUserDTO.alexRivera, previewFriendshipStatus: .friends)
 }
 
 @available(iOS 17, *)
 #Preview("Not Friends") {
-	UserProfileView(user: BaseUserDTO.danielAgapov)
+	UserProfileView(user: BaseUserDTO.alexRivera)
 }

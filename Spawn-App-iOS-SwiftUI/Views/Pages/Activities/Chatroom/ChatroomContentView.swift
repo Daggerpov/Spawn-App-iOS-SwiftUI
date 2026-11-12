@@ -5,7 +5,7 @@ struct ChatroomContentView: View {
 	@State private var messageText = ""
 	@StateObject private var keyboardOverlap = KeyboardOverlapHeight()
 
-	var user: BaseUserDTO = UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov
+	var user: BaseUserDTO = UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.alexRivera
 	@ObservedObject var activity: FullFeedActivityDTO
 	var backgroundColor: Color
 	var isExpanded: Bool
