@@ -395,7 +395,7 @@ struct MapView: View {
 @available(iOS 17.0, *)
 #Preview {
 	let previewViewModel = FeedViewModel(
-		userId: BaseUserDTO.danielAgapov.id
+		userId: BaseUserDTO.alexRivera.id
 	)
-	MapView(user: .danielAgapov, viewModel: previewViewModel)
+	MapView(user: .alexRivera, viewModel: previewViewModel)
 }

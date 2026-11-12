@@ -251,7 +251,7 @@ struct FriendRequestsView: View {
 			senderUser: BaseUserDTO(
 				id: UUID(),
 				username: "emma_artist",
-				profilePicture: "Daniel_Lee_pfp",
+				profilePicture: "Sam_Carter_pfp",
 				name: "Emma Wilson",
 				bio: "Digital artist and UI/UX designer",
 				email: "emma.wilson@example.com"
@@ -263,7 +263,7 @@ struct FriendRequestsView: View {
 			senderUser: BaseUserDTO(
 				id: UUID(),
 				username: "mike_fitness",
-				profilePicture: "Daniel_Agapov_pfp",
+				profilePicture: "Alex_Rivera_pfp",
 				name: "Mike Chen",
 				bio: "Fitness enthusiast and basketball player",
 				email: "mike.chen@example.com"
@@ -275,7 +275,7 @@ struct FriendRequestsView: View {
 			senderUser: BaseUserDTO(
 				id: UUID(),
 				username: "alex_gamer",
-				profilePicture: "Haley_pfp",
+				profilePicture: "Jamie_Brooks_pfp",
 				name: "Alex Rodriguez",
 				bio: "Gaming enthusiast and tech blogger",
 				email: "alex.rodriguez@example.com"
@@ -291,7 +291,7 @@ struct FriendRequestsView: View {
 			receiverUser: BaseUserDTO(
 				id: UUID(),
 				username: "sarah_dev",
-				profilePicture: "Haley_pfp",
+				profilePicture: "Jamie_Brooks_pfp",
 				name: "Sarah Johnson",
 				bio: "Software engineer who loves hiking and coffee",
 				email: "sarah.johnson@example.com"
@@ -302,7 +302,7 @@ struct FriendRequestsView: View {
 			receiverUser: BaseUserDTO(
 				id: UUID(),
 				username: "jake_music",
-				profilePicture: "Daniel_Lee_pfp",
+				profilePicture: "Sam_Carter_pfp",
 				name: "Jake Thompson",
 				bio: "Musician and music producer",
 				email: "jake.thompson@example.com"

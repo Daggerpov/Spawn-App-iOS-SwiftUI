@@ -58,7 +58,7 @@ struct ActivityCardPopupView: View {
 		_mapViewModel = State(wrappedValue: mapVM)
 		self._cardViewModel = State(
 			wrappedValue: ActivityCardViewModel(
-				userId: UserAuthViewModel.shared.spawnUser?.id ?? BaseUserDTO.danielAgapov.id,
+				userId: UserAuthViewModel.shared.spawnUser?.id ?? BaseUserDTO.alexRivera.id,
 				activity: cachedActivity
 			)
 		)

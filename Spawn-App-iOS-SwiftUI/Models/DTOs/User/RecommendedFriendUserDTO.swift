@@ -49,42 +49,42 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable, Send
 }
 
 extension RecommendedFriendUserDTO {
-	static let danielAgapov: RecommendedFriendUserDTO = {
+	static let alexRivera: RecommendedFriendUserDTO = {
 		let id: UUID = UUID()
 		return RecommendedFriendUserDTO(
 			id: id,
-			username: "daggerpov",
-			profilePicture: "Daniel_Agapov_pfp",
-			name: "Daniel Agapov",
+			username: "alexrivera",
+			profilePicture: "Alex_Rivera_pfp",
+			name: "Alex Rivera",
 			bio: "This is my bio.",
-			email: "daniel@agapov.com"
+			email: "alex@example.com"
 		)
 	}()
 
-	static let danielLee: RecommendedFriendUserDTO = {
+	static let samCarter: RecommendedFriendUserDTO = {
 		let id: UUID = UUID()
 		return RecommendedFriendUserDTO(
 			id: id,
-			username: "uhdlee",
-			profilePicture: "Daniel_Lee_pfp",
-			name: "Daniel Lee",
+			username: "samcarter",
+			profilePicture: "Sam_Carter_pfp",
+			name: "Sam Carter",
 			bio: "This is my bio.",
-			email: "daniel2456@gmail.com"
+			email: "sam@example.com"
 		)
 	}()
 
-	static let haley: RecommendedFriendUserDTO = RecommendedFriendUserDTO(
+	static let jamieBrooks: RecommendedFriendUserDTO = RecommendedFriendUserDTO(
 		id: UUID(),
-		username: "haleyusername",
-		profilePicture: "Haley_pfp",
-		name: "Haley",
+		username: "jamiebrooks",
+		profilePicture: "Jamie_Brooks_pfp",
+		name: "Jamie Brooks",
 		bio: "This is my bio.",
-		email: "haley@gmail.com",
+		email: "jamieBrooks@gmail.com",
 		mutualFriendCount: 0,
 		sharedActivitiesCount: 3
 	)
 
 	static let mockUsers: [RecommendedFriendUserDTO] = {
-		return [danielAgapov, danielLee, haley]
+		return [alexRivera, samCarter, jamieBrooks]
 	}()
 }

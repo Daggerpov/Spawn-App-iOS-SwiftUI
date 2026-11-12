@@ -195,7 +195,7 @@ struct ReportUserDrawer: View {
 struct ReportUserDrawer_Previews: PreviewProvider {
 	static var previews: some View {
 		ReportUserDrawer(
-			user: BaseUserDTO.danielAgapov,
+			user: BaseUserDTO.alexRivera,
 			onReport: { _, _ in }
 		)
 	}

@@ -129,7 +129,7 @@ struct ProfileActionButtonsView: View {
 
 #Preview {
 	ProfileActionButtonsView(
-		user: BaseUserDTO.danielAgapov,
+		user: BaseUserDTO.alexRivera,
 		profileViewModel: ProfileViewModel(userId: UUID()),
 		shareProfile: {}
 	)

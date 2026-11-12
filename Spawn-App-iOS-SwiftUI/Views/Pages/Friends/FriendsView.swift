@@ -233,15 +233,15 @@ extension FriendsView {
 @available(iOS 17.0, *)
 #Preview {
 	// Create a mock view model with hardcoded data
-	let mockViewModel = FriendsTabViewModel(userId: BaseUserDTO.danielAgapov.id)
+	let mockViewModel = FriendsTabViewModel(userId: BaseUserDTO.alexRivera.id)
 
 	// Add hardcoded friends data
 	mockViewModel.friends = [
-		FullFriendUserDTO.danielLee,
+		FullFriendUserDTO.samCarter,
 		FullFriendUserDTO(
 			id: UUID(),
 			username: "sarah_dev",
-			profilePicture: "Haley_pfp",
+			profilePicture: "Jamie_Brooks_pfp",
 			name: "Sarah Johnson",
 			bio: "Software engineer who loves hiking and coffee",
 			email: "sarah.johnson@example.com"
@@ -249,7 +249,7 @@ extension FriendsView {
 		FullFriendUserDTO(
 			id: UUID(),
 			username: "mike_fitness",
-			profilePicture: "Daniel_Agapov_pfp",
+			profilePicture: "Alex_Rivera_pfp",
 			name: "Mike Chen",
 			bio: "Fitness enthusiast and basketball player",
 			email: "mike.chen@example.com"
@@ -257,7 +257,7 @@ extension FriendsView {
 		FullFriendUserDTO(
 			id: UUID(),
 			username: "emma_artist",
-			profilePicture: "Daniel_Lee_pfp",
+			profilePicture: "Sam_Carter_pfp",
 			name: "Emma Wilson",
 			bio: "Digital artist and UI/UX designer",
 			email: "emma.wilson@example.com"
@@ -265,7 +265,7 @@ extension FriendsView {
 		FullFriendUserDTO(
 			id: UUID(),
 			username: "alex_gamer",
-			profilePicture: "Haley_pfp",
+			profilePicture: "Jamie_Brooks_pfp",
 			name: "Alex Rodriguez",
 			bio: "Gaming enthusiast and tech blogger",
 			email: "alex.rodriguez@example.com"
@@ -274,11 +274,11 @@ extension FriendsView {
 
 	// Add hardcoded recommended friends data
 	mockViewModel.recommendedFriends = [
-		RecommendedFriendUserDTO.haley,
+		RecommendedFriendUserDTO.jamieBrooks,
 		RecommendedFriendUserDTO(
 			id: UUID(),
 			username: "jake_music",
-			profilePicture: "Daniel_Agapov_pfp",
+			profilePicture: "Alex_Rivera_pfp",
 			name: "Jake Thompson",
 			bio: "Musician and music producer",
 			email: "jake.thompson@example.com",
@@ -288,7 +288,7 @@ extension FriendsView {
 		RecommendedFriendUserDTO(
 			id: UUID(),
 			username: "lily_chef",
-			profilePicture: "Daniel_Lee_pfp",
+			profilePicture: "Sam_Carter_pfp",
 			name: "Lily Park",
 			bio: "Professional chef and food blogger",
 			email: "lily.park@example.com",
@@ -298,7 +298,7 @@ extension FriendsView {
 		RecommendedFriendUserDTO(
 			id: UUID(),
 			username: "tom_traveler",
-			profilePicture: "Haley_pfp",
+			profilePicture: "Jamie_Brooks_pfp",
 			name: "Tom Anderson",
 			bio: "Travel photographer and adventure seeker",
 			email: "tom.anderson@example.com",
@@ -308,7 +308,7 @@ extension FriendsView {
 		RecommendedFriendUserDTO(
 			id: UUID(),
 			username: "nina_writer",
-			profilePicture: "Daniel_Agapov_pfp",
+			profilePicture: "Alex_Rivera_pfp",
 			name: "Nina Martinez",
 			bio: "Writer and book club organizer",
 			email: "nina.martinez@example.com",
@@ -328,7 +328,7 @@ extension FriendsView {
 			senderUser: BaseUserDTO(
 				id: UUID(),
 				username: "new_friend1",
-				profilePicture: "Daniel_Lee_pfp",
+				profilePicture: "Sam_Carter_pfp",
 				name: "Chris Davis",
 				bio: "New to the area, looking to make friends!",
 				email: "chris.davis@example.com"
@@ -340,7 +340,7 @@ extension FriendsView {
 			senderUser: BaseUserDTO(
 				id: UUID(),
 				username: "new_friend2",
-				profilePicture: "Haley_pfp",
+				profilePicture: "Jamie_Brooks_pfp",
 				name: "Maya Patel",
 				bio: "Love outdoor activities and board games",
 				email: "maya.patel@example.com"
@@ -349,6 +349,6 @@ extension FriendsView {
 		),
 	]
 
-	return FriendsView(user: .danielAgapov, viewModel: mockViewModel)
+	return FriendsView(user: .alexRivera, viewModel: mockViewModel)
 		.environmentObject(AppCache.shared)
 }

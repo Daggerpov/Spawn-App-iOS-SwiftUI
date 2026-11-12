@@ -162,7 +162,7 @@ struct FriendRequestSuccessDrawer: View {
 	@Previewable @State var isPresented = true
 
 	FriendRequestSuccessDrawer(
-		friendUser: BaseUserDTO.danielAgapov,
+		friendUser: BaseUserDTO.alexRivera,
 		isPresented: $isPresented,
 		onAddToActivityType: {}
 	)

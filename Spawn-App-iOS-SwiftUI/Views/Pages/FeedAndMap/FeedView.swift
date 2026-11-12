@@ -146,7 +146,7 @@ struct FeedView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-	FeedView(user: .danielAgapov)
+	FeedView(user: .alexRivera)
 }
 
 extension FeedView {

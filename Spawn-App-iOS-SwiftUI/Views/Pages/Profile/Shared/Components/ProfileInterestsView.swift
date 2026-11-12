@@ -230,7 +230,7 @@ struct ProfileInterestsView: View {
 
 #Preview {
 	ProfileInterestsView(
-		user: BaseUserDTO.danielAgapov,
+		user: BaseUserDTO.alexRivera,
 		profileViewModel: ProfileViewModel(),
 		editingState: .constant(.edit),
 		newInterest: .constant(""),

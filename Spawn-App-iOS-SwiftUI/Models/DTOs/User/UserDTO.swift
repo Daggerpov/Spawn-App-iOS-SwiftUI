@@ -43,47 +43,47 @@ struct UserDTO: Identifiable, Codable, Hashable, Nameable, Sendable {
 }
 
 extension UserDTO {
-	static let danielAgapov: UserDTO = {
+	static let alexRivera: UserDTO = {
 		let id: UUID = UUID()
 		let friendIds: [UUID] = [UUID(), UUID()]
 		return UserDTO(
 			id: id,
 			friendUserIds: friendIds,
-			username: "daggerpov",
-			profilePicture: "Daniel_Agapov_pfp",
-			name: "Daniel Agapov",
+			username: "alexrivera",
+			profilePicture: "Alex_Rivera_pfp",
+			name: "Alex Rivera",
 			bio: "This is my bio.",
-			email: "daniel@agapov.com",
+			email: "alex@example.com",
 			hasCompletedOnboarding: true
 		)
 	}()
 
-	static let danielLee: UserDTO = {
+	static let samCarter: UserDTO = {
 		let id: UUID = UUID()
 		return UserDTO(
 			id: id,
 			friendUserIds: [UUID(), UUID()],
-			username: "uhdlee",
-			profilePicture: "Daniel_Lee_pfp",
-			name: "Daniel Lee",
+			username: "samcarter",
+			profilePicture: "Sam_Carter_pfp",
+			name: "Sam Carter",
 			bio: "This is my bio.",
-			email: "daniel2456@gmail.com",
+			email: "sam@example.com",
 			hasCompletedOnboarding: true
 		)
 	}()
 
-	static let haley: UserDTO = UserDTO(
+	static let jamieBrooks: UserDTO = UserDTO(
 		id: UUID(),
 		friendUserIds: [],
-		username: "haleyusername",
-		profilePicture: "Haley_pfp",
-		name: "Haley",
+		username: "jamiebrooks",
+		profilePicture: "Jamie_Brooks_pfp",
+		name: "Jamie Brooks",
 		bio: "This is my bio.",
-		email: "haley@gmail.com",
+		email: "jamieBrooks@gmail.com",
 		hasCompletedOnboarding: true
 	)
 
 	static let mockUsers: [UserDTO] = {
-		return [danielAgapov, danielLee, haley]
+		return [alexRivera, samCarter, jamieBrooks]
 	}()
 }

@@ -221,7 +221,7 @@ struct FriendActivitiesCalendarView: View {
 
 	NavigationStack {
 		FriendActivitiesCalendarView(
-			user: BaseUserDTO.danielAgapov,
+			user: BaseUserDTO.alexRivera,
 			profileViewModel: viewModel,
 			showActivityDetails: .constant(false)
 		)
