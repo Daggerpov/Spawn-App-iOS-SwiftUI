@@ -442,77 +442,54 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
+	@Published private(set) var isGoogleSigningIn = false
+
 	private func signInWithGoogle() async {
-		await MainActor.run {
-			guard
-				let windowScene = UIApplication.shared.connectedScenes.first
-					as? UIWindowScene,
-				let presentingViewController = windowScene.windows.first?
-					.rootViewController
-			else {
-				self.errorMessage = "Unable to start Google Sign-In. Please try again."
-				print("Error: Unable to get the presenting view controller.")
+		guard !isGoogleSigningIn else { return }
+		errorMessage = nil
+		isGoogleSigningIn = true
+		defer { isGoogleSigningIn = false }
+
+		guard let presenter = UIApplication.shared.connectedScenes
+			.compactMap({ $0 as? UIWindowScene })
+			.first(where: { $0.activationState == .foregroundActive })?
+			.windows.first(where: { $0.isKeyWindow })?.rootViewController
+		else {
+			errorMessage = "Unable to start Google Sign-In. Please try again."
+			return
+		}
+
+		do {
+			let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: presenter)
+			let user = try await result.user.refreshTokensIfNeeded()
+			guard let token = user.idToken?.tokenString, !token.isEmpty else {
+				errorMessage = "Google Sign-In did not return a valid session. Please try again."
 				return
 			}
 
-			_ = GIDConfiguration(
-				clientID: "822760465266-1dunhm4jgrcg17137rfjo2idu5qefchk.apps.googleusercontent.com"
-			)
-
-			GIDSignIn.sharedInstance.signIn(
-				withPresenting: presentingViewController
-			) { [weak self] signInResult, error in
-				if let error = error {
-					print(error.localizedDescription)
-					return
-				}
-
-				guard let signInResult = signInResult else { return }
-
-				// Get ID token
-				signInResult.user.refreshTokensIfNeeded { [weak self] user, error in
-					guard error == nil else {
-						print("Error refreshing token: \(error?.localizedDescription ?? "Unknown error")")
-						return
-					}
-					guard let user = user else { return }
-
-					// Extract user data before Task to avoid Sendable issues with GIDGoogleUser
-					let idTokenString = user.idToken?.tokenString ?? ""
-					let userEmail = user.profile?.email
-					let userName = user.profile?.name
-					let userProfilePicUrl = user.profile?.imageURL(withDimension: 400)?.absoluteString
-					let userExternalId = user.userID
-
-					Task { @MainActor in
-						guard let self = self else { return }
-
-						if self.isOnboarding {
-							await self.registerWithOAuth(
-								idToken: idTokenString,
-								provider: .google,
-								email: userEmail,
-								name: userName,
-								profilePictureUrl: userProfilePicUrl
-							)
-							return
-						}
-
-						// Request a higher resolution image (400px instead of 100px)
-						self.profilePicUrl = userProfilePicUrl ?? ""
-						self.name = userName
-						self.email = userEmail
-						self.isLoggedIn = true
-						self.externalUserId = userExternalId
-						self.authProvider = .google
-						self.idToken = idTokenString
-
-						// Now that all properties are set, check if user exists
-						// This must happen AFTER setting idToken to avoid race condition
-						await self.spawnFetchUserIfAlreadyExists()
-					}
-				}
+			let email = user.profile?.email
+			let name = user.profile?.name
+			let picture = user.profile?.imageURL(withDimension: 400)?.absoluteString
+			if isOnboarding {
+				await registerWithOAuth(
+					idToken: token, provider: .google, email: email, name: name, profilePictureUrl: picture)
+				return
 			}
+
+			self.profilePicUrl = picture ?? ""
+			self.name = name
+			self.email = email
+			self.isLoggedIn = true
+			self.externalUserId = user.userID
+			self.authProvider = .google
+			self.idToken = token
+			await spawnFetchUserIfAlreadyExists()
+		} catch {
+			let signInError = error as NSError
+			guard signInError.domain != kGIDSignInErrorDomain
+				|| signInError.code != GIDSignInError.canceled.rawValue
+			else { return }
+			errorMessage = "Google Sign-In failed. Please try again."
 		}
 	}
 

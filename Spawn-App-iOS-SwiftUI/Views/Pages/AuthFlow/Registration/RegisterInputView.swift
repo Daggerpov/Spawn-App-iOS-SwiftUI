@@ -109,7 +109,7 @@ struct RegisterInputView: View {
 					.padding(.top, -16)
 					.padding(.bottom, -30)
 					.padding(.horizontal, -22)
-					.disabled(!isFormValid)
+					.disabled(!isFormValid || viewModel.isGoogleSigningIn)
 				}
 				.padding(.horizontal, 40)
 
@@ -146,7 +146,7 @@ struct RegisterInputView: View {
 				.padding(.horizontal, 40)
 
 				// External Login Buttons or Auto Sign-In State
-				if !viewModel.isAutoSigningIn {
+				if !viewModel.isAutoSigningIn && !viewModel.isGoogleSigningIn {
 					VStack(spacing: 16) {
 						// Continue with Apple
 						Button(action: {
@@ -185,7 +185,7 @@ struct RegisterInputView: View {
 							)
 							.scaleEffect(1.2)
 
-						Text("Account found! Signing you in...")
+						Text(viewModel.isGoogleSigningIn ? "Connecting to Google…" : "Account found! Signing you in...")
 							.font(.onestMedium(size: 16))
 							.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
 							.multilineTextAlignment(.center)

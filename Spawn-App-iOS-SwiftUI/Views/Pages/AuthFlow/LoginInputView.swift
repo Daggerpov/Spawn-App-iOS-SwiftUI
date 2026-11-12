@@ -117,7 +117,7 @@ struct LoginInputView: View {
 						}
 					}
 					.buttonStyle(PlainButtonStyle())
-					.disabled(!isFormValid || isLoading)
+					.disabled(!isFormValid || isLoading || userAuth.isGoogleSigningIn)
 					.scaleEffect(scale)
 					.shadow(
 						color: (isFormValid && !isLoading) ? Color.black.opacity(0.15) : Color.clear,
@@ -144,8 +144,8 @@ struct LoginInputView: View {
 				.padding(.horizontal, 40)
 
 				// Error Message
-				if hasLoginError {
-					Text(errorMessage)
+				if let message = hasLoginError ? errorMessage : userAuth.errorMessage {
+					Text(message)
 						.font(Font.custom("Onest", size: 14).weight(.medium))
 						.foregroundColor(Color(red: 0.92, green: 0.26, blue: 0.21))
 						.padding(.horizontal, 40)
@@ -172,7 +172,7 @@ struct LoginInputView: View {
 				.padding(.horizontal, 40)
 
 				// External Login Buttons or Auto Sign-In State
-				if !userAuth.isAutoSigningIn {
+				if !userAuth.isAutoSigningIn && !userAuth.isGoogleSigningIn {
 					VStack(spacing: 16) {
 						// Continue with Apple
 						Button(action: {
@@ -193,6 +193,7 @@ struct LoginInputView: View {
 							impactGenerator.impactOccurred()
 
 							Task {
+								hasLoginError = false
 								await userAuth.loginWithGoogle()
 							}
 						}) {
@@ -211,7 +212,7 @@ struct LoginInputView: View {
 							)
 							.scaleEffect(1.2)
 
-						Text("Account found! Signing you in...")
+						Text(userAuth.isGoogleSigningIn ? "Signing in…" : "Account found! Signing you in...")
 							.font(.onestMedium(size: 16))
 							.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
 							.multilineTextAlignment(.center)
