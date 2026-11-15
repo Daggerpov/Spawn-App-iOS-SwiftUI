@@ -146,7 +146,7 @@ private struct ProfileMenuContent: View {
 struct ProfileMenuView_Previews: PreviewProvider {
 	static var previews: some View {
 		ProfileMenuView(
-			user: BaseUserDTO.danielAgapov,
+			user: BaseUserDTO.alexRivera,
 			showRemoveFriendConfirmation: .constant(false),
 			showReportDialog: .constant(false),
 			showBlockDialog: .constant(false),

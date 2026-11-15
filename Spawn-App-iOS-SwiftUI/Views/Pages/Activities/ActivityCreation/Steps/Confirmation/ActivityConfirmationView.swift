@@ -66,7 +66,7 @@ struct ActivityConfirmationView: View {
 			note: activity.note,
 			icon: activity.icon,
 			participantLimit: activity.participantLimit,
-			creatorUser: UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov,
+			creatorUser: UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.alexRivera,
 			createdAt: activity.createdAt
 		)
 	}

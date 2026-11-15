@@ -152,7 +152,7 @@ private struct FriendsTabMenuContent: View {
 
 #Preview {
 	FriendsTabMenuView(
-		user: BaseUserDTO.danielAgapov,
+		user: BaseUserDTO.alexRivera,
 		showReportDialog: .constant(false),
 		showBlockDialog: .constant(false),
 		showRemoveFriendConfirmation: .constant(false),

@@ -453,16 +453,20 @@ enum ActivityDuration: CaseIterable {
 		let hardcodedActivityTypes = [
 			ActivityTypeDTO(
 				id: UUID(), title: "Chill", icon: "🛋️",
-				associatedFriends: [MinimalFriendDTO.danielLee, MinimalFriendDTO.danielAgapov], orderNum: 0,
+				associatedFriends: [MinimalFriendDTO.samCarter, MinimalFriendDTO.alexRivera], orderNum: 0,
 				isPinned: false),
 			ActivityTypeDTO(
 				id: UUID(), title: "Food & Drink", icon: "🍽️",
-				associatedFriends: [MinimalFriendDTO.danielLee, MinimalFriendDTO.haley, MinimalFriendDTO.danielAgapov],
+				associatedFriends: [
+					MinimalFriendDTO.samCarter, MinimalFriendDTO.jamieBrooks, MinimalFriendDTO.alexRivera,
+				],
 				orderNum: 1,
 				isPinned: true),
 			ActivityTypeDTO(
 				id: UUID(), title: "Active", icon: "🏃",
-				associatedFriends: [MinimalFriendDTO.haley, MinimalFriendDTO.danielLee, MinimalFriendDTO.danielAgapov],
+				associatedFriends: [
+					MinimalFriendDTO.jamieBrooks, MinimalFriendDTO.samCarter, MinimalFriendDTO.alexRivera,
+				],
 				orderNum: 2,
 				isPinned: false),
 			ActivityTypeDTO(
@@ -470,24 +474,25 @@ enum ActivityDuration: CaseIterable {
 				isPinned: false),
 			ActivityTypeDTO(
 				id: UUID(), title: "Grind", icon: "💼",
-				associatedFriends: [MinimalFriendDTO.danielLee, MinimalFriendDTO.danielAgapov], orderNum: 4,
+				associatedFriends: [MinimalFriendDTO.samCarter, MinimalFriendDTO.alexRivera], orderNum: 4,
 				isPinned: false),
 			ActivityTypeDTO(
 				id: UUID(), title: "Gaming", icon: "🎮",
-				associatedFriends: [MinimalFriendDTO.danielLee, MinimalFriendDTO.haley],
+				associatedFriends: [MinimalFriendDTO.samCarter, MinimalFriendDTO.jamieBrooks],
 				orderNum: 5, isPinned: false),
 			ActivityTypeDTO(
 				id: UUID(), title: "Music", icon: "🎵",
-				associatedFriends: [MinimalFriendDTO.haley, MinimalFriendDTO.danielAgapov], orderNum: 6, isPinned: true),
+				associatedFriends: [MinimalFriendDTO.jamieBrooks, MinimalFriendDTO.alexRivera], orderNum: 6,
+				isPinned: true),
 		]
 
-		// Set activity types for the preview user (danielAgapov)
-		AppCache.shared.updateActivityTypesForUser(hardcodedActivityTypes, userId: BaseUserDTO.danielAgapov.id)
+		// Set activity types for the preview user (alexRivera)
+		AppCache.shared.updateActivityTypesForUser(hardcodedActivityTypes, userId: BaseUserDTO.alexRivera.id)
 		return hardcodedActivityTypes
 	}()
 
 	ActivityCreationView(
-		creatingUser: .danielAgapov,
+		creatingUser: .alexRivera,
 		closeCallback: {
 		},
 		selectedTab: .constant(TabType.activities)

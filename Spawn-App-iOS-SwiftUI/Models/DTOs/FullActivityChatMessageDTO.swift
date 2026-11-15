@@ -56,25 +56,25 @@ extension FullActivityChatMessageDTO {
 		id: UUID(),
 		content: "yo guys, wya?",
 		timestamp: Date().addingTimeInterval(-120),  // 2 minutes ago
-		senderUser: BaseUserDTO.haley,
+		senderUser: BaseUserDTO.jamieBrooks,
 		activityId: FullFeedActivityDTO.mockDinnerActivity.id,
-		likedByUsers: [BaseUserDTO.danielAgapov]
+		likedByUsers: [BaseUserDTO.alexRivera]
 	)
 
 	static let mockChat2: FullActivityChatMessageDTO = FullActivityChatMessageDTO(
 		id: UUID(),
 		content: "im by the SUBWAY!",
 		timestamp: Date().addingTimeInterval(-30),  // 30s ago
-		senderUser: BaseUserDTO.danielAgapov,
+		senderUser: BaseUserDTO.alexRivera,
 		activityId: FullFeedActivityDTO.mockDinnerActivity.id,
-		likedByUsers: [BaseUserDTO.danielAgapov, BaseUserDTO.danielLee]
+		likedByUsers: [BaseUserDTO.alexRivera, BaseUserDTO.samCarter]
 	)
 
 	static let mockChat3: FullActivityChatMessageDTO = FullActivityChatMessageDTO(
 		id: UUID(),
 		content: "Please hurry up..",
 		timestamp: Date().addingTimeInterval(-1),  // 1s ago
-		senderUser: BaseUserDTO.danielLee,
+		senderUser: BaseUserDTO.samCarter,
 		activityId: FullFeedActivityDTO.mockDinnerActivity.id,
 		likedByUsers: []
 	)
@@ -83,9 +83,9 @@ extension FullActivityChatMessageDTO {
 		id: UUID(),
 		content: "Yo try to be there early",
 		timestamp: Date().addingTimeInterval(-60 * 60),  // 1 hour ago
-		senderUser: BaseUserDTO.danielAgapov,
+		senderUser: BaseUserDTO.alexRivera,
 		activityId: FullFeedActivityDTO.mockDinnerActivity.id,
-		likedByUsers: [BaseUserDTO.haley, BaseUserDTO.danielLee, BaseUserDTO.danielAgapov]
+		likedByUsers: [BaseUserDTO.jamieBrooks, BaseUserDTO.samCarter, BaseUserDTO.alexRivera]
 	)
 
 	static let mockChatroom: [FullActivityChatMessageDTO] = [.mockChat4, .mockChat1, .mockChat2, .mockChat3]

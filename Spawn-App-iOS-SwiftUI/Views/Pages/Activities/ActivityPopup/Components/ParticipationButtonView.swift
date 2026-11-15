@@ -116,7 +116,7 @@ struct ParticipationButtonView: View {
 		.fullScreenCover(isPresented: $showingEditFlow) {
 			ActivityCreationView(
 				creatingUser: UserAuthViewModel.shared.spawnUser
-					?? BaseUserDTO.danielAgapov,
+					?? BaseUserDTO.alexRivera,
 				closeCallback: {
 					showingEditFlow = false
 				},

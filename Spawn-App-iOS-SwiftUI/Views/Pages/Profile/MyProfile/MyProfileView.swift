@@ -460,6 +460,6 @@ struct MyProfileSheetsModifier: ViewModifier {
 
 @available(iOS 17, *)
 #Preview {
-	@Previewable @State var previewProfileViewModel = ProfileViewModel(userId: BaseUserDTO.danielAgapov.id)
-	MyProfileView(user: BaseUserDTO.danielAgapov, profileViewModel: previewProfileViewModel)
+	@Previewable @State var previewProfileViewModel = ProfileViewModel(userId: BaseUserDTO.alexRivera.id)
+	MyProfileView(user: BaseUserDTO.alexRivera, profileViewModel: previewProfileViewModel)
 }

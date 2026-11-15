@@ -90,26 +90,26 @@ struct MinimalFriendDTO: Identifiable, Codable, Hashable, Nameable, Sendable {
 // MARK: - Mock Data for Previews
 
 extension MinimalFriendDTO {
-	static let danielAgapov: MinimalFriendDTO = MinimalFriendDTO(
+	static let alexRivera: MinimalFriendDTO = MinimalFriendDTO(
 		id: UUID(uuidString: "7CF00DD1-D246-4339-8B85-0EC589161DBF") ?? UUID(),
-		username: "daggerpov",
-		name: "Daniel Agapov",
-		profilePicture: "Daniel_Agapov_pfp"
+		username: "alexrivera",
+		name: "Alex Rivera",
+		profilePicture: "Alex_Rivera_pfp"
 	)
 
-	static let danielLee: MinimalFriendDTO = MinimalFriendDTO(
+	static let samCarter: MinimalFriendDTO = MinimalFriendDTO(
 		id: UUID(uuidString: "8DF11EE2-E357-5440-9C96-1FD690272ECF") ?? UUID(),
-		username: "uhdlee",
-		name: "Daniel Lee",
-		profilePicture: "Daniel_Lee_pfp"
+		username: "samcarter",
+		name: "Sam Carter",
+		profilePicture: "Sam_Carter_pfp"
 	)
 
-	static let haley: MinimalFriendDTO = MinimalFriendDTO(
+	static let jamieBrooks: MinimalFriendDTO = MinimalFriendDTO(
 		id: UUID(uuidString: "9EF22FF3-F468-6551-AD07-2FE7A1383FDA") ?? UUID(),
-		username: "haleyusername",
-		name: "Haley",
-		profilePicture: "Haley_pfp"
+		username: "jamiebrooks",
+		name: "Jamie Brooks",
+		profilePicture: "Jamie_Brooks_pfp"
 	)
 
-	static let mockUsers: [MinimalFriendDTO] = [danielAgapov, danielLee, haley]
+	static let mockUsers: [MinimalFriendDTO] = [alexRivera, samCarter, jamieBrooks]
 }

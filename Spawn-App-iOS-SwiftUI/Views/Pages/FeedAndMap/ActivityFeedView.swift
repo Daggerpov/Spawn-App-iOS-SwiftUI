@@ -427,7 +427,7 @@ extension ActivityFeedView {
 	@Previewable @State var deepLinkedActivityId: UUID? = nil
 	@Previewable @State var shouldShowDeepLinkedActivity = false
 	let previewViewModel: FeedViewModel = {
-		let viewModel = FeedViewModel(userId: BaseUserDTO.danielAgapov.id)
+		let viewModel = FeedViewModel(userId: BaseUserDTO.alexRivera.id)
 		viewModel.activities = [
 			FullFeedActivityDTO.mockDinnerActivity,
 			FullFeedActivityDTO.mockSelfOwnedActivity,
@@ -437,7 +437,7 @@ extension ActivityFeedView {
 	}()
 	NavigationView {
 		ActivityFeedView(
-			user: .danielAgapov,
+			user: .alexRivera,
 			viewModel: previewViewModel,
 			selectedTab: $tab,
 			deepLinkedActivityId: $deepLinkedActivityId,
@@ -452,11 +452,11 @@ extension ActivityFeedView {
 	@Previewable @State var deepLinkedActivityId: UUID? = nil
 	@Previewable @State var shouldShowDeepLinkedActivity = false
 	let previewViewModel = FeedViewModel(
-		userId: BaseUserDTO.danielAgapov.id
+		userId: BaseUserDTO.alexRivera.id
 	)
 	NavigationView {
 		ActivityFeedView(
-			user: .danielAgapov,
+			user: .alexRivera,
 			viewModel: previewViewModel,
 			selectedTab: $tab,
 			deepLinkedActivityId: $deepLinkedActivityId,

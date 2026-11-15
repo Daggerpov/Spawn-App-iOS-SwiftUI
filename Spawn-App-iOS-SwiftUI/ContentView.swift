@@ -415,7 +415,7 @@ struct ContentView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-	ContentView(user: BaseUserDTO.danielAgapov)
+	ContentView(user: BaseUserDTO.alexRivera)
 }
 
 func resizeImage(_ image: UIImage, targetSize: CGSize) -> UIImage? {

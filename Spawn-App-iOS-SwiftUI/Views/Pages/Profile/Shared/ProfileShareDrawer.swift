@@ -136,7 +136,7 @@ struct ProfileShareDrawer: View {
 		.padding()
 
 		ProfileShareDrawer(
-			user: BaseUserDTO.danielAgapov,
+			user: BaseUserDTO.alexRivera,
 			showShareSheet: $showShareSheet
 		)
 	}

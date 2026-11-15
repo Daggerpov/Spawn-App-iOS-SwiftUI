@@ -105,7 +105,7 @@ struct UserDetailsInputView: View {
 							.disableAutocorrection(true)
 							.onChange(of: username) { _, newValue in
 								// Simulate username taken error for demo (replace with real check)
-								if newValue == "dagapov" {
+								if newValue == "alexrivera" {
 									isUsernameTaken = true
 									usernameError = "This username is taken. Existing users need to Sign In."
 								} else {

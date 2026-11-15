@@ -1476,15 +1476,15 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 	@MainActor
 	func setMockUser() async {
 		// Set mock user details
-		self.name = "Daniel Agapov"
-		self.email = "daniel.agapov@gmail.com"
+		self.name = "Alex Rivera"
+		self.email = "alex@example.com"
 		self.isLoggedIn = true
 		self.externalUserId = "mock_user_id"
 		self.authProvider = .google
 		self.idToken = "mock_id_token"
 
 		// Set the mock user directly
-		self.spawnUser = BaseUserDTO.danielAgapov
+		self.spawnUser = BaseUserDTO.alexRivera
 		self.hasCheckedSpawnUserExistence = true
 
 		// For mock users, mark onboarding as completed

@@ -316,5 +316,5 @@ extension FullFriendUserDTO {
 
 @available(iOS 17.0, *)
 #Preview {
-	InviteView(user: .danielAgapov).environmentObject(AppCache.shared)
+	InviteView(user: .alexRivera).environmentObject(AppCache.shared)
 }

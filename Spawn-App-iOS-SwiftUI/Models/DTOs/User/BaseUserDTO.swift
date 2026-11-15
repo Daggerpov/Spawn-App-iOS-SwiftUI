@@ -72,43 +72,43 @@ extension BaseUserDTO {
 		)
 	}
 
-	static let danielAgapov: BaseUserDTO = {
+	static let alexRivera: BaseUserDTO = {
 		let id: UUID = UUID(uuidString: "7CF00DD1-D246-4339-8B85-0EC589161DBF") ?? UUID()
 		return BaseUserDTO(
 			id: id,
-			username: "daggerpov",
-			profilePicture: "Daniel_Agapov_pfp",
-			name: "Daniel Agapov",
+			username: "alexrivera",
+			profilePicture: "Alex_Rivera_pfp",
+			name: "Alex Rivera",
 			bio: "This is my bio.",
-			email: "daniel@agapov.com",
+			email: "alex@example.com",
 			hasCompletedOnboarding: true
 		)
 	}()
 
-	static let danielLee: BaseUserDTO = {
+	static let samCarter: BaseUserDTO = {
 		let id: UUID = UUID(uuidString: "8DF11EE2-E357-5440-9C96-1FD690272ECF") ?? UUID()
 		return BaseUserDTO(
 			id: id,
-			username: "uhdlee",
-			profilePicture: "Daniel_Lee_pfp",
-			name: "Daniel Lee",
+			username: "samcarter",
+			profilePicture: "Sam_Carter_pfp",
+			name: "Sam Carter",
 			bio: "This is my bio.",
-			email: "daniel2456@gmail.com",
+			email: "sam@example.com",
 			hasCompletedOnboarding: true
 		)
 	}()
 
-	static let haley: BaseUserDTO = BaseUserDTO(
+	static let jamieBrooks: BaseUserDTO = BaseUserDTO(
 		id: UUID(uuidString: "9EF22FF3-F468-6551-AD07-2FE7A1383FDA") ?? UUID(),
-		username: "haleyusername",
-		profilePicture: "Haley_pfp",
-		name: "Haley",
+		username: "jamiebrooks",
+		profilePicture: "Jamie_Brooks_pfp",
+		name: "Jamie Brooks",
 		bio: "This is my bio.",
-		email: "haley@gmail.com",
+		email: "jamieBrooks@gmail.com",
 		hasCompletedOnboarding: true
 	)
 
 	static let mockUsers: [BaseUserDTO] = {
-		return [danielAgapov, danielLee, haley]
+		return [alexRivera, samCarter, jamieBrooks]
 	}()
 }

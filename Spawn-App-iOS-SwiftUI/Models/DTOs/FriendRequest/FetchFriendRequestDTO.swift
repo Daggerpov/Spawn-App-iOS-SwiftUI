@@ -27,20 +27,20 @@ struct FetchFriendRequestDTO: Identifiable, Codable, Hashable, Sendable {
 extension FetchFriendRequestDTO {
 	static let mockFriendRequests: [FetchFriendRequestDTO] = [
 		FetchFriendRequestDTO(
-			id: UUID(), senderUser: BaseUserDTO.danielAgapov),
+			id: UUID(), senderUser: BaseUserDTO.alexRivera),
 		FetchFriendRequestDTO(
 			id: UUID(),
-			senderUser: BaseUserDTO.danielLee,
+			senderUser: BaseUserDTO.samCarter,
 			mutualFriendCount: 2
 		),
 	]
 
 	static let mockSentFriendRequests: [FetchFriendRequestDTO] = [
 		FetchFriendRequestDTO(
-			id: UUID(), senderUser: BaseUserDTO.haley),
+			id: UUID(), senderUser: BaseUserDTO.jamieBrooks),
 		FetchFriendRequestDTO(
 			id: UUID(),
-			senderUser: BaseUserDTO.danielAgapov,
+			senderUser: BaseUserDTO.alexRivera,
 			mutualFriendCount: 1
 		),
 	]

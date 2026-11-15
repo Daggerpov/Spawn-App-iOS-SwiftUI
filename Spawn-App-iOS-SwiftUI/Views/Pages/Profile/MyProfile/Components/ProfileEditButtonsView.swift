@@ -82,7 +82,7 @@ struct ProfileEditButtonsView: View {
 
 #Preview {
 	ProfileEditButtonsView(
-		user: BaseUserDTO.danielAgapov,
+		user: BaseUserDTO.alexRivera,
 		profileViewModel: ProfileViewModel(userId: UUID()),
 		editingState: .constant(.save),
 		username: .constant("johndoe"),

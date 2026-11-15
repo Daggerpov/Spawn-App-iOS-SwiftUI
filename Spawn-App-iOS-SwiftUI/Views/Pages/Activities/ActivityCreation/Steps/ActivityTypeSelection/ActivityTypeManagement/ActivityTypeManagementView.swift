@@ -109,7 +109,7 @@ struct ActivityTypeManagementView: View {
 			.navigationBarHidden(true)
 			.navigationDestination(isPresented: $showingManagePeople) {
 				ManagePeopleView(
-					user: UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov,
+					user: UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.alexRivera,
 					activityTitle: displayActivityType.title,
 					activityTypeDTO: displayActivityType
 				)

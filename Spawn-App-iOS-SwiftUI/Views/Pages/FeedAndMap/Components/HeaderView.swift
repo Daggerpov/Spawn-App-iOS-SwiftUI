@@ -74,7 +74,7 @@ struct HeaderView: View {
 @available(iOS 17, *)
 #Preview {
 	@Previewable @ObservedObject var appCache = AppCache.shared
-	HeaderView(user: BaseUserDTO.danielAgapov).environmentObject(
+	HeaderView(user: BaseUserDTO.alexRivera).environmentObject(
 		appCache
 	)
 }

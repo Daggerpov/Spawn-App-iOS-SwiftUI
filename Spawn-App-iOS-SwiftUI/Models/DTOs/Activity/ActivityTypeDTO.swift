@@ -48,19 +48,21 @@ struct BatchActivityTypeUpdateDTO: Codable, Sendable {
 extension ActivityTypeDTO {
 	static let mockChillActivityType: ActivityTypeDTO = ActivityTypeDTO(
 		id: UUID(uuidString: "A1B2C3D4-E5F6-7890-ABCD-EF1234567890") ?? UUID(),
-		title: "Chill", icon: "🛋️", associatedFriends: [MinimalFriendDTO.danielLee, MinimalFriendDTO.danielAgapov],
+		title: "Chill", icon: "🛋️", associatedFriends: [MinimalFriendDTO.samCarter, MinimalFriendDTO.alexRivera],
 		orderNum: 0, isPinned: false
 	)
 	static let mockFoodActivityType: ActivityTypeDTO = ActivityTypeDTO(
 		id: UUID(uuidString: "B2C3D4E5-F678-9012-BCDE-F12345678901") ?? UUID(),
 		title: "Food", icon: "🍽️",
-		associatedFriends: [MinimalFriendDTO.danielLee, MinimalFriendDTO.haley, MinimalFriendDTO.haley], orderNum: 1,
+		associatedFriends: [MinimalFriendDTO.samCarter, MinimalFriendDTO.jamieBrooks, MinimalFriendDTO.jamieBrooks],
+		orderNum: 1,
 		isPinned: true)
 	static let mockActiveActivityType: ActivityTypeDTO = ActivityTypeDTO(
 		id: UUID(uuidString: "C3D4E5F6-7890-1234-CDEF-123456789012") ?? UUID(),
 		title: "Active", icon: "🏃",
 		associatedFriends: [
-			MinimalFriendDTO.haley, MinimalFriendDTO.danielLee, MinimalFriendDTO.haley, MinimalFriendDTO.danielLee,
+			MinimalFriendDTO.jamieBrooks, MinimalFriendDTO.samCarter, MinimalFriendDTO.jamieBrooks,
+			MinimalFriendDTO.samCarter,
 		],
 		orderNum: 2, isPinned: false)
 	static let mockStudyActivityType: ActivityTypeDTO = ActivityTypeDTO(
