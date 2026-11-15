@@ -60,7 +60,8 @@ struct SwiftUIImagePicker: View {
 					maskRadius: UIScreen.main.bounds.width * 0.35,
 					cropImageCircular: true,
 					rotateImage: false,
-					zoomSensitivity: 1.0
+					// SwiftyCrop multiplies this by 0.1. Match the pinch at 1:1.
+					zoomSensitivity: 10.0
 				)
 
 				SwiftyCropView(
