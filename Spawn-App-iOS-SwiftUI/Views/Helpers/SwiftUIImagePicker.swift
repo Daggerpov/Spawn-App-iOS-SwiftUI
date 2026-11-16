@@ -52,7 +52,7 @@ struct SwiftUIImagePicker: View {
 				}
 			}
 		}
-		.fullScreenCover(isPresented: $isShowingCropper) {
+		.fullScreenCover(isPresented: $isShowingCropper, onDismiss: { dismiss() }) {
 			if let image = originalImage {
 				// Configure SwiftyCrop
 				let configuration = SwiftyCropConfiguration(
@@ -73,13 +73,12 @@ struct SwiftUIImagePicker: View {
 						let finalImage = resizeImageIfNeeded(croppedImage)
 						selectedImage = finalImage
 					}
-					dismiss()
 				}
 			} else {
 				// Fallback
 				Color.black
 					.onAppear {
-						dismiss()
+						isShowingCropper = false
 					}
 			}
 		}
