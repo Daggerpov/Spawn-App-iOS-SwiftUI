@@ -16,6 +16,11 @@ struct ShareDrawer: View {
 	// State for drag gesture
 	@State private var dragOffset: CGFloat = 0
 
+	private var canShareToWhatsApp: Bool {
+		guard let url = URL(string: "whatsapp://send") else { return false }
+		return UIApplication.shared.canOpenURL(url)
+	}
+
 	// MARK: - Adaptive Colors
 
 	private var adaptiveBackgroundColor: Color {
@@ -167,6 +172,9 @@ struct ShareDrawer: View {
 							),
 							label: "WhatsApp"
 						)
+						.disabled(!canShareToWhatsApp)
+						.opacity(canShareToWhatsApp ? 1 : 0.4)
+						.accessibilityHint(canShareToWhatsApp ? "" : "WhatsApp is unavailable on this device")
 
 						Spacer()
 

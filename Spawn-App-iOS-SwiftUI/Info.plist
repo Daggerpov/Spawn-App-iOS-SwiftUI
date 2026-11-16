@@ -36,6 +36,7 @@
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>comgooglemaps</string>
+		<string>whatsapp</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>
