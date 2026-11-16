@@ -336,8 +336,12 @@ struct MapView: View {
 				return true
 
 			case .happeningNow:
-				guard let endTime = activity.endTime else { return false }
-				return startTime <= now && endTime >= now
+				guard startTime <= now, activity.isExpired != true else { return false }
+				if let endTime = activity.endTime {
+					return endTime >= now
+				}
+				// The feed has already applied its expiration policy to indefinite activities.
+				return true
 
 			case .inTheNextHour:
 				let oneHourFromNow =
