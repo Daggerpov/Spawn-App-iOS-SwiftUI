@@ -24,7 +24,6 @@ struct MyProfileView: View {
 	@State private var instagramLink: String = ""
 	@State private var showCalendarPopup: Bool = false
 	@State private var navigateToCalendar: Bool = false
-	@State private var showActivityDetails: Bool = false
 	@State private var navigateToDayActivities: Bool = false
 	@State private var selectedDayActivities: [CalendarActivityDTO] = []
 
@@ -172,12 +171,6 @@ struct MyProfileView: View {
 						isImageLoading: $isImageLoading
 					)
 				)
-				.modifier(
-					MyProfileSheetsModifier(
-						showActivityDetails: $showActivityDetails,
-						activityDetailsView: AnyView(activityDetailsView)
-					)
-				)
 				.background(universalBackgroundColor)
 		}
 		.id(tabNavigationManager.profileNavigationId)
@@ -309,29 +302,6 @@ struct MyProfileView: View {
 		)
 	}
 
-	private var activityDetailsView: some View {
-		Group {
-			if profileViewModel.selectedActivity != nil {
-				EmptyView()  // Replaced with global popup system
-			}
-		}
-		.onChange(of: showActivityDetails) { _, isShowing in
-			if isShowing, let activity = profileViewModel.selectedActivity {
-				let activityColor = getActivityColor(for: activity.id)
-
-				// Post notification to show global popup
-				NotificationCenter.default.post(
-					name: .showGlobalActivityPopup,
-					object: nil,
-					userInfo: ["activity": activity, "color": activityColor]
-				)
-				// Reset local state since global popup will handle it
-				showActivityDetails = false
-				profileViewModel.selectedActivity = nil
-			}
-		}
-	}
-
 	private func shareProfile() {
 		// Post notification to show global profile share drawer
 		NotificationCenter.default.post(
@@ -350,19 +320,23 @@ struct MyProfileView: View {
 	}
 
 	private func handleActivitySelection(_ activity: CalendarActivityDTO) {
-		// First close the calendar popup
 		showCalendarPopup = false
 
-		// Then fetch and show the activity details
-		Task {
-			if let activityId = activity.activityId,
-				await profileViewModel.fetchActivityDetails(activityId: activityId)
-					!= nil
-			{
-				await MainActor.run {
-					showActivityDetails = true
-				}
+		Task { @MainActor in
+			guard let activityId = activity.activityId,
+				let details = await profileViewModel.fetchActivityDetails(activityId: activityId)
+			else {
+				notificationMessage = "Couldn’t load activity details. Please try again."
+				showNotification = true
+				return
 			}
+
+			NotificationCenter.default.post(
+				name: .showGlobalActivityPopup,
+				object: nil,
+				userInfo: ["activity": details, "color": getActivityColor(for: details.id)]
+			)
+			profileViewModel.selectedActivity = nil
 		}
 	}
 
@@ -442,19 +416,6 @@ struct MyProfileView: View {
 			isImageLoading = false
 			editingState = .edit
 		}
-	}
-}
-
-// MARK: - MyProfile Sheets Modifier
-struct MyProfileSheetsModifier: ViewModifier {
-	@Binding var showActivityDetails: Bool
-	var activityDetailsView: AnyView
-
-	func body(content: Content) -> some View {
-		content
-			.sheet(isPresented: $showActivityDetails) {
-				activityDetailsView
-			}
 	}
 }
 
