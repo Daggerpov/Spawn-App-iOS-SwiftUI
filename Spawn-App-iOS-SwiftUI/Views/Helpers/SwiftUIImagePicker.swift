@@ -5,6 +5,7 @@
 //  Created By Daniel Agapov on 2024-05-08.
 //
 
+import Photos
 import PhotosUI
 import SwiftUI
 import SwiftyCrop
@@ -111,7 +112,7 @@ private struct PhotoLibraryPicker: UIViewControllerRepresentable {
 	let onCancel: () -> Void
 
 	func makeUIViewController(context: Context) -> PHPickerViewController {
-		var configuration = PHPickerConfiguration()
+		var configuration = PHPickerConfiguration(photoLibrary: .shared())
 		configuration.filter = .images
 		configuration.selectionLimit = 1
 		let picker = PHPickerViewController(configuration: configuration)
@@ -135,11 +136,16 @@ private struct PhotoLibraryPicker: UIViewControllerRepresentable {
 		}
 
 		func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-			if let provider = results.first?.itemProvider {
-				parent.onSelection(provider)
-			} else {
+			guard let result = results.first else {
 				parent.onCancel()
+				return
 			}
+
+			// The crop editor owns the pending choice. Keep the picker clear when it reappears.
+			if let assetIdentifier = result.assetIdentifier {
+				picker.deselectAssets(withIdentifiers: [assetIdentifier])
+			}
+			parent.onSelection(result.itemProvider)
 		}
 	}
 }
