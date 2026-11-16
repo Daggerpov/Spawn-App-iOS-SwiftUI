@@ -108,7 +108,10 @@ struct ActivityCreationLocationView: View {
 			handleUserLocationUpdate(location)
 		}
 		.onReceive(locationManager.$locationError) { error in
-			if let error = error {
+			if let error = error,
+				locationManager.authorizationStatus != .denied,
+				locationManager.authorizationStatus != .restricted
+			{
 				print("Location error in ActivityCreationLocationView: \(error)")
 				showLocationError = true
 			}
