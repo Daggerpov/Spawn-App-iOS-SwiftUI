@@ -178,7 +178,7 @@ struct LoginInputView: View {
 							.padding(.horizontal, 40)
 
 							// External Login Buttons or Auto Sign-In State
-							if !userAuth.isAutoSigningIn {
+							if !userAuth.isAutoSigningIn && !userAuth.isCompletingGoogleSignIn {
 								VStack(spacing: 16) {
 									// Continue with Apple
 									Button(action: {
@@ -218,7 +218,7 @@ struct LoginInputView: View {
 										)
 										.scaleEffect(1.2)
 
-									Text("Account found! Signing you in...")
+									Text(userAuth.isAutoSigningIn ? "Account found! Signing you in..." : "Signing you in...")
 										.font(.onestMedium(size: 16))
 										.foregroundColor(
 											universalAccentColor(from: themeService, environment: colorScheme)
@@ -243,6 +243,10 @@ struct LoginInputView: View {
 		.onAppear {
 			// Reset any previous error state
 			userAuth.errorMessage = nil
+		}
+		.onDisappear {
+			// The next screen is up (or the user left): never come back to a stuck spinner
+			userAuth.isCompletingGoogleSignIn = false
 		}
 		.alert(item: $userAuth.authAlert) { alertType in
 			Alert(

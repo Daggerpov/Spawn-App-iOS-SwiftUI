@@ -95,6 +95,9 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 	// Track whether user is being automatically signed in after trying to register with existing account
 	@Published var isAutoSigningIn: Bool = false
 
+	// Track whether Google returned an account and we're now signing in with the Spawn back-end
+	@Published var isCompletingGoogleSignIn: Bool = false
+
 	// For handling terms of service acceptance
 	@Published var defaultPfpFetchError: Bool = false
 	@Published var defaultPfpUrlString: String? = nil
@@ -451,6 +454,7 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 					.rootViewController
 			else {
 				self.errorMessage = "Unable to start Google Sign-In. Please try again."
+				self.authAlert = .unknownError("Unable to start Google Sign-In. Please try again.")
 				print("Error: Unable to get the presenting view controller.")
 				return
 			}
@@ -462,20 +466,21 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 			GIDSignIn.sharedInstance.signIn(
 				withPresenting: presentingViewController
 			) { [weak self] signInResult, error in
-				if let error = error {
-					print(error.localizedDescription)
+				guard error == nil, let signInResult = signInResult else {
+					Task { @MainActor in
+						self?.handleGoogleSignInFailure(error, context: "sign-in")
+					}
 					return
 				}
 
-				guard let signInResult = signInResult else { return }
-
 				// Get ID token
 				signInResult.user.refreshTokensIfNeeded { [weak self] user, error in
-					guard error == nil else {
-						print("Error refreshing token: \(error?.localizedDescription ?? "Unknown error")")
+					guard error == nil, let user = user else {
+						Task { @MainActor in
+							self?.handleGoogleSignInFailure(error, context: "token refresh")
+						}
 						return
 					}
-					guard let user = user else { return }
 
 					// Extract user data before Task to avoid Sendable issues with GIDGoogleUser
 					let idTokenString = user.idToken?.tokenString ?? ""
@@ -507,13 +512,34 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 						self.authProvider = .google
 						self.idToken = idTokenString
 
+						// Show a spinner on Welcome Back while the back-end signs the user in
+						self.isCompletingGoogleSignIn = true
+
 						// Now that all properties are set, check if user exists
 						// This must happen AFTER setting idToken to avoid race condition
 						await self.spawnFetchUserIfAlreadyExists()
+
+						// Sign-in failed (account not found, server or network error): bring the buttons back.
+						// On success keep the spinner until the next screen is pushed.
+						if self.spawnUser == nil {
+							self.isCompletingGoogleSignIn = false
+						}
 					}
 				}
 			}
 		}
+	}
+
+	/// Tells the user Google sign-in failed. Cancelling the Google sheet is not treated as an error.
+	private func handleGoogleSignInFailure(_ error: Error?, context: String) {
+		if let googleError = error as? GIDSignInError, googleError.code == .canceled {
+			print("ℹ️ Google Sign-In cancelled by user")
+			return
+		}
+		print("❌ Google \(context) failed: \(error?.localizedDescription ?? "No result returned")")
+		let message = "Google sign-in failed. Please try again."
+		self.errorMessage = message
+		self.authAlert = .unknownError(message)
 	}
 
 	func signInWithApple() {
