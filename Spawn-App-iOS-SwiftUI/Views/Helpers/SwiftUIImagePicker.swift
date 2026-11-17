@@ -5,84 +5,82 @@
 //  Created By Daniel Agapov on 2024-05-08.
 //
 
+import Photos
 import PhotosUI
 import SwiftUI
 import SwiftyCrop
+import UniformTypeIdentifiers
 
 struct SwiftUIImagePicker: View {
 	@Binding var selectedImage: UIImage?
 	@Environment(\.dismiss) private var dismiss
-	@State private var photosPickerItem: PhotosPickerItem?
-	@State private var originalImage: UIImage?
-	@State private var isPresentingPhotoPicker: Bool = true
-	@State private var isShowingCropper: Bool = false
+	@State private var cropSource: CropSource?
+	@State private var savedCrop: UIImage?
+	@State private var loadingSelection: UUID?
+	@State private var showsLoadError = false
+
+	private struct CropSource: Identifiable {
+		let id = UUID()
+		let image: UIImage
+	}
 
 	var body: some View {
-		ZStack {
-			// Background color when no image is selected
-			if originalImage == nil {
-				Color.black.opacity(0.3)
-					.ignoresSafeArea()
-					.onTapGesture {
-						dismiss()
-					}
-			} else {
-				// Show loading indicator if needed
-				Color.clear
-			}
-		}
-		.photosPicker(isPresented: $isPresentingPhotoPicker, selection: $photosPickerItem, matching: .images)
-		.onChange(of: photosPickerItem) { _, newItem in
-			if newItem != nil {
-				Task {
-					if let data = try? await newItem?.loadTransferable(type: Data.self),
-						let image = UIImage(data: data)
-					{
-						await MainActor.run {
-							self.originalImage = image
-							self.isPresentingPhotoPicker = false
-							self.isShowingCropper = true
-						}
-					} else {
-						// If loading fails, dismiss the picker
-						await MainActor.run {
-							dismiss()
-						}
-					}
+		PhotoLibraryPicker(onSelection: loadPhoto, onCancel: { dismiss() })
+			.disabled(loadingSelection != nil)
+			.overlay {
+				if loadingSelection != nil {
+					ProgressView("Loading photo…")
+						.padding()
+						.background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
 				}
 			}
-		}
-		.fullScreenCover(isPresented: $isShowingCropper) {
-			if let image = originalImage {
-				// Configure SwiftyCrop
-				let configuration = SwiftyCropConfiguration(
-					maxMagnificationScale: 4.0,
-					maskRadius: UIScreen.main.bounds.width * 0.35,
-					cropImageCircular: true,
-					rotateImage: false,
-					// SwiftyCrop multiplies this by 0.1. Match the pinch at 1:1.
-					zoomSensitivity: 10.0
-				)
-
+			.fullScreenCover(item: $cropSource, onDismiss: finishCropping) { source in
 				SwiftyCropView(
-					imageToCrop: image,
+					imageToCrop: source.image,
 					maskShape: .circle,
-					configuration: configuration
+					configuration: SwiftyCropConfiguration(
+						maxMagnificationScale: 4.0,
+						maskRadius: UIScreen.main.bounds.width * 0.35,
+						cropImageCircular: true,
+						rotateImage: false,
+						// SwiftyCrop multiplies this by 0.1. Match the pinch at 1:1.
+						zoomSensitivity: 10.0
+					)
 				) { croppedImage in
-					if let croppedImage = croppedImage {
-						let finalImage = resizeImageIfNeeded(croppedImage)
-						selectedImage = finalImage
-					}
-					dismiss()
+					savedCrop = croppedImage
 				}
-			} else {
-				// Fallback
-				Color.black
-					.onAppear {
-						dismiss()
-					}
+			}
+			.alert("Couldn’t load photo", isPresented: $showsLoadError) {
+				Button("OK", role: .cancel) {}
+			} message: {
+				Text("Try selecting the photo again or choose another one.")
+			}
+			.onDisappear {
+				loadingSelection = nil
+			}
+	}
+
+	private func loadPhoto(_ provider: NSItemProvider) {
+		guard loadingSelection == nil else { return }
+		let selection = UUID()
+		loadingSelection = selection
+		provider.loadDataRepresentation(forTypeIdentifier: UTType.image.identifier) { data, _ in
+			Task { @MainActor in
+				guard loadingSelection == selection else { return }
+				loadingSelection = nil
+				if let data, let image = UIImage(data: data) {
+					cropSource = CropSource(image: image)
+				} else {
+					showsLoadError = true
+				}
 			}
 		}
+	}
+
+	private func finishCropping() {
+		guard let savedCrop else { return }
+		selectedImage = resizeImageIfNeeded(savedCrop)
+		dismiss()
 	}
 
 	// Helper method to resize large images
@@ -105,6 +103,50 @@ struct SwiftUIImagePicker: View {
 		}
 
 		return image
+	}
+}
+
+// Keep the system picker mounted behind the cropper so Cancel reveals it again.
+private struct PhotoLibraryPicker: UIViewControllerRepresentable {
+	let onSelection: (NSItemProvider) -> Void
+	let onCancel: () -> Void
+
+	func makeUIViewController(context: Context) -> PHPickerViewController {
+		var configuration = PHPickerConfiguration(photoLibrary: .shared())
+		configuration.filter = .images
+		configuration.selectionLimit = 1
+		let picker = PHPickerViewController(configuration: configuration)
+		picker.delegate = context.coordinator
+		return picker
+	}
+
+	func updateUIViewController(_ picker: PHPickerViewController, context: Context) {
+		context.coordinator.parent = self
+	}
+
+	func makeCoordinator() -> Coordinator {
+		Coordinator(parent: self)
+	}
+
+	final class Coordinator: NSObject, PHPickerViewControllerDelegate {
+		var parent: PhotoLibraryPicker
+
+		init(parent: PhotoLibraryPicker) {
+			self.parent = parent
+		}
+
+		func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+			guard let result = results.first else {
+				parent.onCancel()
+				return
+			}
+
+			// The crop editor owns the pending choice. Keep the picker clear when it reappears.
+			if let assetIdentifier = result.assetIdentifier {
+				picker.deselectAssets(withIdentifiers: [assetIdentifier])
+			}
+			parent.onSelection(result.itemProvider)
+		}
 	}
 }
 
