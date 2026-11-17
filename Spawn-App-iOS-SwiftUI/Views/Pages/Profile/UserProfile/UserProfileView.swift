@@ -295,60 +295,6 @@ struct UserProfileView: View {
 			// Friendship badge (for other users' profiles)
 			friendshipBadge
 
-			// Friend Request Buttons (for incoming requests)
-			if profileViewModel.friendshipStatus == .requestReceived {
-				HStack(spacing: 10) {
-					Button(action: {
-						if let requestId = profileViewModel.pendingFriendRequestId {
-							Task {
-								await profileViewModel.acceptFriendRequest(requestId: requestId)
-								// Show success drawer after successful acceptance
-								showSuccessDrawer = true
-							}
-						}
-					}) {
-						HStack(spacing: 6) {
-							Image(systemName: "checkmark")
-								.font(.system(size: 14, weight: .semibold))
-							Text("Accept")
-								.font(.system(size: 14, weight: .semibold))
-						}
-						.foregroundColor(.white)
-						.padding(.vertical, 12)
-						.padding(.horizontal, 16)
-						.frame(maxWidth: .infinity)
-						.background(universalAccentColor)
-						.cornerRadius(10)
-					}
-
-					Button(action: {
-						if let requestId = profileViewModel.pendingFriendRequestId {
-							Task {
-								await profileViewModel.declineFriendRequest(requestId: requestId)
-							}
-						}
-					}) {
-						HStack(spacing: 6) {
-							Image(systemName: "xmark")
-								.font(.system(size: 14, weight: .semibold))
-							Text("Deny")
-								.font(.system(size: 14, weight: .semibold))
-						}
-						.foregroundColor(universalAccentColor)
-						.padding(.vertical, 12)
-						.padding(.horizontal, 16)
-						.frame(maxWidth: .infinity)
-						.background(Color.clear)
-						.overlay(
-							RoundedRectangle(cornerRadius: 10)
-								.stroke(universalAccentColor, lineWidth: 1.5)
-						)
-					}
-				}
-				.padding(.horizontal, 20)
-				.padding(.vertical, 10)
-			}
-
 			// Add Friend Button for non-friends or showing Friend Request Sent
 			if profileViewModel.friendshipStatus == .none || profileViewModel.friendshipStatus == .requestSent {
 				Button(action: {
@@ -648,7 +594,7 @@ struct UserProfileView: View {
 
 			case .requestReceived:
 				// Accept/Deny buttons
-				HStack(spacing: 10) {
+				HStack(spacing: 8) {
 					Button(action: {
 						if let requestId = profileViewModel
 							.pendingFriendRequestId
@@ -666,19 +612,17 @@ struct UserProfileView: View {
 							}
 						}
 					}) {
-						HStack(spacing: 4) {
+						HStack(spacing: 12) {
 							Image(systemName: "checkmark")
-								.font(.system(size: 12, weight: .semibold))
-							Text("Accept")
-								.font(.system(size: 12, weight: .semibold))
+								.font(.system(size: 16, weight: .semibold))
+							Text("Accept Request")
+								.font(.onestMedium(size: 16))
 						}
 						.foregroundColor(.white)
-						.padding(.vertical, 8)
-						.padding(.horizontal, 12)
-						.frame(height: 32)
-						.frame(maxWidth: .infinity)
-						.background(universalAccentColor)
-						.cornerRadius(8)
+						.padding(.vertical, 12)
+						.padding(.horizontal, 16)
+						.background(universalSecondaryColor)
+						.cornerRadius(12)
 						.scaleEffect(acceptButtonScale)
 						.shadow(
 							color: Color.black.opacity(0.15),
@@ -718,28 +662,22 @@ struct UserProfileView: View {
 							}
 						}
 					}) {
-						HStack(spacing: 4) {
-							Image(systemName: "xmark")
-								.font(.system(size: 12, weight: .semibold))
-							Text("Deny")
-								.font(.system(size: 12, weight: .semibold))
-						}
-						.foregroundColor(universalAccentColor)
-						.padding(.vertical, 8)
-						.padding(.horizontal, 12)
-						.frame(height: 32)
-						.frame(maxWidth: .infinity)
-						.overlay(
-							RoundedRectangle(cornerRadius: 8)
-								.stroke(universalAccentColor, lineWidth: 1)
-						)
-						.scaleEffect(denyButtonScale)
-						.shadow(
-							color: Color.black.opacity(0.15),
-							radius: denyButtonPressed ? 2 : 8,
-							x: 0,
-							y: denyButtonPressed ? 2 : 4
-						)
+						Text("Deny")
+							.font(.onestMedium(size: 16))
+							.foregroundColor(universalSecondaryTextColor)
+							.padding(.vertical, 12)
+							.padding(.horizontal, 16)
+							.overlay(
+								RoundedRectangle(cornerRadius: 12)
+									.stroke(universalSecondaryTextColor, lineWidth: 2)
+							)
+							.scaleEffect(denyButtonScale)
+							.shadow(
+								color: Color.black.opacity(0.15),
+								radius: denyButtonPressed ? 2 : 8,
+								x: 0,
+								y: denyButtonPressed ? 2 : 4
+							)
 					}
 					.buttonStyle(PlainButtonStyle())
 					.animation(.easeInOut(duration: 0.15), value: denyButtonScale)
