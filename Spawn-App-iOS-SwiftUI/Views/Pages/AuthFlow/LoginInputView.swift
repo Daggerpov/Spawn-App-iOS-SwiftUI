@@ -40,188 +40,203 @@ struct LoginInputView: View {
 			.padding(.horizontal, 25)
 			.padding(.top, 16)
 
-			Spacer()
+			// Scrolls when the keyboard is up so the title stays below the status bar
+			GeometryReader { geometry in
+				ScrollView {
+					VStack(spacing: 0) {
+						Spacer(minLength: 16)
 
-			// Main Content
-			VStack(spacing: 32) {
-				// Title and Subtitle
-				VStack(spacing: 16) {
-					Text("Welcome Back")
-						.font(heading1)
-						.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+						// Main Content
+						VStack(spacing: 32) {
+							// Title and Subtitle
+							VStack(spacing: 16) {
+								Text("Welcome Back")
+									.font(heading1)
+									.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
 
-					Text("Your plans are waiting - time to spawn.")
-						.font(.onestRegular(size: 16))
-						.foregroundColor(
-							universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7)
-						)
-						.multilineTextAlignment(.center)
-						.lineLimit(2)
-				}
-				.padding(.horizontal, 40)
-
-				// Form Fields
-				VStack(spacing: 24) {
-					// Username/Email Field
-					VStack(alignment: .leading, spacing: 8) {
-						Text("Email or Username")
-							.font(.onestRegular(size: 16))
-							.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-
-						TextField("Enter your email or username", text: $usernameOrEmail)
-							.textFieldStyle(ErrorTextFieldStyle(hasError: hasLoginError))
-							.onChange(of: usernameOrEmail) {
-								hasLoginError = false
+								Text("Your plans are waiting - time to spawn.")
+									.font(.onestRegular(size: 16))
+									.foregroundColor(
+										universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7)
+									)
+									.multilineTextAlignment(.center)
+									.lineLimit(2)
 							}
-							.textInputAutocapitalization(.never)
-					}
+							.padding(.horizontal, 40)
 
-					// Password Field
-					VStack(alignment: .leading, spacing: 8) {
-						Text("Password")
-							.font(.onestRegular(size: 16))
-							.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+							// Form Fields
+							VStack(spacing: 24) {
+								// Username/Email Field
+								VStack(alignment: .leading, spacing: 8) {
+									Text("Email or Username")
+										.font(.onestRegular(size: 16))
+										.foregroundColor(
+											universalAccentColor(from: themeService, environment: colorScheme))
 
-						SecureField("Enter your password", text: $password)
-							.textFieldStyle(ErrorSecureFieldStyle(hasError: hasLoginError))
-							.onChange(of: password) {
-								hasLoginError = false
+									TextField("Enter your email or username", text: $usernameOrEmail)
+										.textFieldStyle(ErrorTextFieldStyle(hasError: hasLoginError))
+										.onChange(of: usernameOrEmail) {
+											hasLoginError = false
+										}
+										.textInputAutocapitalization(.never)
+								}
+
+								// Password Field
+								VStack(alignment: .leading, spacing: 8) {
+									Text("Password")
+										.font(.onestRegular(size: 16))
+										.foregroundColor(
+											universalAccentColor(from: themeService, environment: colorScheme))
+
+									SecureField("Enter your password", text: $password)
+										.textFieldStyle(ErrorSecureFieldStyle(hasError: hasLoginError))
+										.onChange(of: password) {
+											hasLoginError = false
+										}
+								}
+
+								// Continue Button
+								Button(action: {
+									// Haptic feedback
+									let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+									impactGenerator.impactOccurred()
+
+									// Execute action with slight delay for animation
+									Task { @MainActor in
+										try? await Task.sleep(for: .seconds(0.1))
+										await performLogin()
+									}
+								}) {
+									ZStack {
+										RoundedRectangle(cornerRadius: 16)
+											.fill(isFormValid ? figmaIndigo : Color.gray.opacity(0.6))
+											.frame(height: 55)
+
+										if isLoading {
+											ProgressView()
+												.progressViewStyle(CircularProgressViewStyle(tint: .white))
+										} else {
+											Text("Continue")
+												.font(.onestMedium(size: 16))
+												.foregroundColor(.white)
+										}
+									}
+								}
+								.buttonStyle(PlainButtonStyle())
+								.disabled(!isFormValid || isLoading)
+								.scaleEffect(scale)
+								.shadow(
+									color: (isFormValid && !isLoading) ? Color.black.opacity(0.15) : Color.clear,
+									radius: isPressed ? 2 : 8,
+									x: 0,
+									y: isPressed ? 2 : 4
+								)
+								.animation(.easeInOut(duration: 0.15), value: scale)
+								.animation(.easeInOut(duration: 0.15), value: isPressed)
+								.simultaneousGesture(
+									DragGesture(minimumDistance: 0)
+										.onChanged { _ in
+											guard isFormValid && !isLoading && !isPressed else { return }
+											isPressed = true
+											scale = 0.95
+										}
+										.onEnded { _ in
+											guard isFormValid && !isLoading else { return }
+											isPressed = false
+											scale = 1.0
+										}
+								)
 							}
-					}
+							.padding(.horizontal, 40)
 
-					// Continue Button
-					Button(action: {
-						// Haptic feedback
-						let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-						impactGenerator.impactOccurred()
+							// Error Message
+							if hasLoginError {
+								Text(errorMessage)
+									.font(Font.custom("Onest", size: 14).weight(.medium))
+									.foregroundColor(Color(red: 0.92, green: 0.26, blue: 0.21))
+									.padding(.horizontal, 40)
+									.padding(.top, -16)
+							}
 
-						// Execute action with slight delay for animation
-						Task { @MainActor in
-							try? await Task.sleep(for: .seconds(0.1))
-							await performLogin()
-						}
-					}) {
-						ZStack {
-							RoundedRectangle(cornerRadius: 16)
-								.fill(isFormValid ? figmaIndigo : Color.gray.opacity(0.6))
-								.frame(height: 55)
+							// Divider with "or"
+							HStack {
+								Rectangle()
+									.fill(Color.gray.opacity(0.3))
+									.frame(height: 1)
 
-							if isLoading {
-								ProgressView()
-									.progressViewStyle(CircularProgressViewStyle(tint: .white))
+								Text("or")
+									.font(.system(size: 16))
+									.foregroundColor(
+										universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7)
+									)
+									.padding(.horizontal, 16)
+
+								Rectangle()
+									.fill(Color.gray.opacity(0.3))
+									.frame(height: 1)
+							}
+							.padding(.horizontal, 40)
+
+							// External Login Buttons or Auto Sign-In State
+							if !userAuth.isAutoSigningIn {
+								VStack(spacing: 16) {
+									// Continue with Apple
+									Button(action: {
+										// Haptic feedback
+										let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+										impactGenerator.impactOccurred()
+
+										userAuth.signInWithApple()
+									}) {
+										AuthProviderButtonView(.apple)
+									}
+									.buttonStyle(AuthProviderButtonStyle())
+
+									// Continue with Google
+									Button(action: {
+										// Haptic feedback
+										let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+										impactGenerator.impactOccurred()
+
+										Task {
+											await userAuth.loginWithGoogle()
+										}
+									}) {
+										AuthProviderButtonView(.google)
+									}
+									.buttonStyle(AuthProviderButtonStyle())
+								}
+								.padding(.horizontal, 40)
 							} else {
-								Text("Continue")
-									.font(.onestMedium(size: 16))
-									.foregroundColor(.white)
+								// Auto Sign-In Loading State
+								VStack(spacing: 16) {
+									ProgressView()
+										.progressViewStyle(
+											CircularProgressViewStyle(
+												tint: universalAccentColor(from: themeService, environment: colorScheme)
+											)
+										)
+										.scaleEffect(1.2)
+
+									Text("Account found! Signing you in...")
+										.font(.onestMedium(size: 16))
+										.foregroundColor(
+											universalAccentColor(from: themeService, environment: colorScheme)
+										)
+										.multilineTextAlignment(.center)
+								}
+								.padding(.horizontal, 40)
+								.transition(.opacity)
 							}
 						}
+
+						Spacer(minLength: 16)
 					}
-					.buttonStyle(PlainButtonStyle())
-					.disabled(!isFormValid || isLoading)
-					.scaleEffect(scale)
-					.shadow(
-						color: (isFormValid && !isLoading) ? Color.black.opacity(0.15) : Color.clear,
-						radius: isPressed ? 2 : 8,
-						x: 0,
-						y: isPressed ? 2 : 4
-					)
-					.animation(.easeInOut(duration: 0.15), value: scale)
-					.animation(.easeInOut(duration: 0.15), value: isPressed)
-					.simultaneousGesture(
-						DragGesture(minimumDistance: 0)
-							.onChanged { _ in
-								guard isFormValid && !isLoading && !isPressed else { return }
-								isPressed = true
-								scale = 0.95
-							}
-							.onEnded { _ in
-								guard isFormValid && !isLoading else { return }
-								isPressed = false
-								scale = 1.0
-							}
-					)
+					.frame(minHeight: geometry.size.height)
 				}
-				.padding(.horizontal, 40)
-
-				// Error Message
-				if hasLoginError {
-					Text(errorMessage)
-						.font(Font.custom("Onest", size: 14).weight(.medium))
-						.foregroundColor(Color(red: 0.92, green: 0.26, blue: 0.21))
-						.padding(.horizontal, 40)
-						.padding(.top, -16)
-				}
-
-				// Divider with "or"
-				HStack {
-					Rectangle()
-						.fill(Color.gray.opacity(0.3))
-						.frame(height: 1)
-
-					Text("or")
-						.font(.system(size: 16))
-						.foregroundColor(
-							universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7)
-						)
-						.padding(.horizontal, 16)
-
-					Rectangle()
-						.fill(Color.gray.opacity(0.3))
-						.frame(height: 1)
-				}
-				.padding(.horizontal, 40)
-
-				// External Login Buttons or Auto Sign-In State
-				if !userAuth.isAutoSigningIn {
-					VStack(spacing: 16) {
-						// Continue with Apple
-						Button(action: {
-							// Haptic feedback
-							let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-							impactGenerator.impactOccurred()
-
-							userAuth.signInWithApple()
-						}) {
-							AuthProviderButtonView(.apple)
-						}
-						.buttonStyle(AuthProviderButtonStyle())
-
-						// Continue with Google
-						Button(action: {
-							// Haptic feedback
-							let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-							impactGenerator.impactOccurred()
-
-							Task {
-								await userAuth.loginWithGoogle()
-							}
-						}) {
-							AuthProviderButtonView(.google)
-						}
-						.buttonStyle(AuthProviderButtonStyle())
-					}
-					.padding(.horizontal, 40)
-				} else {
-					// Auto Sign-In Loading State
-					VStack(spacing: 16) {
-						ProgressView()
-							.progressViewStyle(
-								CircularProgressViewStyle(
-									tint: universalAccentColor(from: themeService, environment: colorScheme))
-							)
-							.scaleEffect(1.2)
-
-						Text("Account found! Signing you in...")
-							.font(.onestMedium(size: 16))
-							.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-							.multilineTextAlignment(.center)
-					}
-					.padding(.horizontal, 40)
-					.transition(.opacity)
-				}
+				.scrollBounceBehavior(.basedOnSize)
+				.scrollDismissesKeyboard(.interactively)
 			}
-
-			Spacer()
 		}
 		.background(universalBackgroundColor(from: themeService, environment: colorScheme))
 		.navigationBarHidden(true)
