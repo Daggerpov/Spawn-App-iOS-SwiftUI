@@ -187,7 +187,9 @@ struct SettingsView: View {
 						}
 
 						SettingsRow(icon: "star", title: "Rate Spawn", showDisclosure: false) {
-							// Navigate to rate app
+							if let url = URL(string: "https://apps.apple.com/app/id6738635871?action=write-review") {
+								UIApplication.shared.open(url)
+							}
 						}
 					}
 
