@@ -1,8 +1,15 @@
+import StoreKit
 import SwiftUI
 
 struct SettingsView: View {
 	@Environment(\.presentationMode) var presentationMode
+	@Environment(\.requestReview) private var requestReview
 	@ObservedObject var userAuth = UserAuthViewModel.shared
+
+	@State private var showRatingPrompt = false
+	/// Rating picked in the prompt; acted on once the sheet has finished dismissing.
+	@State private var pendingRating: Int?
+	@State private var navigateToFeedback = false
 
 	/// Extra scroll padding below the last row so it clears the floating tab bar (layout only reserves
 	/// 92pt; the overlaid pill sits higher). Matches the 100pt bottom padding used by My Profile.
@@ -187,9 +194,8 @@ struct SettingsView: View {
 						}
 
 						SettingsRow(icon: "star", title: "Rate Spawn", showDisclosure: false) {
-							if let url = URL(string: "https://apps.apple.com/app/id6738635871?action=write-review") {
-								UIApplication.shared.open(url)
-							}
+							pendingRating = nil
+							showRatingPrompt = true
 						}
 					}
 
@@ -260,6 +266,20 @@ struct SettingsView: View {
 		.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 		.background(universalBackgroundColor)
 		.navigationBarHidden(true)
+		.sheet(isPresented: $showRatingPrompt, onDismiss: handleRatingPromptDismissed) {
+			RateSpawnSheet(
+				onRate: { rating in
+					pendingRating = rating
+					showRatingPrompt = false
+				},
+				onDismiss: {
+					showRatingPrompt = false
+				}
+			)
+		}
+		.navigationDestination(isPresented: $navigateToFeedback) {
+			FeedbackView(userId: userAuth.spawnUser?.id, email: userAuth.spawnUser?.email)
+		}
 		.alert(item: $userAuth.activeAlert) { alertType in
 			switch alertType {
 			case .deleteConfirmation:
@@ -294,6 +314,17 @@ struct SettingsView: View {
 					dismissButton: .default(Text("OK"))
 				)
 			}
+		}
+	}
+
+	/// 4-5 stars ask for an App Store review; 1-3 stars go to the feedback form.
+	private func handleRatingPromptDismissed() {
+		guard let rating = pendingRating else { return }
+		pendingRating = nil
+		if rating >= 4 {
+			requestReview()
+		} else {
+			navigateToFeedback = true
 		}
 	}
 }
