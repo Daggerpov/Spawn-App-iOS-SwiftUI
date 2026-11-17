@@ -4,6 +4,9 @@
 # save it to ~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8, and export:
 #   ASC_KEY_ID=<key id>  ASC_ISSUER_ID=<issuer id>
 #
+# Needs fastlane whose xcodeproj gem understands Xcode 16 synchronized folders (xcodeproj >= 1.25),
+# and an Xcode account signed in with access to cloud-managed distribution signing.
+#
 # Usage:
 #   fastlane release version:2.3                     # bump, build, upload, submit for review
 #   fastlane release version:2.3 submit:false        # stop after uploading the build
@@ -21,23 +24,35 @@ platform :ios do
     )
   end
 
+  # agvtool (increment_version_number) skips the app target, which has no VERSIONING_SYSTEM,
+  # so set MARKETING_VERSION and CURRENT_PROJECT_VERSION in the project file directly.
+  def set_project_versions(version, build)
+    path = ["../Spawn-App-iOS-SwiftUI.xcodeproj/project.pbxproj", "Spawn-App-iOS-SwiftUI.xcodeproj/project.pbxproj"]
+           .map { |p| File.expand_path(p) }.find { |p| File.exist?(p) } || UI.user_error!("project.pbxproj not found")
+    pbx = File.read(path)
+      .gsub(/MARKETING_VERSION = [^;]+;/, "MARKETING_VERSION = #{version};")
+      .gsub(/CURRENT_PROJECT_VERSION = [^;]+;/, "CURRENT_PROJECT_VERSION = #{build};")
+    File.write(path, pbx)
+    UI.message("Set version #{version} (#{build})")
+  end
+
   desc "Bump the version, build, upload to App Store Connect and submit for review"
   lane :release do |options|
     version = options[:version] || UI.user_error!("Pass version:, e.g. fastlane release version:2.3")
     api_key = asc_key
 
-    increment_version_number(version_number: version, xcodeproj: "Spawn-App-iOS-SwiftUI.xcodeproj")
-    increment_build_number(
-      build_number: latest_testflight_build_number(api_key: api_key, version: version, initial_build_number: 0) + 1,
-      xcodeproj: "Spawn-App-iOS-SwiftUI.xcodeproj"
-    )
+    build_number = latest_testflight_build_number(api_key: api_key, version: version, initial_build_number: 0) + 1
+    set_project_versions(version, build_number)
 
     build_app(
       project: "Spawn-App-iOS-SwiftUI.xcodeproj",
       scheme: "Spawn-App-iOS-SwiftUI",
       configuration: "Release",
       export_method: "app-store",
-      xcargs: "-allowProvisioningUpdates"
+      export_options: { signingStyle: "automatic", teamID: "GUW483PXY6" },
+      xcargs: "-allowProvisioningUpdates",
+      # Export needs it too, so Xcode's signed-in account can use cloud-managed distribution signing
+      export_xcargs: "-allowProvisioningUpdates"
     )
 
     upload_to_app_store(
