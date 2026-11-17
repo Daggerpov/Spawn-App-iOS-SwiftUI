@@ -3,6 +3,7 @@ import SwiftUI
 struct NotificationSettingsView: View {
 	@ObservedObject private var notificationService = NotificationService.shared
 	@State private var isShowingPermissionAlert = false
+	@Environment(\.scenePhase) private var scenePhase
 	@Environment(\.presentationMode) var presentationMode
 
 	var body: some View {
@@ -140,6 +141,11 @@ struct NotificationSettingsView: View {
 		}
 		.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 		.background(universalBackgroundColor)
+		.onChange(of: scenePhase) { _, phase in
+			if phase == .active {
+				notificationService.checkNotificationStatus()
+			}
+		}
 		.navigationBarHidden(true)
 		.alert(isPresented: $isShowingPermissionAlert) {
 			Alert(
