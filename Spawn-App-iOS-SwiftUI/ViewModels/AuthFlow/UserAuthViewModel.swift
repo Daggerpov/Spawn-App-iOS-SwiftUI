@@ -1339,17 +1339,13 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 			)
 
 			do {
-				let result: Bool =
-					((try await self.apiService.sendData(
-						changePasswordDTO,
-						to: url,
-						parameters: nil
-					)) != nil)
-
-				if !result {
-					throw NSError(
-						domain: "UserAuth", code: 400, userInfo: [NSLocalizedDescriptionKey: "Password change failed"])
-				}
+				// The server answers 200 with an empty body on success and an error status
+				// (e.g. 401 for a wrong current password) otherwise, which sendData throws.
+				let _: EmptyResponse? = try await self.apiService.sendData(
+					changePasswordDTO,
+					to: url,
+					parameters: nil
+				)
 
 				print("Password changed successfully for user \(userId)")
 			} catch {
