@@ -1474,6 +1474,8 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 					default:
 						self.errorMessage = "Unable to sign in at this time. Please try again later."
 					}
+				} else if case .failedTokenSaving = error {
+					self.errorMessage = "Unable to save your sign-in session. Please try again."
 				} else {
 					self.errorMessage = "Network connection error. Please check your internet connection and try again."
 				}
