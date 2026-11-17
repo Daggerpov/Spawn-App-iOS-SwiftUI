@@ -218,12 +218,15 @@ struct LoginInputView: View {
 										)
 										.scaleEffect(1.2)
 
-									Text(userAuth.isAutoSigningIn ? "Account found! Signing you in..." : "Signing you in...")
-										.font(.onestMedium(size: 16))
-										.foregroundColor(
-											universalAccentColor(from: themeService, environment: colorScheme)
-										)
-										.multilineTextAlignment(.center)
+									Text(
+										userAuth.isAutoSigningIn
+											? "Account found! Signing you in..." : "Signing you in..."
+									)
+									.font(.onestMedium(size: 16))
+									.foregroundColor(
+										universalAccentColor(from: themeService, environment: colorScheme)
+									)
+									.multilineTextAlignment(.center)
 								}
 								.padding(.horizontal, 40)
 								.transition(.opacity)
