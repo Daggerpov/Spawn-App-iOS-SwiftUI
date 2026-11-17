@@ -636,7 +636,7 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 					self.spawnUser = nil
 					if case .serviceUnavailable = error {
 						// Railway fallback 404: back-end is offline, not a missing account
-						print("❌ Spawn back-end unavailable during OAuth sign-in")
+						AppLog.warning("Spawn back-end unavailable during OAuth sign-in", category: "Auth")
 						self.isLoggedIn = false
 						self.authAlert = .serverUnavailable
 						self.errorMessage = AuthAlertType.serverUnavailable.message
@@ -696,7 +696,7 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 			self.spawnUser = nil
 			self.authAlert = .serverUnavailable
 			self.errorMessage = AuthAlertType.serverUnavailable.message
-			print("Spawn back-end unavailable - showing server unavailable error")
+			AppLog.warning("Spawn back-end unavailable, showing server unavailable error", category: "Auth")
 		} else if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
 			// For 404 errors (user doesn't exist), show user-friendly error without navigation
 			self.spawnUser = nil
@@ -1456,7 +1456,10 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 				self.spawnUser = nil
 				print("[DEBUG] Error: \(error)")
 				// Provide user-friendly error messages based on API error
-				if case .invalidStatusCode(let statusCode) = error {
+				if case .serviceUnavailable = error {
+					// Back-end is offline (hosting fallback 404), not a connection problem on the user's side
+					self.errorMessage = AuthAlertType.serverUnavailable.message
+				} else if case .invalidStatusCode(let statusCode) = error {
 					switch statusCode {
 					case 401:
 						self.errorMessage =
