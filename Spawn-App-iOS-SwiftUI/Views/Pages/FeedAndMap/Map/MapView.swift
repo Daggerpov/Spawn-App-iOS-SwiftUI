@@ -128,6 +128,21 @@ struct MapView: View {
 			}
 			updateFilteredActivities()
 		}
+		.task(id: selectedTimeFilter) {
+			guard selectedTimeFilter != .allActivities else { return }
+
+			while !Task.isCancelled {
+				do {
+					// Time windows only change minute to minute, so a 30s refresh is plenty and saves battery
+					try await Task.sleep(for: .seconds(30))
+				} catch {
+					return
+				}
+				if shouldProcessUpdates {
+					updateFilteredActivities()
+				}
+			}
+		}
 		.onChange(of: locationManager.locationUpdated) { _, _ in
 			guard shouldProcessUpdates else {
 				return
@@ -367,10 +382,9 @@ struct MapView: View {
 			}
 		}
 
-		filteredActivities = filtered
-		print(
-			"🔍 Filtered activities: \(filtered.count) of \(viewModel.activities.count)"
-		)
+		if filteredActivities != filtered {
+			filteredActivities = filtered
+		}
 	}
 
 	// MARK: - Activity Interaction
