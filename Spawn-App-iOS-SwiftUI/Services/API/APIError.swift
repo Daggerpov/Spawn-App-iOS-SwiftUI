@@ -17,6 +17,8 @@ enum APIError: LocalizedError {
 	case unknownError(error: Error)
 	case failedTokenSaving(tokenType: String)
 	case cancelled
+	/// The hosting provider has no running app for our domain (e.g. Railway's fallback 404), so the back-end is down
+	case serviceUnavailable
 
 	var errorDescription: String? {
 		switch self {
@@ -40,6 +42,8 @@ enum APIError: LocalizedError {
 			return "An error occurred saving the JWT (for \(tokenType)) to keychain."
 		case .cancelled:
 			return "Request was cancelled."
+		case .serviceUnavailable:
+			return "Spawn's servers are temporarily unavailable. Please try again later."
 		}
 	}
 

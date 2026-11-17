@@ -49,6 +49,8 @@ final class ErrorFormattingService: Sendable {
 			return "There was an issue with authentication. Please try signing in again."
 		case .cancelled:
 			return "Request was cancelled."  // This typically shouldn't be shown to users
+		case .serviceUnavailable:
+			return "Spawn's servers are temporarily unavailable. Please try again later."
 		}
 	}
 
@@ -210,6 +212,8 @@ final class ErrorFormattingService: Sendable {
 			return "There was an authentication issue. Please try signing in again."
 		case .cancelled:
 			return "Request was cancelled."
+		case .serviceUnavailable:
+			return "Spawn's servers are temporarily unavailable. Please try again later."
 		}
 	}
 
