@@ -10,10 +10,10 @@ import SwiftUI
 struct ProfileMenuView: View {
 	let user: Nameable
 	@Binding var showRemoveFriendConfirmation: Bool
-	@Binding var showReportDialog: Bool
 	@Binding var showBlockDialog: Bool
 	@Binding var showAddToActivityType: Bool
 	let isFriend: Bool
+	let requestReport: () -> Void
 	let copyProfileURL: () -> Void
 	let shareProfile: () -> Void
 	@Environment(\.dismiss) private var dismiss
@@ -23,10 +23,10 @@ struct ProfileMenuView: View {
 		SheetMenuContainer(rowCount: isFriend ? 7 : 5) {
 			ProfileMenuContent(
 				showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
-				showReportDialog: $showReportDialog,
 				showBlockDialog: $showBlockDialog,
 				showAddToActivityType: $showAddToActivityType,
 				isFriend: isFriend,
+				requestReport: requestReport,
 				copyProfileURL: copyProfileURL,
 				shareProfile: shareProfile,
 				dismiss: dismiss
@@ -38,10 +38,10 @@ struct ProfileMenuView: View {
 // Content view that contains the actual menu items
 private struct ProfileMenuContent: View {
 	@Binding var showRemoveFriendConfirmation: Bool
-	@Binding var showReportDialog: Bool
 	@Binding var showBlockDialog: Bool
 	@Binding var showAddToActivityType: Bool
 	let isFriend: Bool
+	let requestReport: () -> Void
 	let copyProfileURL: () -> Void
 	let shareProfile: () -> Void
 	let dismiss: DismissAction
@@ -104,8 +104,8 @@ private struct ProfileMenuContent: View {
 				text: "Report user",
 				color: .red
 			) {
+				requestReport()
 				dismiss()
-				showReportDialog = true
 			}
 			.background(universalBackgroundColor)
 
@@ -148,10 +148,10 @@ struct ProfileMenuView_Previews: PreviewProvider {
 		ProfileMenuView(
 			user: BaseUserDTO.alexRivera,
 			showRemoveFriendConfirmation: .constant(false),
-			showReportDialog: .constant(false),
 			showBlockDialog: .constant(false),
 			showAddToActivityType: .constant(false),
 			isFriend: true,
+			requestReport: {},
 			copyProfileURL: {},
 			shareProfile: {}
 		)
