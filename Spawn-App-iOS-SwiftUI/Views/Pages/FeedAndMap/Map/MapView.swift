@@ -133,7 +133,8 @@ struct MapView: View {
 
 			while !Task.isCancelled {
 				do {
-					try await Task.sleep(for: .seconds(1))
+					// Time windows only change minute to minute, so a 30s refresh is plenty and saves battery
+					try await Task.sleep(for: .seconds(30))
 				} catch {
 					return
 				}
