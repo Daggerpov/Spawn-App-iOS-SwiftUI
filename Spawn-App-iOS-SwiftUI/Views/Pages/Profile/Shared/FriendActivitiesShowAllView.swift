@@ -224,8 +224,7 @@ struct CompactActivityCard: View {
 			.padding(.horizontal, 16)
 			.padding(.vertical, 13)
 			.background(
-				RoundedRectangle(cornerRadius: 12)
-					.fill(color)
+				ActivityCardGradientBackground(color: color)
 					.shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 2)
 			)
 		}

@@ -48,8 +48,7 @@ struct ActivityLoadingCard: View {
 		}
 		.padding(14)
 		.background(
-			RoundedRectangle(cornerRadius: 14)
-				.fill(color)
+			ActivityCardGradientBackground(color: color, cornerRadius: 14)
 		)
 		.shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 4)
 		.overlay(

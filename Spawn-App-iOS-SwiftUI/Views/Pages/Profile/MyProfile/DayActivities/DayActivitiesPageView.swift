@@ -237,12 +237,8 @@ struct DayActivitiesPageView: View {
 	}
 
 	private func getColorForActivity(_ activity: CalendarActivityDTO) -> Color {
-		// If we have a color hex code from the backend, use it
-		if let colorHex = activity.colorHexCode, !colorHex.isEmpty {
-			return Color(hex: colorHex)
-		}
-
-		// Use the exact same logic as feed view - ActivityColorService with activityId
+		// Same assignment as the feed and the profile calendar cells (which ignore the backend's
+		// colorHexCode), so a day's cards match the cell that opened them and get the Figma gradient.
 		if let activityId = activity.activityId {
 			return ActivityColorService.shared.getColorForActivity(activityId)
 		}
