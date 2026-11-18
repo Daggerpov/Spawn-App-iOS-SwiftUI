@@ -46,10 +46,35 @@ enum ActivityGradient {
 		],
 	]
 
-	/// The gradient stops for an activity's base color. Colors outside the palette fall back to a flat fill.
+	/// The gradient stops for an activity's base color. Colors outside the palette (backend color
+	/// codes, older cached colors) use the gradient of the nearest palette color, so no activity
+	/// surface ever falls back to a flat fill.
 	static func stops(for baseColor: Color) -> [Gradient.Stop] {
-		stopsByBaseHex[baseColor.hex.uppercased()]
-			?? [.init(color: baseColor, location: 0), .init(color: baseColor, location: 1)]
+		let hex = baseColor.hex.uppercased()
+		if let stops = stopsByBaseHex[hex] {
+			return stops
+		}
+		return stopsByBaseHex[nearestPaletteHex(to: hex)] ?? []
+	}
+
+	/// The palette hex closest to `hex` by RGB distance.
+	private static func nearestPaletteHex(to hex: String) -> String {
+		let target = rgb(hex)
+		return activityColorHexCodes.min { lhs, rhs in
+			distance(rgb(lhs), target) < distance(rgb(rhs), target)
+		} ?? activityBlueHexCode
+	}
+
+	private static func rgb(_ hex: String) -> (Int, Int, Int) {
+		let value = Int(hex.trimmingCharacters(in: CharacterSet(charactersIn: "#")), radix: 16) ?? 0
+		return ((value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF)
+	}
+
+	private static func distance(_ a: (Int, Int, Int), _ b: (Int, Int, Int)) -> Int {
+		let dr = a.0 - b.0
+		let dg = a.1 - b.1
+		let db = a.2 - b.2
+		return dr * dr + dg * dg + db * db
 	}
 
 	/// Location pill fill in the activity drawer (Figma node 2805:5432): a left-to-right blend from
@@ -74,9 +99,12 @@ enum ActivityGradient {
 }
 
 /// Rounded activity-card background: Figma's radial gradient plus the inner white glow.
+/// Used by every activity surface (feed cards, profile cards, past-activity cards, calendar cells).
 struct ActivityCardGradientBackground: View {
 	let color: Color
 	var cornerRadius: CGFloat = 12
+	/// Figma's inner glow is drawn for a full-size card; small tiles scale it down.
+	var innerGlowRadius: CGFloat = 8
 
 	var body: some View {
 		GeometryReader { geometry in
@@ -84,7 +112,8 @@ struct ActivityCardGradientBackground: View {
 				.fill(
 					ActivityGradient.cardGradient(for: color, size: geometry.size)
 						// Figma "inner/16i": #FFFFFF40, y -4, blur 16
-						.shadow(.inner(color: .white.opacity(0.25), radius: 8, x: 0, y: -4))
+						.shadow(
+							.inner(color: .white.opacity(0.25), radius: innerGlowRadius, x: 0, y: -innerGlowRadius / 2))
 				)
 		}
 	}

@@ -188,22 +188,9 @@ struct FriendCalendarDayCell: View {
 
 	var body: some View {
 		ZStack {
-			RoundedRectangle(cornerRadius: 6.618)
-				.fill(activityColor)
+			ActivityCardGradientBackground(color: activityColor, cornerRadius: 6.618, innerGlowRadius: 4)
 				.frame(width: 46.33, height: 46.33)
 				.shadow(color: Color.black.opacity(0.1), radius: 6.618, x: 0, y: 1.655)
-
-			// Inner highlight effect per Figma
-			RoundedRectangle(cornerRadius: 6.618)
-				.fill(
-					LinearGradient(
-						colors: [Color.white.opacity(0.5), Color.clear],
-						startPoint: .top,
-						endPoint: .bottom
-					)
-				)
-				.frame(width: 46.33, height: 46.33)
-				.allowsHitTesting(false)
 
 			// Emoji icon
 			if let icon = activity.icon, !icon.isEmpty {
@@ -217,16 +204,8 @@ struct FriendCalendarDayCell: View {
 	}
 
 	private var activityColor: Color {
-		// First check if activity has a custom color hex code
-		if let colorHexCode = activity.colorHexCode, !colorHexCode.isEmpty {
-			return Color(hex: colorHexCode)
-		}
-
-		// Fallback to activity color based on ID
-		guard let activityId = activity.activityId else {
-			return Color(hex: colorsGray200)  // Default gray color
-		}
-		return getActivityColor(for: activityId)
+		// Same assignment as the feed and the cards this cell opens (backend colorHexCode is ignored)
+		getActivityColor(for: activity.activityId ?? activity.id)
 	}
 }
 
