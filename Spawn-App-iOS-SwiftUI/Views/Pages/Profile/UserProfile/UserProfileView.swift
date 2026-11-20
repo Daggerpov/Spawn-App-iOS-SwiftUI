@@ -476,10 +476,6 @@ struct UserProfileView: View {
 							currentUserId: currentUserId,
 							profileUserId: user.id
 						)
-
-						// Show success notification
-						notificationMessage = "Friend removed successfully"
-						showNotification = true
 					}
 				}
 			}

@@ -940,12 +940,9 @@ final class ProfileViewModel {
 	// MARK: - Friend Management
 
 	func removeFriend(currentUserId: UUID, profileUserId: UUID) async {
-		let operation = WriteOperation<EmptyRequestBody>.delete(
-			endpoint: "api/v1/users/friends/\(currentUserId)/\(profileUserId)",
-			cacheInvalidationKeys: ["friends_\(currentUserId)"]
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
+			.removeFriend(currentUserId: currentUserId, friendId: profileUserId)
 		)
-
-		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operation)
 
 		switch result {
 		case .success:
