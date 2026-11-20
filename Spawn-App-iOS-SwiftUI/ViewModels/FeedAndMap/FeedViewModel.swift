@@ -11,7 +11,20 @@ import Foundation
 @Observable
 @MainActor
 final class FeedViewModel {
-	var activities: [FullFeedActivityDTO] = []
+	@ObservationIgnored private var storedActivities: [FullFeedActivityDTO] = []
+
+	// DTO equality compares IDs, so replacements must also publish changed card details.
+	var activities: [FullFeedActivityDTO] {
+		get {
+			access(keyPath: \.activities)
+			return storedActivities
+		}
+		set {
+			withMutation(keyPath: \.activities) {
+				storedActivities = newValue
+			}
+		}
+	}
 
 	// Use the ActivityTypeViewModel for managing activity types
 	var activityTypeViewModel: ActivityTypeViewModel
@@ -237,22 +250,14 @@ final class FeedViewModel {
 	/// Loads cached activities immediately from DataService cache
 	/// Call this before fetchAllData() to show cached data instantly
 	@MainActor
-	func loadCachedActivities() {
-		Task {
-			// Use cache-only policy to get instant cache results
-			let result: DataResult<[FullFeedActivityDTO]> = await dataService.read(
-				.activities(userId: userId),
-				cachePolicy: .cacheOnly
-			)
+	func loadCachedActivities() async {
+		let result: DataResult<[FullFeedActivityDTO]> = await dataService.read(
+			.activities(userId: userId),
+			cachePolicy: .cacheOnly
+		)
 
-			switch result {
-			case .success(let cachedActivities, _):
-				let filteredActivities = self.filterExpiredActivities(cachedActivities)
-				self.activitiesSubject.send(filteredActivities)
-
-			case .failure:
-				print("⚠️ FeedViewModel: No cached activities available")
-			}
+		if case .success(let cachedActivities, _) = result {
+			activities = filterExpiredActivities(cachedActivities)
 		}
 	}
 
@@ -267,7 +272,7 @@ final class FeedViewModel {
 			// Wait for both to complete
 			let _ = await (activities, activityTypes)
 		} else {
-			// Use cache-first strategy for normal navigation
+			// Refresh cards from the API after the initial cache load
 			async let activities: () = fetchActivitiesForUser()
 			async let activityTypes: () = activityTypeViewModel.fetchActivityTypes()
 
@@ -277,21 +282,8 @@ final class FeedViewModel {
 	}
 
 	func fetchActivitiesForUser() async {
-		// Use DataService with cache-first policy and background refresh
-		let result: DataResult<[FullFeedActivityDTO]> = await dataService.read(
-			.activities(userId: userId),
-			cachePolicy: .cacheFirst(backgroundRefresh: true)
-		)
-
-		switch result {
-		case .success(let activities, _):
-			let filteredActivities = self.filterExpiredActivities(activities)
-			self.activitiesSubject.send(filteredActivities)
-
-		case .failure(let error):
-			APIError.logIfNotCancellation(error, message: "❌ FeedViewModel: Error fetching activities")
-			self.activitiesSubject.send([])
-		}
+		// Cached cards are loaded separately; apply the API response to this view model.
+		await fetchActivitiesFromAPI()
 	}
 
 	/// Force refresh activities from the API, bypassing cache
@@ -320,7 +312,6 @@ final class FeedViewModel {
 
 		case .failure(let error):
 			APIError.logIfNotCancellation(error, message: "❌ FeedViewModel: Error force refreshing activities")
-			self.activitiesSubject.send([])
 		}
 	}
 

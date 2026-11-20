@@ -191,9 +191,7 @@ struct ContentView: View {
 			guard let feedVM = feedViewModel else { return }
 
 			// Load cached data through view model instead of directly accessing cache
-			await MainActor.run {
-				feedVM.loadCachedActivities()
-			}
+			await feedVM.loadCachedActivities()
 
 			// Check if task was cancelled before starting background refresh
 			if Task.isCancelled {
