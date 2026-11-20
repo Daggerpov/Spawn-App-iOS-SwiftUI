@@ -375,11 +375,14 @@ struct FriendRowView: View {
 		}
 		.opacity(opacity)
 		.scaleEffect(opacity < 1 ? 0.95 : 1.0)
-		.sheet(isPresented: $showProfileMenu, onDismiss: {
-			guard reportRequestedFromMenu else { return }
-			reportRequestedFromMenu = false
-			showReportDialog = true
-		}) {
+		.sheet(
+			isPresented: $showProfileMenu,
+			onDismiss: {
+				guard reportRequestedFromMenu else { return }
+				reportRequestedFromMenu = false
+				showReportDialog = true
+			}
+		) {
 			ProfileMenuView(
 				user: userForProfile,
 				showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
