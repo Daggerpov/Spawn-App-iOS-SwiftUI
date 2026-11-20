@@ -16,6 +16,7 @@ struct UserProfileView: View {
 	@State private var notificationMessage: String = ""
 	@State private var showActivityDetails: Bool = false
 	@State private var showReportDialog: Bool = false
+	@State private var reportRequestedFromMenu = false
 	@State private var showBlockDialog: Bool = false
 	@State private var blockReason: String = ""
 	@State private var showRemoveFriendConfirmation: Bool = false
@@ -185,6 +186,7 @@ struct UserProfileView: View {
 					showBlockDialog: $showBlockDialog,
 					blockUserAlert: AnyView(blockUserAlert),
 					showProfileMenu: $showProfileMenu,
+					onProfileMenuDismissed: openPendingReport,
 					profileMenuSheet: AnyView(profileMenuSheet)
 				)
 			)
@@ -458,13 +460,19 @@ struct UserProfileView: View {
 		ProfileMenuView(
 			user: user,
 			showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
-			showReportDialog: $showReportDialog,
 			showBlockDialog: $showBlockDialog,
 			showAddToActivityType: $showAddToActivityType,
 			isFriend: profileViewModel.friendshipStatus == .friends,
+			requestReport: { reportRequestedFromMenu = true },
 			copyProfileURL: copyProfileURL,
 			shareProfile: shareProfile
 		)
+	}
+
+	private func openPendingReport() {
+		guard reportRequestedFromMenu else { return }
+		reportRequestedFromMenu = false
+		showReportDialog = true
 	}
 
 	private var removeFriendConfirmationAlert: some View {
@@ -712,6 +720,7 @@ struct UserProfileSheetsModifier: ViewModifier {
 	@Binding var showBlockDialog: Bool
 	var blockUserAlert: AnyView
 	@Binding var showProfileMenu: Bool
+	var onProfileMenuDismissed: () -> Void
 	var profileMenuSheet: AnyView
 
 	func body(content: Content) -> some View {
@@ -729,7 +738,7 @@ struct UserProfileSheetsModifier: ViewModifier {
 			.alert("Block User", isPresented: $showBlockDialog) {
 				blockUserAlert
 			}
-			.sheet(isPresented: $showProfileMenu) {
+			.sheet(isPresented: $showProfileMenu, onDismiss: onProfileMenuDismissed) {
 				profileMenuSheet
 			}
 	}

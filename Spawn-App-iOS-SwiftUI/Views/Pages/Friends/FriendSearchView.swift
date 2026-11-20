@@ -254,6 +254,7 @@ struct FriendRowView: View {
 	@State private var showProfileMenu: Bool = false
 	@State private var showRemoveFriendConfirmation: Bool = false
 	@State private var showReportDialog: Bool = false
+	@State private var reportRequestedFromMenu = false
 	@State private var showBlockDialog: Bool = false
 	@State private var showAddToActivityType: Bool = false
 	@State private var blockReason: String = ""
@@ -374,14 +375,18 @@ struct FriendRowView: View {
 		}
 		.opacity(opacity)
 		.scaleEffect(opacity < 1 ? 0.95 : 1.0)
-		.sheet(isPresented: $showProfileMenu) {
+		.sheet(isPresented: $showProfileMenu, onDismiss: {
+			guard reportRequestedFromMenu else { return }
+			reportRequestedFromMenu = false
+			showReportDialog = true
+		}) {
 			ProfileMenuView(
 				user: userForProfile,
 				showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
-				showReportDialog: $showReportDialog,
 				showBlockDialog: $showBlockDialog,
 				showAddToActivityType: $showAddToActivityType,
 				isFriend: true,  // Since this is only shown for existing friends
+				requestReport: { reportRequestedFromMenu = true },
 				copyProfileURL: { copyProfileURL(for: userForProfile) },
 				shareProfile: { shareProfile(for: userForProfile) }
 			)
