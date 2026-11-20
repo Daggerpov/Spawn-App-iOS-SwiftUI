@@ -268,7 +268,7 @@ struct ActivityCreationView: View {
 						isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
 					print("🔍 DEBUG: Calculated hour24: \(hour24), selectedMinute: \(selectedMinute)")
 
-					var components = calendar.dateComponents([.year, .month, .day], from: Date())
+					var components = calendar.dateComponents([.year, .month, .day], from: viewModel.selectedDate)
 					components.hour = hour24
 					components.minute = selectedMinute
 					components.second = 0

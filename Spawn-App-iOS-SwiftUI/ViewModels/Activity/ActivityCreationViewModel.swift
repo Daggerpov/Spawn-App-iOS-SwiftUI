@@ -170,6 +170,7 @@ final class ActivityCreationViewModel {
 		shared.activity.endTime = activity.endTime ?? Date().addingTimeInterval(2 * 60 * 60)
 		shared.activity.location = activity.location
 		shared.activity.icon = activity.icon ?? "⭐️"
+		shared.activity.activityTypeId = activity.activityTypeId
 		shared.activity.creatorUserId = activity.creatorUser.id
 
 		// Set view model properties
@@ -518,6 +519,7 @@ final class ActivityCreationViewModel {
 		// Don't overwrite the user's custom title with the activity type name
 		// Only set icon based on the selected activity type
 		activity.icon = activityTypeDTO.icon
+		activity.activityTypeId = activityTypeDTO.id
 
 		// Category is now handled by the back-end, so we don't need to infer it
 	}
@@ -671,6 +673,11 @@ final class ActivityCreationViewModel {
 			if let endTime = activity.endTime {
 				updateData.endTime = formatter.string(from: endTime)
 			}
+		}
+
+		// Include a venue change without overwriting it in unrelated edits.
+		if locationChanged {
+			updateData.location = selectedLocation
 		}
 
 		// Add participant limit if set
