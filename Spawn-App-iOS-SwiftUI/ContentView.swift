@@ -253,24 +253,14 @@ struct ContentView: View {
 			backgroundRefreshTask?.cancel()
 			backgroundRefreshTask = nil
 		}
-		.onChange(of: deepLinkManager.shouldShowActivity) { _, shouldShow in
-			if shouldShow, let activityId = deepLinkManager.activityToShow {
+		.onChange(of: deepLinkManager.pendingDeepLink, initial: true) { _, deepLink in
+			switch deepLink {
+			case .activity(let activityId):
 				handleDeepLinkActivity(activityId)
-			}
-		}
-		.onChange(of: deepLinkManager.shouldShowProfile) { _, shouldShow in
-			if shouldShow, let profileId = deepLinkManager.profileToShow {
+			case .profile(let profileId):
 				handleDeepLinkProfile(profileId)
-			}
-		}
-		.onReceive(NotificationCenter.default.publisher(for: .deepLinkActivityReceived)) { notification in
-			if let activityId = notification.userInfo?["activityId"] as? UUID {
-				handleDeepLinkActivity(activityId)
-			}
-		}
-		.onReceive(NotificationCenter.default.publisher(for: .deepLinkProfileReceived)) { notification in
-			if let profileId = notification.userInfo?["profileId"] as? UUID {
-				handleDeepLinkProfile(profileId)
+			case .unknown, nil:
+				break
 			}
 		}
 		.onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowActivityFullAlert"))) {

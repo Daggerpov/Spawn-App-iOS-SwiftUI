@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 // MARK: - Deep Link Types
-enum DeepLinkType {
+enum DeepLinkType: Equatable {
 	case activity(UUID)
 	case profile(UUID)
 	case unknown
