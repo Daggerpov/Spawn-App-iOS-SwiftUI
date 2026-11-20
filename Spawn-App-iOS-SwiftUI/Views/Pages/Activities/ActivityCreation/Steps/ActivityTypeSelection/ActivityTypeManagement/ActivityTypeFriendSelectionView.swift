@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct ActivityTypeFriendSelectionView: View {
-	@Environment(\.dismiss) private var dismiss
 	@EnvironmentObject var appCache: AppCache
 	@State private var searchText = ""
 	@State private var selectedFriends: Set<UUID> = []
