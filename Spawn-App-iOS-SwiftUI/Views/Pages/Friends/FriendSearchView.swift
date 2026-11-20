@@ -114,9 +114,8 @@ struct FriendSearchView: View {
 					await MainActor.run {
 						viewModel.loadCachedData()
 					}
-					if viewModel.friends.isEmpty {
-						await viewModel.fetchAllData()
-					}
+					// Entering this screen can cancel the parent tab's refresh task.
+					await viewModel.fetchFriends(forceRefresh: true)
 				case .recentlySpawnedWith:
 					await viewModel.fetchRecentlySpawnedWith()
 				case .recommendedFriends:
