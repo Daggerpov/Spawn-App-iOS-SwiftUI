@@ -261,9 +261,10 @@ final class ProfileViewModel {
 		whatsappLink: String?,
 		instagramLink: String?
 	) async {
+		// Empty strings clear saved links; omitted fields leave the server values unchanged.
 		let updateDTO = UpdateUserSocialMediaDTO(
-			whatsappNumber: whatsappLink,
-			instagramUsername: instagramLink
+			whatsappNumber: whatsappLink ?? "",
+			instagramUsername: instagramLink ?? ""
 		)
 
 		// Use WriteOperationType configuration
