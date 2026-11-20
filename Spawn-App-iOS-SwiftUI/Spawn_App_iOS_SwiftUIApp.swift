@@ -67,9 +67,6 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 						await userAuth.setMockUser()
 					}
 				}
-				.onOpenURL { url in
-					GIDSignIn.sharedInstance.handle(url)
-				}
 				.onestFontTheme()
 		} else if userAuth.isLoggedIn, let spawnUser = userAuth.spawnUser, userAuth.hasCompletedOnboarding {
 			// User is logged in, has user data, and has completed onboarding - go to main content
@@ -80,17 +77,6 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 					// Clean up any expired activities after cache validation
 					appCache.cleanupExpiredActivities()
 				}
-				.onOpenURL { url in
-					AppLog.debug("App received URL: \(url.absoluteString)", category: "DeepLink")
-					// Handle Google Sign-In URLs
-					if url.scheme == UserAuthViewModel.googleIOSURLScheme {
-						GIDSignIn.sharedInstance.handle(url)
-					}
-					// Handle Spawn deep links (both custom URL schemes and Universal Links)
-					else if url.scheme == "spawn" || (url.scheme == "https" && url.host == "getspawn.com") {
-						deepLinkManager.handleURL(url)
-					}
-				}
 				.onestFontTheme()
 		} else {
 			// User is not logged in or has no user data - show welcome screen
@@ -99,9 +85,6 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 					// Connect the app delegate to the app
 					appDelegate.app = self
 				}
-				.onOpenURL { url in
-					GIDSignIn.sharedInstance.handle(url)
-				}
 				.onestFontTheme()
 		}
 	}
@@ -109,10 +92,20 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 	var body: some Scene {
 		WindowGroup {
 			rootView
+				.onOpenURL(perform: handleIncomingURL)
 				.preferredColorScheme(themeService.colorScheme.colorScheme)
 				.onChange(of: scenePhase) { _, phase in
 					handleScenePhaseChange(phase)
 				}
+		}
+	}
+
+	private func handleIncomingURL(_ url: URL) {
+		if url.scheme == UserAuthViewModel.googleIOSURLScheme {
+			GIDSignIn.sharedInstance.handle(url)
+		} else {
+			// Keep Spawn links even while authentication is still loading.
+			deepLinkManager.handleURL(url)
 		}
 	}
 
