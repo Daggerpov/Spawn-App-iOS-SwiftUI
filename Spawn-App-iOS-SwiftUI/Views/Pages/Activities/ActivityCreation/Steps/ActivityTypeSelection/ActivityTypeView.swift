@@ -139,7 +139,9 @@ struct ActivityTypeView: View {
 				},
 				content: {
 					NavigationStack {
-						ActivityTypeEditView(activityTypeDTO: newActivityTypeDTO)
+						ActivityTypeEditView(activityTypeDTO: newActivityTypeDTO) {
+							navigateToCreateType = false
+						}
 					}
 				}
 			)

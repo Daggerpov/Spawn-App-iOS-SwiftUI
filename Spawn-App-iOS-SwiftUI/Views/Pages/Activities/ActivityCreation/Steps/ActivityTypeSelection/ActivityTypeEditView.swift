@@ -2,12 +2,11 @@ import SwiftUI
 
 struct ActivityTypeEditView: View {
 	let activityTypeDTO: ActivityTypeDTO
-	let onBack: (() -> Void)?
-	@Environment(\.dismiss) private var dismiss
+	let onBack: () -> Void
 	@Environment(\.colorScheme) private var colorScheme
 
-	@State private var editedTitle: String = ""
-	@State private var editedIcon: String = ""
+	@State private var editedTitle: String
+	@State private var editedIcon: String
 	@State private var hasChanges: Bool = false
 	@State private var friendSelectionActivityType: ActivityTypeDTO?
 	@State private var showEmojiPicker: Bool = false
@@ -20,9 +19,11 @@ struct ActivityTypeEditView: View {
 		activityTypeDTO.associatedFriends.isEmpty && activityTypeDTO.title.isEmpty
 	}
 
-	init(activityTypeDTO: ActivityTypeDTO, onBack: (() -> Void)? = nil) {
+	init(activityTypeDTO: ActivityTypeDTO, onBack: @escaping () -> Void) {
 		self.activityTypeDTO = activityTypeDTO
 		self.onBack = onBack
+		self._editedTitle = State(initialValue: activityTypeDTO.title)
+		self._editedIcon = State(initialValue: activityTypeDTO.icon)
 
 		// Initialize the view model with userId
 		let userId = UserAuthViewModel.shared.spawnUser?.id ?? UUID()
@@ -38,9 +39,6 @@ struct ActivityTypeEditView: View {
 		.ignoresSafeArea(.keyboard, edges: .bottom)  // Prevent keyboard from pushing header up
 		.sheet(isPresented: $showEmojiPicker) {
 			ElegantEmojiPickerView(selectedEmoji: $editedIcon, isPresented: $showEmojiPicker)
-		}
-		.onAppear {
-			setupInitialState()
 		}
 		.task {
 			// Auto-focus the title field when the view appears
@@ -68,7 +66,7 @@ struct ActivityTypeEditView: View {
 	private var headerView: some View {
 		HStack {
 			UnifiedBackButton {
-				dismiss()
+				onBack()
 			}
 
 			Spacer()
@@ -206,11 +204,7 @@ struct ActivityTypeEditView: View {
 				borderColor: Color(red: 0.15, green: 0.14, blue: 0.14),
 				isEnabled: !viewModel.isLoading
 			) {
-				if let onBack = onBack {
-					onBack()
-				} else {
-					dismiss()
-				}
+				onBack()
 			}
 			.frame(width: 290)
 		}
@@ -224,7 +218,7 @@ struct ActivityTypeEditView: View {
 			await viewModel.createActivityType(finalActivityType)
 			// Dismiss the edit view after successful creation
 			await MainActor.run {
-				dismiss()
+				onBack()
 			}
 		}
 	}
@@ -248,12 +242,6 @@ struct ActivityTypeEditView: View {
 	}
 
 	// MARK: - Private Methods
-	private func setupInitialState() {
-		editedTitle = activityTypeDTO.title
-		editedIcon = activityTypeDTO.icon
-		hasChanges = false
-	}
-
 	private func updateHasChanges() {
 		hasChanges = (editedTitle != activityTypeDTO.title) || (editedIcon != activityTypeDTO.icon)
 	}
@@ -283,7 +271,7 @@ struct ActivityTypeEditView: View {
 			await viewModel.updateActivityType(updatedActivityType)
 			// Dismiss after saving
 			await MainActor.run {
-				dismiss()
+				onBack()
 			}
 		}
 	}
@@ -295,7 +283,7 @@ struct ActivityTypeEditView: View {
 	@Previewable @ObservedObject var appCache = AppCache.shared
 
 	NavigationView {
-		ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.createNew(), onBack: nil)
+		ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.createNew(), onBack: {})
 			.environmentObject(appCache)
 	}
 }
