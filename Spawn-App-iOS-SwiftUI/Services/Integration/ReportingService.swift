@@ -111,8 +111,10 @@ final class ReportingService {
 	/// - Parameter blockerId: ID of the user whose blocked list to retrieve
 	/// - Returns: Array of full BlockedUserDTO objects with user details
 	func getFullBlockedUsers(blockerId: UUID) async throws -> [BlockedUserDTO] {
+		// The list must reflect block/unblock changes made from other screens.
 		let result: DataResult<[BlockedUserDTO]> = await dataService.read(
-			.blockedUsers(blockerId: blockerId, returnOnlyIds: false))
+			.blockedUsers(blockerId: blockerId, returnOnlyIds: false),
+			cachePolicy: .apiOnly)
 		switch result {
 		case .success(let blockedUsers, _):
 			return blockedUsers
