@@ -124,9 +124,8 @@ struct FriendSearchView: View {
 					await MainActor.run {
 						viewModel.loadCachedData()
 					}
-					if viewModel.recommendedFriends.isEmpty {
-						await viewModel.fetchRecommendedFriends()
-					}
+					// Cached recommendations can still include a request sent from this list.
+					await viewModel.fetchRecommendedFriends(forceRefresh: true)
 				}
 
 				viewModel.connectSearchViewModel(searchViewModel)
