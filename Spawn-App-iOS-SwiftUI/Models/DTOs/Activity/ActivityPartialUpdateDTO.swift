@@ -15,6 +15,7 @@ struct ActivityPartialUpdateDTO: Codable, Sendable {
 	var endTime: String?  // ISO8601 formatted string
 	var participantLimit: Int?
 	var note: String?
+	var location: LocationDTO?
 
 	init(
 		title: String? = nil,
@@ -22,7 +23,8 @@ struct ActivityPartialUpdateDTO: Codable, Sendable {
 		startTime: String? = nil,
 		endTime: String? = nil,
 		participantLimit: Int? = nil,
-		note: String? = nil
+		note: String? = nil,
+		location: LocationDTO? = nil
 	) {
 		self.title = title
 		self.icon = icon
@@ -30,5 +32,6 @@ struct ActivityPartialUpdateDTO: Codable, Sendable {
 		self.endTime = endTime
 		self.participantLimit = participantLimit
 		self.note = note
+		self.location = location
 	}
 }
