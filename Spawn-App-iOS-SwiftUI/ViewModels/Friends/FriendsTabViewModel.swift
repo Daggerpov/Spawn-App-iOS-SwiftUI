@@ -321,7 +321,8 @@ final class FriendsTabViewModel {
 		if forceRefresh {
 			print("🔄 [VM] Force refresh requested - fetching from API")
 			await MainActor.run {
-				isLoading = true
+				isLoading = friends.isEmpty && recommendedFriends.isEmpty
+					&& incomingFriendRequests.isEmpty && outgoingFriendRequests.isEmpty
 			}
 
 			// Create a task group to run these in parallel
@@ -403,13 +404,9 @@ final class FriendsTabViewModel {
 				self.filteredOutgoingFriendRequests = self.outgoingFriendRequests
 			}
 
-			// Refresh profile pictures for all visible users in background (non-blocking)
-			Task.detached(priority: .background) {
-				await self.refreshProfilePictures()
-			}
-
-			let duration = Date().timeIntervalSince(startTime)
-			print("⏱️ [VM] fetchAllData (cached) completed in \(String(format: "%.3f", duration))s")
+			// A cached list can predate an acceptance on another device. Keep it visible
+			// while applying the API result, just as an explicit refresh would.
+			await fetchAllData(forceRefresh: true)
 			return
 		}
 
@@ -422,16 +419,16 @@ final class FriendsTabViewModel {
 		// Create a task group to run these in parallel
 		await withTaskGroup(of: Void.self) { group in
 			group.addTask {
-				await self.fetchIncomingFriendRequests()
+				await self.fetchIncomingFriendRequests(forceRefresh: true)
 			}
 			group.addTask {
-				await self.fetchOutgoingFriendRequests()
+				await self.fetchOutgoingFriendRequests(forceRefresh: true)
 			}
 			group.addTask {
-				await self.fetchRecommendedFriends()
+				await self.fetchRecommendedFriends(forceRefresh: true)
 			}
 			group.addTask {
-				await self.fetchFriends()
+				await self.fetchFriends(forceRefresh: true)
 			}
 			group.addTask {
 				await self.fetchRecentlySpawnedWith()
@@ -486,9 +483,8 @@ final class FriendsTabViewModel {
 			}
 
 		case .failure:
-			await MainActor.run {
-				self.incomingFriendRequests = []
-			}
+			// Keep the last known list when refreshing fails.
+			break
 		}
 	}
 
@@ -519,9 +515,8 @@ final class FriendsTabViewModel {
 			}
 
 		case .failure:
-			await MainActor.run {
-				self.outgoingFriendRequests = []
-			}
+			// Keep the last known list when refreshing fails.
+			break
 		}
 	}
 
@@ -542,9 +537,8 @@ final class FriendsTabViewModel {
 			}
 
 		case .failure:
-			await MainActor.run {
-				self.recommendedFriends = []
-			}
+			// Keep the last known list when refreshing fails.
+			break
 		}
 	}
 
@@ -565,9 +559,8 @@ final class FriendsTabViewModel {
 			}
 
 		case .failure:
-			await MainActor.run {
-				self.friends = []
-			}
+			// Keep the last known list when refreshing fails.
+			break
 		}
 	}
 
