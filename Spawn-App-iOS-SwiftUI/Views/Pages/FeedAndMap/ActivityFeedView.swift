@@ -409,14 +409,7 @@ extension ActivityFeedView {
 			}
 		}
 		.refreshable {
-			// Pull to refresh - user-initiated refresh
-			// Start the API fetch in background and return quickly to prevent long spinner
-			// This matches the friends page behavior where the refresh animation is brief
-			Task.detached {
-				await viewModel.fetchAllData(forceRefresh: true)
-			}
-			// Brief delay to show visual feedback that refresh was triggered
-			try? await Task.sleep(for: .seconds(0.5))
+			await viewModel.fetchAllData(forceRefresh: true)
 		}
 	}
 }
