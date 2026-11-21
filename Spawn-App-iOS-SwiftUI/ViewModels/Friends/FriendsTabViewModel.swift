@@ -321,7 +321,8 @@ final class FriendsTabViewModel {
 		if forceRefresh {
 			print("🔄 [VM] Force refresh requested - fetching from API")
 			await MainActor.run {
-				isLoading = friends.isEmpty && recommendedFriends.isEmpty
+				isLoading =
+					friends.isEmpty && recommendedFriends.isEmpty
 					&& incomingFriendRequests.isEmpty && outgoingFriendRequests.isEmpty
 			}
 

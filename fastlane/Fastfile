@@ -11,10 +11,15 @@
 #   fastlane release version:2.3                     # bump, build, upload, submit for review
 #   fastlane release version:2.3 submit:false        # stop after uploading the build
 #   fastlane release version:2.3 notes:"Bug fixes"   # What's New (default "Bug Fixes & UI Tweaks")
+#   fastlane beta version:2.5                        # bump, build, upload to TestFlight internal + external
+#                                                    # (use while another version is still in App Review)
 
 default_platform(:ios)
 
 platform :ios do
+  APP_ID = "6738635871"
+  EXTERNAL_GROUP_ID = "2529a993-e4a1-46db-9f54-c64cb9192db2" # "Spawn External Testers"
+
   def asc_key
     key_id = ENV.fetch("ASC_KEY_ID")
     app_store_connect_api_key(
@@ -36,11 +41,7 @@ platform :ios do
     UI.message("Set version #{version} (#{build})")
   end
 
-  desc "Bump the version, build, upload to App Store Connect and submit for review"
-  lane :release do |options|
-    version = options[:version] || UI.user_error!("Pass version:, e.g. fastlane release version:2.3")
-    api_key = asc_key
-
+  def bump_and_build(version, api_key)
     build_number = latest_testflight_build_number(api_key: api_key, version: version, initial_build_number: 0) + 1
     set_project_versions(version, build_number)
 
@@ -54,6 +55,51 @@ platform :ios do
       # Export needs it too, so Xcode's signed-in account can use cloud-managed distribution signing
       export_xcargs: "-allowProvisioningUpdates"
     )
+    build_number
+  end
+
+  # Adds a processed build to the external group (it holds the public join link) and submits it
+  # for Beta App Review. The internal group already has access to all builds.
+  def distribute_external(api_key, version, build_number, notes)
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
+    build = nil
+    60.times do
+      build = Spaceship::ConnectAPI::Build.all(app_id: APP_ID, version: version, build_number: build_number.to_s).first
+      break if build&.processing_state == "VALID"
+      UI.message("Waiting for #{version} (#{build_number}) to finish processing...")
+      sleep(30)
+    end
+    UI.user_error!("#{version} (#{build_number}) did not finish processing") unless build&.processing_state == "VALID"
+
+    localization = Spaceship::ConnectAPI.get_beta_build_localizations(filter: { build: build.id }).to_models
+                                       .find { |l| l.locale == "en-CA" }
+    if localization
+      Spaceship::ConnectAPI.patch_beta_build_localizations(localization_id: localization.id, attributes: { whatsNew: notes })
+    else
+      Spaceship::ConnectAPI.post_beta_build_localizations(build_id: build.id, attributes: { locale: "en-CA", whatsNew: notes })
+    end
+    build.add_beta_groups(beta_groups: [Spaceship::ConnectAPI::BetaGroup.new(EXTERNAL_GROUP_ID, {})])
+    build.post_beta_app_review_submission
+    UI.success("#{version} (#{build_number}) is in TestFlight and submitted for Beta App Review")
+  end
+
+  desc "Bump the version, build, upload to TestFlight and submit the external group for beta review"
+  lane :beta do |options|
+    version = options[:version] || UI.user_error!("Pass version:, e.g. fastlane beta version:2.5")
+    api_key = asc_key
+    build_number = bump_and_build(version, api_key)
+
+    # pilot 2.220's processing watcher can fail with "Found more than 1 matching build",
+    # so upload without waiting and distribute through the API instead.
+    upload_to_testflight(api_key: api_key, skip_waiting_for_build_processing: true, uses_non_exempt_encryption: false)
+    distribute_external(api_key, version, build_number, options[:notes] || "Bug Fixes & UI Tweaks")
+  end
+
+  desc "Bump the version, build, upload to App Store Connect and submit for review"
+  lane :release do |options|
+    version = options[:version] || UI.user_error!("Pass version:, e.g. fastlane release version:2.3")
+    api_key = asc_key
+    bump_and_build(version, api_key)
 
     upload_to_app_store(
       api_key: api_key,
