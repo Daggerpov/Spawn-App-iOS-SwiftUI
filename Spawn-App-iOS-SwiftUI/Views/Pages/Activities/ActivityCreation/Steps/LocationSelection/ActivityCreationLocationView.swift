@@ -80,7 +80,7 @@ struct ActivityCreationLocationView: View {
 		LocationData(
 			name: "Thunderbird Park",
 			address: "2700 East Mall, Vancouver, BC V6T 1Z4",
-			coordinate: CLLocationCoordinate2D(latitude: 49.2525, longitude: -123.2592)
+			coordinate: CLLocationCoordinate2D(latitude: 49.258117, longitude: -123.241357)
 		),
 	]
 
