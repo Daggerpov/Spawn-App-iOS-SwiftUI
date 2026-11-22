@@ -101,14 +101,16 @@ final class ActivityStatusViewModel {
 				let nextUpdateDate = activityStartTime.advanced(by: floorHoursUntilInSeconds)
 				refresh = max(5, nextUpdateDate.timeIntervalSinceNow)  // Defensive check
 			} else {
-				let daysUntilStart = calendar.dateComponents(
-					[.day], from: calendar.startOfDay(for: now),
-					to: calendar.startOfDay(for: activityStartTime)
-				).day ?? 0
+				let daysUntilStart =
+					calendar.dateComponents(
+						[.day], from: calendar.startOfDay(for: now),
+						to: calendar.startOfDay(for: activityStartTime)
+					).day ?? 0
 				status = daysUntilStart > 0 ? .inDays(daysUntilStart) : .laterToday
 
 				// Refresh the day label at calendar midnight, or enter the hourly countdown first.
-				let nextMidnight = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))
+				let nextMidnight =
+					calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))
 					?? now.addingTimeInterval(24 * 3600)
 				refresh = max(5, min(timeUntilStart - 3 * 3600, nextMidnight.timeIntervalSince(now)))
 			}

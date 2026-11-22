@@ -323,8 +323,12 @@ final class NotificationService: NSObject, ObservableObject {
 			return
 		}
 		let opensChatroom = ["new_comment", "chat"].contains(type)
-		guard opensChatroom || ["activity_invite", "activityInvite", "activity_update", "activityUpdate",
-			 "activity_participation", "activity_participation_revoked"].contains(type),
+		guard
+			opensChatroom
+				|| [
+					"activity_invite", "activityInvite", "activity_update", "activityUpdate",
+					"activity_participation", "activity_participation_revoked",
+				].contains(type),
 			let value = userInfo["activityId"] as? String,
 			let activityId = UUID(uuidString: value)
 		else { return }

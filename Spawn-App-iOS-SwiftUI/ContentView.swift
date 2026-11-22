@@ -263,7 +263,8 @@ struct ContentView: View {
 			if let notificationId = notificationService.pendingFriendRequestNotification {
 				await AppCache.shared.forceRefreshAllFriendRequests()
 				guard !Task.isCancelled,
-					notificationService.pendingFriendRequestNotification == notificationId else { return }
+					notificationService.pendingFriendRequestNotification == notificationId
+				else { return }
 				showingGlobalActivityPopup = false
 				selectedTabsEnum = .friends
 				friendRequestsNotificationId = notificationId
