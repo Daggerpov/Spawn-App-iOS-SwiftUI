@@ -17,6 +17,7 @@ struct ActivityDateTimeView: View {
 
 	// State for day selection - initialize safely
 	@State private var selectedDay: DayOption = .today
+	@StateObject private var keyboardOverlap = KeyboardOverlapHeight()
 
 	// State for tomorrow's default time
 	@State private var tomorrowHour: Int = 10
@@ -691,6 +692,7 @@ struct ActivityDateTimeView: View {
 
 				}
 			}
+			.keyboardOverlapPadding(keyboardOverlap)
 		}
 		.background(universalBackgroundColor)
 		.onAppear {
