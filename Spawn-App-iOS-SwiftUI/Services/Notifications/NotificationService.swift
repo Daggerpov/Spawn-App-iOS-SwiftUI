@@ -10,6 +10,7 @@ final class NotificationService: NSObject, ObservableObject {
 
 	@Published var isNotificationsEnabled = false
 	@Published private(set) var pendingActivityNotification: UUID?
+	@Published private(set) var pendingFriendRequestNotification: UUID?
 
 	// Notification preference properties
 	@Published var friendRequestsEnabled: Bool = true
@@ -287,15 +288,27 @@ final class NotificationService: NSObject, ObservableObject {
 
 	/// Queue a user-selected activity notification until authenticated content is ready.
 	/// Receipt alone must not navigate, and notification opens must not auto-join an activity.
-	func handleActivityNotificationResponse(_ userInfo: [AnyHashable: Any]) {
-		guard let type = userInfo["type"] as? String,
-			["activity_invite", "activityInvite", "activity_update", "activityUpdate",
+	func handleNotificationResponse(_ userInfo: [AnyHashable: Any]) {
+		guard let type = userInfo["type"] as? String else { return }
+		if ["friend-request", "friend_request", "friendRequest"].contains(type) {
+			pendingActivityNotification = nil
+			pendingFriendRequestNotification = UUID()
+			return
+		}
+		guard ["activity_invite", "activityInvite", "activity_update", "activityUpdate",
 			 "activity_participation", "activity_participation_revoked"].contains(type),
 			let value = userInfo["activityId"] as? String,
 			let activityId = UUID(uuidString: value)
 		else { return }
 
+		pendingFriendRequestNotification = nil
 		pendingActivityNotification = activityId
+	}
+
+	func completeFriendRequestNotification(_ notificationId: UUID) {
+		if pendingFriendRequestNotification == notificationId {
+			pendingFriendRequestNotification = nil
+		}
 	}
 
 	func completeActivityNotification(_ activityId: UUID) {

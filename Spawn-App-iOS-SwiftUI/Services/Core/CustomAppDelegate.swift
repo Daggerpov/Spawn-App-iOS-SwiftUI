@@ -134,7 +134,7 @@ extension CustomAppDelegate: @preconcurrency UNUserNotificationCenterDelegate {
 
 		// Process the notification based on its type
 		handleReceivedNotification(userInfo)
-		NotificationService.shared.handleActivityNotificationResponse(userInfo)
+		NotificationService.shared.handleNotificationResponse(userInfo)
 
 		// Also handle cache updates
 		NotificationService.shared.handleNotificationData(userInfo)

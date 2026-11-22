@@ -36,6 +36,8 @@ struct ContentView: View {
 	@State private var deepLinkedActivityId: UUID?
 	@State private var shouldShowDeepLinkedProfile = false
 	@State private var deepLinkedProfileId: UUID?
+	@State private var showFriendRequestsFromNotification = false
+	@State private var friendRequestsNotificationId: UUID?
 
 	// Global activity popup state
 	@State private var showingGlobalActivityPopup = false
@@ -97,7 +99,9 @@ struct ContentView: View {
 							user: user,
 							viewModel: friendsVM,
 							deepLinkedProfileId: $deepLinkedProfileId,
-							shouldShowDeepLinkedProfile: $shouldShowDeepLinkedProfile
+							shouldShowDeepLinkedProfile: $shouldShowDeepLinkedProfile,
+							showFriendRequests: $showFriendRequestsFromNotification,
+							notificationId: friendRequestsNotificationId
 						)
 						.disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
 					case .profile:
@@ -251,6 +255,17 @@ struct ContentView: View {
 			// Cancel any ongoing background refresh to prevent blocking
 			backgroundRefreshTask?.cancel()
 			backgroundRefreshTask = nil
+		}
+		.task(id: notificationService.pendingFriendRequestNotification) {
+			if let notificationId = notificationService.pendingFriendRequestNotification {
+				await AppCache.shared.forceRefreshAllFriendRequests()
+				guard !Task.isCancelled,
+					notificationService.pendingFriendRequestNotification == notificationId else { return }
+				selectedTabsEnum = .friends
+				friendRequestsNotificationId = notificationId
+				showFriendRequestsFromNotification = true
+				notificationService.completeFriendRequestNotification(notificationId)
+			}
 		}
 		.task(id: notificationService.pendingActivityNotification) {
 			if let activityId = notificationService.pendingActivityNotification {
