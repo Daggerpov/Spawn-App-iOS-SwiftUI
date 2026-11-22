@@ -70,10 +70,6 @@ final class ActivityStatusViewModel {
 		let timeUntilStart: TimeInterval = activityStartTime.timeIntervalSince(now)
 		let timeAfterStart: TimeInterval = now.timeIntervalSince(activityStartTime)
 		let calendar = Calendar.current
-		let todayComponents = calendar.dateComponents([.day, .hour], from: now)
-		let today = todayComponents.day ?? 1
-		let hourOfToday = todayComponents.hour ?? 1
-		let activityDay = calendar.component(.day, from: activityStartTime)
 
 		// For activities without an end time that started on a different day, treat as past
 		// This handles indefinite activities from previous days
@@ -104,16 +100,17 @@ final class ActivityStatusViewModel {
 				let floorHoursUntilInSeconds = floor(hoursUntilStart) * 3600 * -1
 				let nextUpdateDate = activityStartTime.advanced(by: floorHoursUntilInSeconds)
 				refresh = max(5, nextUpdateDate.timeIntervalSinceNow)  // Defensive check
-			} else if today != activityDay && hoursUntilStart <= 24 {
-				status = .inDays(1)
-				let hoursUntilMidnight = 24 - hourOfToday
-				let secondsUntilMidnight = Double(hoursUntilMidnight * 3600 * -1)
-				let nextUpdateDate = activityStartTime.advanced(by: secondsUntilMidnight)
-				refresh = max(5, nextUpdateDate.timeIntervalSinceNow)
 			} else {
-				status = .laterToday
-				let hoursUntil3HoursAway = hoursUntilStart - 3
-				refresh = hoursUntil3HoursAway * 3600
+				let daysUntilStart = calendar.dateComponents(
+					[.day], from: calendar.startOfDay(for: now),
+					to: calendar.startOfDay(for: activityStartTime)
+				).day ?? 0
+				status = daysUntilStart > 0 ? .inDays(daysUntilStart) : .laterToday
+
+				// Refresh the day label at calendar midnight, or enter the hourly countdown first.
+				let nextMidnight = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))
+					?? now.addingTimeInterval(24 * 3600)
+				refresh = max(5, min(timeUntilStart - 3 * 3600, nextMidnight.timeIntervalSince(now)))
 			}
 		} else {
 			// Activity has already ended
