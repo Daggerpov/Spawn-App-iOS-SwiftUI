@@ -122,7 +122,7 @@ struct ActivityTypeCard: View {
 				}
 			}
 		}
-		.buttonStyle(PlainButtonStyle())
+		.buttonStyle(PressShrinkButtonStyle())
 
 		if let onPin = onPin, let onDelete = onDelete, let onManage = onManage {
 			card
@@ -144,5 +144,14 @@ struct ActivityTypeCard: View {
 		} else {
 			card
 		}
+	}
+}
+
+/// Shrinks the card slightly while it's pressed, so a tap visibly lands before the next step zooms in.
+private struct PressShrinkButtonStyle: ButtonStyle {
+	func makeBody(configuration: Configuration) -> some View {
+		configuration.label
+			.scaleEffect(configuration.isPressed ? 0.94 : 1)
+			.animation(.easeOut(duration: 0.12), value: configuration.isPressed)
 	}
 }

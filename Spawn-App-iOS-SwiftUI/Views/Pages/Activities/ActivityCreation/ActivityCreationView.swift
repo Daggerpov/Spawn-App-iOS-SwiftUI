@@ -126,11 +126,19 @@ struct ActivityCreationView: View {
 	}
 
 	var body: some View {
-		VStack(spacing: 0) {
-			// Content
+		// ZStack so the outgoing and incoming steps overlap while they animate.
+		ZStack {
+			// Each step zooms in as it appears (instead of only cross-fading), like opening an app on iOS.
 			content
-				.animation(.easeInOut, value: currentStep)
+				.id(currentStep)
+				.transition(
+					.asymmetric(
+						insertion: .scale(scale: 0.92).combined(with: .opacity),
+						removal: .opacity
+					)
+				)
 		}
+		.animation(.easeInOut(duration: 0.3), value: currentStep)
 		.background(universalBackgroundColor)
 		.onAppear {
 			// Initialize activityTitle from view model if it exists
