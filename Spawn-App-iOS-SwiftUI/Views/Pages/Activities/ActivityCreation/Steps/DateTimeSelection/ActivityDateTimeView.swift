@@ -34,16 +34,22 @@ struct ActivityDateTimeView: View {
 	private let minutes = [0, 15, 30, 45]
 	private let amPmOptions = ["AM", "PM"]
 
-	enum DayOption: CaseIterable {
+	enum DayOption: Hashable {
 		case yesterday
 		case today
 		case tomorrow
+		case original(Date)
 
 		var title: String {
 			switch self {
 			case .yesterday: return "Yesterday"
 			case .today: return "Today"
 			case .tomorrow: return "Tomorrow"
+			case .original(let date):
+				let formatter = DateFormatter()
+				let sameYear = Calendar.current.isDate(date, equalTo: Date(), toGranularity: .year)
+				formatter.setLocalizedDateFormatFromTemplate(sameYear ? "MMMd" : "MMMdyy")
+				return formatter.string(from: date)
 			}
 		}
 
@@ -56,8 +62,7 @@ struct ActivityDateTimeView: View {
 
 			var options: [DayOption] = [.today, .tomorrow]
 
-			// Add yesterday option if editing an existing activity and it was created yesterday
-			// Add safety checks to prevent crashes
+			// Keep an existing activity's scheduled day available while editing.
 			guard viewModel.isEditingExistingActivity,
 				let activityDate = viewModel.originalDate
 			else {
@@ -73,6 +78,8 @@ struct ActivityDateTimeView: View {
 
 			if activityDay == yesterdayDay {
 				options.insert(.yesterday, at: 0)
+			} else if !calendar.isDateInToday(activityDate) && !calendar.isDateInTomorrow(activityDate) {
+				options.insert(.original(activityDay), at: 0)
 			}
 
 			// Ensure we always return at least one option to prevent crashes
@@ -661,6 +668,8 @@ struct ActivityDateTimeView: View {
 		// Get the base date (today or tomorrow)
 		let baseDate: Date
 		switch selectedDay {
+		case .original(let date):
+			baseDate = date
 		case .yesterday:
 			baseDate = calendar.date(byAdding: .day, value: -1, to: now) ?? now
 		case .today:
@@ -700,10 +709,15 @@ struct ActivityDateTimeView: View {
 			viewModel.activity.title = activityTitle
 		}
 
-		// Determine the correct day option based on the existing activity's date if editing
-		if viewModel.isEditingExistingActivity {
-			selectedDay = determineDayOptionFromActivityDate()
+		// Restore both edits and a creation draft returning from Location. Seed the
+		// tomorrow values before changing the day so onChange preserves its time.
+		let restoredDay = determineDayOptionFromActivityDate()
+		if restoredDay == .tomorrow {
+			tomorrowHour = selectedHour
+			tomorrowMinute = validateMinuteForPicker(selectedMinute)
+			tomorrowIsAM = isAM
 		}
+		selectedDay = restoredDay
 
 		// Ensure selectedDay is valid for the current available options
 		let currentOptions = DayOption.availableOptions
@@ -736,9 +750,7 @@ struct ActivityDateTimeView: View {
 		} else if activityDay == tomorrow {
 			return .tomorrow
 		} else {
-			// For dates beyond yesterday/today/tomorrow, default to today
-			// In the future, we might want to add more options or handle this differently
-			return .today
+			return .original(activityDay)
 		}
 	}
 }
