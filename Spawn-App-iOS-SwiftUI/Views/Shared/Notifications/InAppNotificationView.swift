@@ -10,15 +10,20 @@ struct InAppNotificationView: View {
 
 	var body: some View {
 		HStack(spacing: 12) {
-			// Profile circle/icon
-			Circle()
-				.fill(profileIconColor.opacity(0.5))
-				.frame(width: 36, height: 36)
-				.shadow(
-					color: Color.black.opacity(0.25),
-					radius: 3.22,
-					y: 1.29
-				)
+			if let statusIcon {
+				Image(statusIcon)
+					.frame(width: 32, height: 32)
+					.accessibilityHidden(true)
+			} else {
+				Circle()
+					.fill(profileIconColor.opacity(0.5))
+					.frame(width: 36, height: 36)
+					.shadow(
+						color: Color.black.opacity(0.25),
+						radius: 3.22,
+						y: 1.29
+					)
+			}
 
 			// Text content
 			VStack(alignment: .leading, spacing: 2) {
@@ -38,6 +43,12 @@ struct InAppNotificationView: View {
 		.frame(maxWidth: .infinity)
 		.background(backgroundColor)
 		.cornerRadius(12)
+		.overlay {
+			if let statusColor {
+				RoundedRectangle(cornerRadius: 12)
+					.strokeBorder(statusColor, lineWidth: 1)
+			}
+		}
 		.shadow(
 			color: Color.black.opacity(0.25),
 			radius: 8,
@@ -58,7 +69,29 @@ struct InAppNotificationView: View {
 
 	// MARK: - Color Helpers
 
+	private var statusIcon: String? {
+		switch notificationType {
+		case .success: return "notification_success"
+		case .error: return "notification_error"
+		default: return nil
+		}
+	}
+
+	private var statusColor: Color? {
+		switch notificationType {
+		case .success: return Color(hex: "339E7C")
+		case .error: return Color(hex: "FF4664")
+		default: return nil
+		}
+	}
+
 	private var backgroundColor: Color {
+		switch notificationType {
+		case .success: return Color(hex: "B0FBDD")
+		case .error: return Color(hex: "FFD4DB")
+		default: break
+		}
+
 		switch colorScheme {
 		case .dark:
 			return Color(red: 0.24, green: 0.23, blue: 0.23)
@@ -70,6 +103,8 @@ struct InAppNotificationView: View {
 	}
 
 	private var titleColor: Color {
+		if let statusColor { return statusColor.opacity(0.8) }
+
 		switch colorScheme {
 		case .dark:
 			return Color.white.opacity(0.60)
@@ -81,6 +116,8 @@ struct InAppNotificationView: View {
 	}
 
 	private var messageColor: Color {
+		if let statusColor { return statusColor }
+
 		switch colorScheme {
 		case .dark:
 			return Color.white.opacity(0.80)
