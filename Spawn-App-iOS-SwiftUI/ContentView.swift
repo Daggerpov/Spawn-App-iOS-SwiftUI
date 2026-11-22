@@ -44,6 +44,8 @@ struct ContentView: View {
 	@State private var globalPopupActivity: FullFeedActivityDTO?
 	@State private var globalPopupColor: Color?
 	@State private var globalPopupFromMapView = false
+	@State private var globalPopupShowsChatroom = false
+	@State private var globalPopupNotificationId: UUID?
 
 	// Global profile share drawer state
 	@State private var showingGlobalProfileShareDrawer = false
@@ -146,10 +148,11 @@ struct ContentView: View {
 						get: { selectedTabsEnum.toTabType },
 						set: { if let newTab = $0 { selectedTabsEnum = Tabs(from: newTab) } }
 					),
-					fromMapView: globalPopupFromMapView
+					fromMapView: globalPopupFromMapView,
+					showChatroomInitially: globalPopupShowsChatroom
 				)
 				.id(
-					"\(activity.id.uuidString)-\(activity.title ?? "untitled")-\(activity.icon ?? "")-\(activity.participantUsers?.count ?? 0)"
+					"\(activity.id.uuidString)-\(activity.title ?? "untitled")-\(activity.icon ?? "")-\(activity.participantUsers?.count ?? 0)-\(globalPopupNotificationId?.uuidString ?? "")"
 				)  // Force recreation when activity changes
 				.allowsHitTesting(true)
 				.ignoresSafeArea(.all, edges: .all)  // Cover absolutely everything
@@ -261,6 +264,7 @@ struct ContentView: View {
 				await AppCache.shared.forceRefreshAllFriendRequests()
 				guard !Task.isCancelled,
 					notificationService.pendingFriendRequestNotification == notificationId else { return }
+				showingGlobalActivityPopup = false
 				selectedTabsEnum = .friends
 				friendRequestsNotificationId = notificationId
 				showFriendRequestsFromNotification = true
@@ -268,8 +272,8 @@ struct ContentView: View {
 			}
 		}
 		.task(id: notificationService.pendingActivityNotification) {
-			if let activityId = notificationService.pendingActivityNotification {
-				await openActivityNotification(activityId)
+			if let target = notificationService.pendingActivityNotification {
+				await openActivityNotification(target)
 			}
 		}
 		.onChange(of: deepLinkManager.pendingDeepLink, initial: true) { _, deepLink in
@@ -300,6 +304,8 @@ struct ContentView: View {
 				globalPopupActivity = activity
 				globalPopupColor = color
 				globalPopupFromMapView = notification.userInfo?["fromMapView"] as? Bool ?? false
+				globalPopupShowsChatroom = false
+				globalPopupNotificationId = nil
 				showingGlobalActivityPopup = true
 			}
 		}
@@ -330,12 +336,13 @@ struct ContentView: View {
 
 	// MARK: - Deep Link Handling
 	@MainActor
-	private func openActivityNotification(_ activityId: UUID) async {
+	private func openActivityNotification(_ target: NotificationService.ActivityNotificationTarget) async {
+		let activityId = target.activityId
 		let result: DataResult<FullFeedActivityDTO> = await DataService.shared.read(
 			.activity(activityId: activityId, requestingUserId: user.id, autoJoin: false),
 			cachePolicy: .apiOnly
 		)
-		guard !Task.isCancelled, notificationService.pendingActivityNotification == activityId else { return }
+		guard !Task.isCancelled, notificationService.pendingActivityNotification == target else { return }
 
 		switch result {
 		case .success(let activity, _):
@@ -343,6 +350,8 @@ struct ContentView: View {
 			globalPopupActivity = activity
 			globalPopupColor = ActivityColorService.shared.getColorForActivity(activityId)
 			globalPopupFromMapView = false
+			globalPopupShowsChatroom = target.opensChatroom
+			globalPopupNotificationId = target.id
 			showingGlobalActivityPopup = true
 		case .failure:
 			inAppNotificationManager.showNotification(
@@ -351,7 +360,7 @@ struct ContentView: View {
 				type: .error
 			)
 		}
-		notificationService.completeActivityNotification(activityId)
+		notificationService.completeActivityNotification(target)
 	}
 
 	private func handleDeepLinkActivity(_ activityId: UUID) {

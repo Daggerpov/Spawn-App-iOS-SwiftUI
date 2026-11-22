@@ -9,7 +9,13 @@ final class NotificationService: NSObject, ObservableObject {
 	static let shared = NotificationService()
 
 	@Published var isNotificationsEnabled = false
-	@Published private(set) var pendingActivityNotification: UUID?
+	struct ActivityNotificationTarget: Hashable {
+		let id = UUID()
+		let activityId: UUID
+		let opensChatroom: Bool
+	}
+
+	@Published private(set) var pendingActivityNotification: ActivityNotificationTarget?
 	@Published private(set) var pendingFriendRequestNotification: UUID?
 
 	// Notification preference properties
@@ -286,7 +292,7 @@ final class NotificationService: NSObject, ObservableObject {
 		return nil
 	}
 
-	/// Queue a user-selected activity notification until authenticated content is ready.
+	/// Queue a selected destination until authenticated content is ready.
 	/// Receipt alone must not navigate, and notification opens must not auto-join an activity.
 	func handleNotificationResponse(_ userInfo: [AnyHashable: Any]) {
 		guard let type = userInfo["type"] as? String else { return }
@@ -295,14 +301,15 @@ final class NotificationService: NSObject, ObservableObject {
 			pendingFriendRequestNotification = UUID()
 			return
 		}
-		guard ["activity_invite", "activityInvite", "activity_update", "activityUpdate",
+		let opensChatroom = ["new_comment", "chat"].contains(type)
+		guard opensChatroom || ["activity_invite", "activityInvite", "activity_update", "activityUpdate",
 			 "activity_participation", "activity_participation_revoked"].contains(type),
 			let value = userInfo["activityId"] as? String,
 			let activityId = UUID(uuidString: value)
 		else { return }
 
 		pendingFriendRequestNotification = nil
-		pendingActivityNotification = activityId
+		pendingActivityNotification = ActivityNotificationTarget(activityId: activityId, opensChatroom: opensChatroom)
 	}
 
 	func completeFriendRequestNotification(_ notificationId: UUID) {
@@ -311,8 +318,8 @@ final class NotificationService: NSObject, ObservableObject {
 		}
 	}
 
-	func completeActivityNotification(_ activityId: UUID) {
-		if pendingActivityNotification == activityId {
+	func completeActivityNotification(_ target: ActivityNotificationTarget) {
+		if pendingActivityNotification == target {
 			pendingActivityNotification = nil
 		}
 	}

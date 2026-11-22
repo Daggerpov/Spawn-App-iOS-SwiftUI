@@ -42,6 +42,7 @@ struct ActivityCardPopupView: View {
 		isExpanded: Binding<Bool>,
 		selectedTab: Binding<TabType?> = .constant(nil),
 		fromMapView: Bool = false,
+		showChatroomInitially: Bool = false,
 		onDismiss: @escaping () -> Void = {}
 	) {
 		// Get the most up-to-date activity from cache to ensure correct participation status
@@ -68,6 +69,7 @@ struct ActivityCardPopupView: View {
 		self._selectedTab = selectedTab
 		self.fromMapView = fromMapView
 		self.onDismiss = onDismiss
+		self._showingChatroom = State(initialValue: showChatroomInitially)
 	}
 
 	var body: some View {

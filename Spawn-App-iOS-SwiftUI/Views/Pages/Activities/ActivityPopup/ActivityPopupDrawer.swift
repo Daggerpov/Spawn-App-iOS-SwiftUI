@@ -16,6 +16,7 @@ struct ActivityPopupDrawer: View {
 
 	// Flag to determine if opened from map view
 	let fromMapView: Bool
+	let showChatroomInitially: Bool
 
 	@State private var dragOffset: CGFloat = 0
 	@State private var isExpanded: Bool = false
@@ -27,13 +28,15 @@ struct ActivityPopupDrawer: View {
 		activityColor: Color,
 		isPresented: Binding<Bool>,
 		selectedTab: Binding<TabType?> = .constant(nil),
-		fromMapView: Bool = false
+		fromMapView: Bool = false,
+		showChatroomInitially: Bool = false
 	) {
 		self.activity = activity
 		self.activityColor = activityColor
 		self._isPresented = isPresented
 		self._selectedTab = selectedTab
 		self.fromMapView = fromMapView
+		self.showChatroomInitially = showChatroomInitially
 	}
 
 	private var screenHeight: CGFloat {
@@ -79,6 +82,7 @@ struct ActivityPopupDrawer: View {
 				isExpanded: $isExpanded,
 				selectedTab: $selectedTab,
 				fromMapView: fromMapView,
+				showChatroomInitially: showChatroomInitially,
 				onDismiss: dismissPopup
 			)
 			.frame(maxWidth: .infinity)
