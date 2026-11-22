@@ -20,6 +20,7 @@ final class InAppNotificationManager: ObservableObject {
 	/// - Note: `nonisolated(unsafe)` allows safe access from nonisolated deinit if needed.
 	/// This is a singleton so deinit won't be called in practice, but marking it for consistency.
 	private nonisolated(unsafe) var dismissTask: Task<Void, Never>?
+	private var clearTask: Task<Void, Never>?
 
 	func showNotification(
 		title: String,
@@ -32,6 +33,9 @@ final class InAppNotificationManager: ObservableObject {
 		// Cancel any existing dismiss task
 		dismissTask?.cancel()
 		dismissTask = nil
+		// A previous banner may still be finishing its dismissal animation.
+		clearTask?.cancel()
+		clearTask = nil
 
 		// Set new notification data immediately
 		currentNotification = InAppNotificationData(
@@ -59,6 +63,9 @@ final class InAppNotificationManager: ObservableObject {
 	/// Dismiss the current notification
 	func dismissNotification() {
 		print("📱 [InAppNotificationManager] Dismissing notification")
+		dismissTask?.cancel()
+		dismissTask = nil
+		clearTask?.cancel()
 
 		// Hide notification with animation
 		withAnimation(.easeInOut(duration: 0.3)) {
@@ -66,9 +73,10 @@ final class InAppNotificationManager: ObservableObject {
 		}
 
 		// Clear notification data after animation
-		Task {
+		clearTask = Task { [weak self] in
 			try? await Task.sleep(for: .seconds(0.3))
-			currentNotification = nil
+			guard !Task.isCancelled else { return }
+			self?.currentNotification = nil
 		}
 	}
 
