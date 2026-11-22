@@ -5,31 +5,39 @@ struct OnboardingActivityCardsView: View {
 	var body: some View {
 		GeometryReader { geometry in
 			ZStack(alignment: .topLeading) {
-				card("Morning Jog", host: "Jamie Park", time: "7–8:30 AM",
+				card(
+					"Morning Jog", host: "Jamie Park", time: "7–8:30 AM",
 					location: "Main Mall · 100m away", symbol: "figure.run",
-					color: colorsRed600, happeningNow: true)
-					.rotationEffect(.degrees(-5))
-					.offset(x: 5, y: 25)
+					color: colorsRed600, happeningNow: true
+				)
+				.rotationEffect(.degrees(-5))
+				.offset(x: 5, y: 25)
 
-				card("Lunch Break", host: "Casey Rivera", time: "12–1 PM",
+				card(
+					"Lunch Break", host: "Casey Rivera", time: "12–1 PM",
 					location: "Campus Café · 450m away", symbol: "fork.knife",
-					color: colorsTeal600)
-					.scaleEffect(0.75, anchor: .topLeading)
-					.rotationEffect(.degrees(-10), anchor: .topLeading)
-					.offset(x: 305, y: 75)
+					color: colorsTeal600
+				)
+				.scaleEffect(0.75, anchor: .topLeading)
+				.rotationEffect(.degrees(-10), anchor: .topLeading)
+				.offset(x: 305, y: 75)
 
-				card("Hoop Run", host: "Morgan Lee", time: "1–2:30 PM",
+				card(
+					"Hoop Run", host: "Morgan Lee", time: "1–2:30 PM",
 					location: "Rec Centre · 500m away", symbol: "basketball",
-					color: colorsPurple600, width: 240)
-					.scaleEffect(0.8, anchor: .topLeading)
-					.rotationEffect(.degrees(-10), anchor: .topLeading)
-					.offset(x: 0, y: 195)
+					color: colorsPurple600, width: 240
+				)
+				.scaleEffect(0.8, anchor: .topLeading)
+				.rotationEffect(.degrees(-10), anchor: .topLeading)
+				.offset(x: 0, y: 195)
 
-				card("Climb Sesh", host: "Taylor Reed", time: "7–8:30 AM",
+				card(
+					"Climb Sesh", host: "Taylor Reed", time: "7–8:30 AM",
 					location: "Climbing Gym · 800m away", symbol: "figure.climbing",
-					color: colorsBlue600, width: 244)
-					.rotationEffect(.degrees(5), anchor: .topLeading)
-					.offset(x: 218, y: 155)
+					color: colorsBlue600, width: 244
+				)
+				.rotationEffect(.degrees(5), anchor: .topLeading)
+				.offset(x: 218, y: 155)
 			}
 			.frame(width: 500, height: 288, alignment: .topLeading)
 			.scaleEffect(geometry.size.width / 500, anchor: .topLeading)

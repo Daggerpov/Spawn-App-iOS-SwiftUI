@@ -82,10 +82,10 @@ struct SpawnIntroView: View {
 						OnboardingActivityCardsView()
 					}
 				}
-					.frame(maxWidth: .infinity, maxHeight: 320)
-					.padding(.horizontal, 20)
-					.scaleEffect(currentPage == 0 ? 1.1 : 1.0)
-					.animation(.easeInOut(duration: 0.3), value: currentPage)
+				.frame(maxWidth: .infinity, maxHeight: 320)
+				.padding(.horizontal, 20)
+				.scaleEffect(currentPage == 0 ? 1.1 : 1.0)
+				.animation(.easeInOut(duration: 0.3), value: currentPage)
 			}
 
 			Spacer()
