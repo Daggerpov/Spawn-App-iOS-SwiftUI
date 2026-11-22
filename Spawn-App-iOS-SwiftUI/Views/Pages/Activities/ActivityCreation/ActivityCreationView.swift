@@ -430,11 +430,35 @@ enum ActivityType: String, CaseIterable {
 	}
 }
 
-enum ActivityDuration: CaseIterable {
+enum ActivityDuration: Hashable {
 	case indefinite
 	case twoHours
 	case oneHour
 	case thirtyMinutes
+	/// Any length the user picks from the Custom picker, in minutes.
+	case custom(minutes: Int)
+
+	/// The fixed chips shown in a row above the Custom chip.
+	static let presets: [ActivityDuration] = [.indefinite, .twoHours, .oneHour, .thirtyMinutes]
+
+	/// What the Custom picker starts on before the user has set a length.
+	static let defaultCustomMinutes = 180
+
+	/// Length in minutes, or nil for an activity with no end time.
+	var minutes: Int? {
+		switch self {
+		case .indefinite: return nil
+		case .twoHours: return 120
+		case .oneHour: return 60
+		case .thirtyMinutes: return 30
+		case .custom(let minutes): return minutes
+		}
+	}
+
+	var isCustom: Bool {
+		if case .custom = self { return true }
+		return false
+	}
 
 	var title: String {
 		switch self {
@@ -442,7 +466,23 @@ enum ActivityDuration: CaseIterable {
 		case .twoHours: return "2 hours"
 		case .oneHour: return "1 hour"
 		case .thirtyMinutes: return "30 mins"
+		case .custom(let minutes): return "Custom: \(Self.format(minutes: minutes))"
 		}
+	}
+
+	/// The preset matching this length exactly, otherwise a custom length.
+	init(minutes: Int) {
+		self = Self.presets.first { $0.minutes == minutes } ?? .custom(minutes: minutes)
+	}
+
+	/// "45 min", "1 hr", "3 hrs", "1 hr 30 min".
+	static func format(minutes total: Int) -> String {
+		let hours = total / 60
+		let minutes = total % 60
+		let hoursText = hours == 1 ? "1 hr" : "\(hours) hrs"
+		if hours == 0 { return "\(minutes) min" }
+		if minutes == 0 { return hoursText }
+		return "\(hoursText) \(minutes) min"
 	}
 }
 

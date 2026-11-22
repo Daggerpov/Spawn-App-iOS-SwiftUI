@@ -29,6 +29,9 @@ struct ActivityDateTimeView: View {
 	// State for comprehensive changes confirmation
 	@State private var showSaveConfirmation: Bool = false
 
+	// Hours/minutes picker for a length other than the presets
+	@State private var showCustomDurationPicker: Bool = false
+
 	// Available options for the pickers
 	private let hours = Array(1...12)
 	private let minutes = [0, 15, 30, 45]
@@ -323,32 +326,53 @@ struct ActivityDateTimeView: View {
 		}
 	}
 
+	private func selectDuration(_ duration: ActivityDuration) {
+		selectedDuration = duration
+		viewModel.selectedDuration = duration
+		syncCurrentValuesToViewModel()
+		// Validate time in real-time when duration changes
+		Task {
+			await viewModel.validateActivityForm()
+		}
+	}
+
 	private func durationButton(for duration: ActivityDuration) -> some View {
-		let isSelected = selectedDuration == duration
+		durationChip(title: duration.title, isSelected: selectedDuration == duration) {
+			selectDuration(duration)
+		}
+	}
+
+	/// Full-width chip under the presets that opens the hours/minutes picker
+	private var customDurationButton: some View {
+		durationChip(
+			title: selectedDuration.isCustom ? selectedDuration.title : "Custom",
+			isSelected: selectedDuration.isCustom,
+			fillsWidth: true
+		) {
+			showCustomDurationPicker = true
+		}
+	}
+
+	private func durationChip(
+		title: String, isSelected: Bool, fillsWidth: Bool = false, action: @escaping () -> Void
+	) -> some View {
 		let borderColor = isSelected ? Color(hex: colorsIndigo500) : secondaryTextColor
 
-		return Button(action: {
-			selectedDuration = duration
-			viewModel.selectedDuration = duration
-			syncCurrentValuesToViewModel()
-			// Validate time in real-time when duration changes
-			Task {
-				await viewModel.validateActivityForm()
-			}
-		}) {
+		return Button(action: action) {
 			// Size the label for its bold (selected) weight so selecting it doesn't
 			// change the button width and shift the row
-			Text(duration.title)
+			Text(title)
 				.font(.custom("Onest", size: 16).weight(.bold))
 				.hidden()
 				.overlay(
-					Text(duration.title)
+					Text(title)
 						.font(.custom("Onest", size: 16).weight(isSelected ? .bold : .medium))
 						.foregroundColor(isSelected ? borderColor : secondaryTextColor)
 				)
 				.padding(.horizontal, 10)
 				.padding(.vertical, 12)
 				.fixedSize(horizontal: true, vertical: false)
+				.frame(maxWidth: fillsWidth ? .infinity : nil)
 				.background(durationButtonBackground(isSelected: isSelected, borderColor: borderColor))
 				.contentShape(RoundedRectangle(cornerRadius: 12))
 		}
@@ -518,13 +542,15 @@ struct ActivityDateTimeView: View {
 						// Duration buttons - horizontal layout with Figma styling, spaced out
 						// to span the same width as the Title field
 						HStack(spacing: 0) {
-							ForEach(Array(ActivityDuration.allCases.enumerated()), id: \.element) { index, duration in
+							ForEach(Array(ActivityDuration.presets.enumerated()), id: \.element) { index, duration in
 								if index > 0 {
 									Spacer(minLength: 8)
 								}
 								durationButton(for: duration)
 							}
 						}
+
+						customDurationButton
 
 					}
 					.padding(.horizontal, screenEdgePadding())
@@ -580,6 +606,20 @@ struct ActivityDateTimeView: View {
 		.background(universalBackgroundColor)
 		.onAppear {
 			initializeDateAndTime()
+		}
+		.sheet(isPresented: $showCustomDurationPicker) {
+			CustomDurationPickerView(
+				initialMinutes: selectedDuration.isCustom
+					? (selectedDuration.minutes ?? ActivityDuration.defaultCustomMinutes)
+					: ActivityDuration.defaultCustomMinutes,
+				onCancel: { showCustomDurationPicker = false },
+				onSet: { minutes in
+					showCustomDurationPicker = false
+					selectDuration(.custom(minutes: minutes))
+				}
+			)
+			.presentationDetents([.height(300)])
+			.presentationDragIndicator(.visible)
 		}
 		.alert("Save All Changes?", isPresented: $showSaveConfirmation) {
 			Button("Don't Save", role: .destructive) {
