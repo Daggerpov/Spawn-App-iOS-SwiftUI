@@ -27,8 +27,6 @@ final class ActivityCreationViewModel {
 	// MARK: - Constants
 	private enum TimeConstants {
 		static let twoHoursInSeconds: TimeInterval = 2 * 60 * 60
-		static let oneHourInSeconds: TimeInterval = 60 * 60
-		static let thirtyMinutesInSeconds: TimeInterval = 30 * 60
 		static let coordinateTolerance: Double = 0.0001
 	}
 
@@ -339,18 +337,11 @@ final class ActivityCreationViewModel {
 
 	// MARK: - Helper Methods
 
-	/// Calculate duration from time interval
+	/// The preset matching an activity's length, or a custom length when none does
 	private static func calculateDuration(from startTime: Date, to endTime: Date) -> ActivityDuration {
-		let duration = endTime.timeIntervalSince(startTime)
-		if duration <= TimeConstants.thirtyMinutesInSeconds {
-			return .thirtyMinutes
-		} else if duration <= TimeConstants.oneHourInSeconds {
-			return .oneHour
-		} else if duration <= TimeConstants.twoHoursInSeconds {
-			return .twoHours
-		} else {
-			return .indefinite
-		}
+		let minutes = Int((endTime.timeIntervalSince(startTime) / 60).rounded())
+		guard minutes > 0 else { return .indefinite }
+		return ActivityDuration(minutes: minutes)
 	}
 
 	/// Convert BaseUserDTO to MinimalFriendDTO (drops bio and email to save memory)
@@ -496,17 +487,9 @@ final class ActivityCreationViewModel {
 
 	func updateActivityDuration() {
 		let startTime = selectedDate
-		let endTime: Date?
-
-		switch selectedDuration {
-		case .indefinite:
-			endTime = nil  // Set to nil for indefinite duration
-		case .twoHours:
-			endTime = Calendar.current.date(byAdding: .hour, value: 2, to: startTime) ?? startTime
-		case .oneHour:
-			endTime = Calendar.current.date(byAdding: .hour, value: 1, to: startTime) ?? startTime
-		case .thirtyMinutes:
-			endTime = Calendar.current.date(byAdding: .minute, value: 30, to: startTime) ?? startTime
+		// nil end time means an indefinite activity
+		let endTime: Date? = selectedDuration.minutes.map {
+			Calendar.current.date(byAdding: .minute, value: $0, to: startTime) ?? startTime
 		}
 
 		activity.startTime = startTime
