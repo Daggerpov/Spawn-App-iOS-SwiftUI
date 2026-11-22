@@ -31,10 +31,10 @@ struct OnboardingActivityCardsView: View {
 					.rotationEffect(.degrees(5), anchor: .topLeading)
 					.offset(x: 218, y: 155)
 			}
-			.frame(width: 462, height: 266, alignment: .topLeading)
-			.scaleEffect(geometry.size.width / 462, anchor: .topLeading)
+			.frame(width: 500, height: 288, alignment: .topLeading)
+			.scaleEffect(geometry.size.width / 500, anchor: .topLeading)
 		}
-		.aspectRatio(462.0 / 266, contentMode: .fit)
+		.aspectRatio(500.0 / 288, contentMode: .fit)
 		.clipped()
 		.accessibilityElement(children: .ignore)
 		.accessibilityLabel("Example activities with fictional hosts and placeholder avatars")
