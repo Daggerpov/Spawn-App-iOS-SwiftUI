@@ -76,14 +76,20 @@ final class InAppNotificationManager: ObservableObject {
 	/// - Parameter userInfo: The push notification payload
 	func showNotificationFromPushData(_ userInfo: [AnyHashable: Any]) {
 		guard let typeString = userInfo["type"] as? String,
-			let notificationType = NotificationType(rawValue: typeString)
+			let notificationType = NotificationType(pushValue: typeString)
 		else {
 			print("[IN-APP NOTIFICATION] Invalid notification type in payload")
 			return
 		}
 
-		let title = extractTitle(from: userInfo, type: notificationType)
-		let message = extractMessage(from: userInfo, type: notificationType)
+		// FCM puts the event's actual wording in aps.alert. In particular, an accepted
+		// request must retain its acceptance message instead of the new-request fallback.
+		let aps = userInfo["aps"] as? [String: Any]
+		let alert = aps?["alert"] as? [String: Any]
+		let title = alert?["title"] as? String ?? extractTitle(from: userInfo, type: notificationType)
+		let message = alert?["body"] as? String
+			?? aps?["alert"] as? String
+			?? extractMessage(from: userInfo, type: notificationType)
 
 		showNotification(title: title, message: message, type: notificationType)
 	}

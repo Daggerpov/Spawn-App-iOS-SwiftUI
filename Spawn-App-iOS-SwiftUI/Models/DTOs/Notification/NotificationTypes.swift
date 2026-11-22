@@ -22,6 +22,29 @@ enum NotificationType: String, Codable, Sendable {
 
 	/// Success notifications
 	case success = "success"
+
+	/// Classify server push payloads while preserving the existing local notification values.
+	init?(pushValue: String) {
+		if let localType = Self(rawValue: pushValue) {
+			self = localType
+			return
+		}
+
+		switch pushValue {
+		case "friend-request", "friend_request", "friend-accepted", "friend_request_accepted":
+			self = .friendRequest
+		case "activity_invite":
+			self = .activityInvite
+		case "activity_update", "activity_participation", "activity_participation_revoked":
+			self = .activityUpdate
+		case "new_comment":
+			self = .chat
+		case "registration", "push_enabled", "push_registration":
+			self = .welcome
+		default:
+			return nil
+		}
+	}
 }
 
 /// Utility for building notification data
