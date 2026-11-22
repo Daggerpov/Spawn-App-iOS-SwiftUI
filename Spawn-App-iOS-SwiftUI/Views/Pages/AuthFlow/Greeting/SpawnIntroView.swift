@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct OnboardingPage {
-	let imageName: String
+	let imageName: String?
 	let title: String
 	let description: String
 }
@@ -21,7 +21,7 @@ struct SpawnIntroView: View {
 
 	let pages = [
 		OnboardingPage(
-			imageName: "Group 6812",
+			imageName: nil,
 			title: "Stay in the Loop",
 			description: "Know what your friends are up to—so you can jump in or start something new."
 		),
@@ -37,12 +37,10 @@ struct SpawnIntroView: View {
 		),
 	]
 
-	private func getImageName(for pageIndex: Int) -> String {
+	private func getImageName(for pageIndex: Int) -> String? {
 		// Use dark mode assets when in dark mode
 		if colorScheme == .dark {
 			switch pageIndex {
-			case 0:  // "Stay in the Loop" page
-				return "onboarding_activity_cards_dark_mode"
 			case 1:  // "Set the Vibe" page
 				return "onboarding_activity_types_dark_mode"
 			default:
@@ -75,9 +73,15 @@ struct SpawnIntroView: View {
 			// Main content
 			VStack(spacing: 32) {
 				// Image
-				Image(getImageName(for: currentPage))
-					.resizable()
-					.scaledToFit()
+				Group {
+					if let imageName = getImageName(for: currentPage) {
+						Image(imageName)
+							.resizable()
+							.scaledToFit()
+					} else {
+						OnboardingActivityCardsView()
+					}
+				}
 					.frame(maxWidth: .infinity, maxHeight: 320)
 					.padding(.horizontal, 20)
 					.scaleEffect(currentPage == 0 ? 1.1 : 1.0)
