@@ -1,3 +1,4 @@
+import Combine
 import FirebaseMessaging
 import Foundation
 import SwiftUI
@@ -27,6 +28,7 @@ final class NotificationService: NSObject, ObservableObject {
 
 	// Store the device token for later registration
 	private var storedDeviceToken: String?
+	private var authSubscription: AnyCancellable?
 
 	// APIService instance to use for all API calls
 	private let apiService: IAPIService
@@ -47,6 +49,7 @@ final class NotificationService: NSObject, ObservableObject {
 		checkNotificationStatus()
 		// Load saved preferences from UserDefaults
 		loadPreferencesFromUserDefaults()
+		observeAuthentication()
 
 		// Add observer for user login notification
 		NotificationCenter.default.addObserver(
@@ -82,11 +85,29 @@ final class NotificationService: NSObject, ObservableObject {
 		super.init()
 		checkNotificationStatus()
 		loadPreferencesFromUserDefaults()
+		observeAuthentication()
+	}
+
+	private func observeAuthentication() {
+		// Defer access to the auth singleton until this service finishes initializing.
+		Task { @MainActor [weak self] in
+			guard let self else { return }
+			let auth = UserAuthViewModel.shared
+			self.authSubscription = auth.$isLoggedIn.combineLatest(auth.$spawnUser)
+				.map { loggedIn, user in loggedIn ? user?.id : nil }
+				.removeDuplicates()
+				// Published values arrive before their backing properties are assigned.
+				.receive(on: RunLoop.main)
+				.sink { [weak self] userId in
+					guard let userId, auth.isLoggedIn, auth.spawnUser?.id == userId else { return }
+					self?.registerStoredTokenWithBackend()
+				}
+		}
 	}
 
 	// Called when user logs in
 	@objc private func userDidLogin() {
-		// If we have a stored token, register it now
+		// Refresh permission; the auth subscription registers any queued token.
 		registerForPushNotifications()
 
 		// Fetch notification preferences after login
