@@ -9,6 +9,14 @@ final class NotificationService: NSObject, ObservableObject {
 	static let shared = NotificationService()
 
 	@Published var isNotificationsEnabled = false
+	struct ActivityNotificationTarget: Hashable {
+		let id = UUID()
+		let activityId: UUID
+		let opensChatroom: Bool
+	}
+
+	@Published private(set) var pendingActivityNotification: ActivityNotificationTarget?
+	@Published private(set) var pendingFriendRequestNotification: UUID?
 
 	// Notification preference properties
 	@Published var friendRequestsEnabled: Bool = true
@@ -282,6 +290,38 @@ final class NotificationService: NSObject, ObservableObject {
 		}
 
 		return nil
+	}
+
+	/// Queue a selected destination until authenticated content is ready.
+	/// Receipt alone must not navigate, and notification opens must not auto-join an activity.
+	func handleNotificationResponse(_ userInfo: [AnyHashable: Any]) {
+		guard let type = userInfo["type"] as? String else { return }
+		if ["friend-request", "friend_request", "friendRequest"].contains(type) {
+			pendingActivityNotification = nil
+			pendingFriendRequestNotification = UUID()
+			return
+		}
+		let opensChatroom = ["new_comment", "chat"].contains(type)
+		guard opensChatroom || ["activity_invite", "activityInvite", "activity_update", "activityUpdate",
+			 "activity_participation", "activity_participation_revoked"].contains(type),
+			let value = userInfo["activityId"] as? String,
+			let activityId = UUID(uuidString: value)
+		else { return }
+
+		pendingFriendRequestNotification = nil
+		pendingActivityNotification = ActivityNotificationTarget(activityId: activityId, opensChatroom: opensChatroom)
+	}
+
+	func completeFriendRequestNotification(_ notificationId: UUID) {
+		if pendingFriendRequestNotification == notificationId {
+			pendingFriendRequestNotification = nil
+		}
+	}
+
+	func completeActivityNotification(_ target: ActivityNotificationTarget) {
+		if pendingActivityNotification == target {
+			pendingActivityNotification = nil
+		}
 	}
 
 	// Handle different notification types

@@ -20,6 +20,7 @@ struct ContentView: View {
 	@State private var feedViewModel: FeedViewModel?
 	private var tutorialViewModel = TutorialViewModel.shared
 	@ObservedObject private var inAppNotificationManager = InAppNotificationManager.shared
+	@ObservedObject private var notificationService = NotificationService.shared
 	@ObservedObject var deepLinkManager: DeepLinkManager
 
 	// Computed binding to convert Tabs <-> TabType for child views
@@ -35,12 +36,16 @@ struct ContentView: View {
 	@State private var deepLinkedActivityId: UUID?
 	@State private var shouldShowDeepLinkedProfile = false
 	@State private var deepLinkedProfileId: UUID?
+	@State private var showFriendRequestsFromNotification = false
+	@State private var friendRequestsNotificationId: UUID?
 
 	// Global activity popup state
 	@State private var showingGlobalActivityPopup = false
 	@State private var globalPopupActivity: FullFeedActivityDTO?
 	@State private var globalPopupColor: Color?
 	@State private var globalPopupFromMapView = false
+	@State private var globalPopupShowsChatroom = false
+	@State private var globalPopupNotificationId: UUID?
 
 	// Global profile share drawer state
 	@State private var showingGlobalProfileShareDrawer = false
@@ -96,7 +101,9 @@ struct ContentView: View {
 							user: user,
 							viewModel: friendsVM,
 							deepLinkedProfileId: $deepLinkedProfileId,
-							shouldShowDeepLinkedProfile: $shouldShowDeepLinkedProfile
+							shouldShowDeepLinkedProfile: $shouldShowDeepLinkedProfile,
+							showFriendRequests: $showFriendRequestsFromNotification,
+							notificationId: friendRequestsNotificationId
 						)
 						.disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
 					case .profile:
@@ -141,10 +148,11 @@ struct ContentView: View {
 						get: { selectedTabsEnum.toTabType },
 						set: { if let newTab = $0 { selectedTabsEnum = Tabs(from: newTab) } }
 					),
-					fromMapView: globalPopupFromMapView
+					fromMapView: globalPopupFromMapView,
+					showChatroomInitially: globalPopupShowsChatroom
 				)
 				.id(
-					"\(activity.id.uuidString)-\(activity.title ?? "untitled")-\(activity.icon ?? "")-\(activity.participantUsers?.count ?? 0)"
+					"\(activity.id.uuidString)-\(activity.title ?? "untitled")-\(activity.icon ?? "")-\(activity.participantUsers?.count ?? 0)-\(globalPopupNotificationId?.uuidString ?? "")"
 				)  // Force recreation when activity changes
 				.allowsHitTesting(true)
 				.ignoresSafeArea(.all, edges: .all)  // Cover absolutely everything
@@ -251,6 +259,23 @@ struct ContentView: View {
 			backgroundRefreshTask?.cancel()
 			backgroundRefreshTask = nil
 		}
+		.task(id: notificationService.pendingFriendRequestNotification) {
+			if let notificationId = notificationService.pendingFriendRequestNotification {
+				await AppCache.shared.forceRefreshAllFriendRequests()
+				guard !Task.isCancelled,
+					notificationService.pendingFriendRequestNotification == notificationId else { return }
+				showingGlobalActivityPopup = false
+				selectedTabsEnum = .friends
+				friendRequestsNotificationId = notificationId
+				showFriendRequestsFromNotification = true
+				notificationService.completeFriendRequestNotification(notificationId)
+			}
+		}
+		.task(id: notificationService.pendingActivityNotification) {
+			if let target = notificationService.pendingActivityNotification {
+				await openActivityNotification(target)
+			}
+		}
 		.onChange(of: deepLinkManager.pendingDeepLink, initial: true) { _, deepLink in
 			switch deepLink {
 			case .activity(let activityId):
@@ -279,6 +304,8 @@ struct ContentView: View {
 				globalPopupActivity = activity
 				globalPopupColor = color
 				globalPopupFromMapView = notification.userInfo?["fromMapView"] as? Bool ?? false
+				globalPopupShowsChatroom = false
+				globalPopupNotificationId = nil
 				showingGlobalActivityPopup = true
 			}
 		}
@@ -308,6 +335,34 @@ struct ContentView: View {
 	}
 
 	// MARK: - Deep Link Handling
+	@MainActor
+	private func openActivityNotification(_ target: NotificationService.ActivityNotificationTarget) async {
+		let activityId = target.activityId
+		let result: DataResult<FullFeedActivityDTO> = await DataService.shared.read(
+			.activity(activityId: activityId, requestingUserId: user.id, autoJoin: false),
+			cachePolicy: .apiOnly
+		)
+		guard !Task.isCancelled, notificationService.pendingActivityNotification == target else { return }
+
+		switch result {
+		case .success(let activity, _):
+			selectedTabsEnum = .home
+			globalPopupActivity = activity
+			globalPopupColor = ActivityColorService.shared.getColorForActivity(activityId)
+			globalPopupFromMapView = false
+			globalPopupShowsChatroom = target.opensChatroom
+			globalPopupNotificationId = target.id
+			showingGlobalActivityPopup = true
+		case .failure:
+			inAppNotificationManager.showNotification(
+				title: "Couldn't Open Activity",
+				message: "This activity could not be loaded. Please try again.",
+				type: .error
+			)
+		}
+		notificationService.completeActivityNotification(target)
+	}
+
 	private func handleDeepLinkActivity(_ activityId: UUID) {
 		print("🎯 ContentView: Handling deep link for activity: \(activityId)")
 

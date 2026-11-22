@@ -16,6 +16,8 @@ struct FriendsView: View {
 	// Deep link parameters
 	@Binding var deepLinkedProfileId: UUID?
 	@Binding var shouldShowDeepLinkedProfile: Bool
+	@Binding private var showFriendRequests: Bool
+	private let notificationId: UUID?
 	@State private var isFetchingDeepLinkedProfile = false
 
 	// Use shared navigation manager for pop-to-root functionality
@@ -25,12 +27,16 @@ struct FriendsView: View {
 		user: BaseUserDTO,
 		viewModel: FriendsTabViewModel,
 		deepLinkedProfileId: Binding<UUID?> = .constant(nil),
-		shouldShowDeepLinkedProfile: Binding<Bool> = .constant(false)
+		shouldShowDeepLinkedProfile: Binding<Bool> = .constant(false),
+		showFriendRequests: Binding<Bool> = .constant(false),
+		notificationId: UUID? = nil
 	) {
 		self.user = user
 		self.viewModel = viewModel
 		self._deepLinkedProfileId = deepLinkedProfileId
 		self._shouldShowDeepLinkedProfile = shouldShowDeepLinkedProfile
+		self._showFriendRequests = showFriendRequests
+		self.notificationId = notificationId
 	}
 
 	var body: some View {
@@ -46,8 +52,11 @@ struct FriendsView: View {
 				}
 				.background(universalBackgroundColor)
 				.navigationBarHidden(true)
+				.navigationDestination(isPresented: $showFriendRequests) {
+					FriendRequestsView(userId: user.id)
+				}
 			}
-			.id(tabNavigationManager.friendsNavigationId)
+			.id("\(tabNavigationManager.friendsNavigationId)-\(notificationId?.uuidString ?? "default")")
 		}
 		.task {
 			// CRITICAL FIX: Use MainActor task to respect navigation lifecycle
