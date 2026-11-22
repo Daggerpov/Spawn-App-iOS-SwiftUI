@@ -9,6 +9,7 @@ final class NotificationService: NSObject, ObservableObject {
 	static let shared = NotificationService()
 
 	@Published var isNotificationsEnabled = false
+	@Published private(set) var pendingActivityNotification: UUID?
 
 	// Notification preference properties
 	@Published var friendRequestsEnabled: Bool = true
@@ -282,6 +283,25 @@ final class NotificationService: NSObject, ObservableObject {
 		}
 
 		return nil
+	}
+
+	/// Queue a user-selected activity notification until authenticated content is ready.
+	/// Receipt alone must not navigate, and notification opens must not auto-join an activity.
+	func handleActivityNotificationResponse(_ userInfo: [AnyHashable: Any]) {
+		guard let type = userInfo["type"] as? String,
+			["activity_invite", "activityInvite", "activity_update", "activityUpdate",
+			 "activity_participation", "activity_participation_revoked"].contains(type),
+			let value = userInfo["activityId"] as? String,
+			let activityId = UUID(uuidString: value)
+		else { return }
+
+		pendingActivityNotification = activityId
+	}
+
+	func completeActivityNotification(_ activityId: UUID) {
+		if pendingActivityNotification == activityId {
+			pendingActivityNotification = nil
+		}
 	}
 
 	// Handle different notification types

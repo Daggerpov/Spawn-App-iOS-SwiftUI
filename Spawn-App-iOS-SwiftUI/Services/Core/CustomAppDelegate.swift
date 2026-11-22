@@ -124,6 +124,8 @@ extension CustomAppDelegate: @preconcurrency UNUserNotificationCenterDelegate {
 	// This function lets us do something when the user interacts with a notification
 	@MainActor
 	func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+		guard response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
+
 		// Get the notification data
 		let userInfo = response.notification.request.content.userInfo
 		print("[PUSH DEBUG] User interacted with notification: \(response.notification.request.content.title)")
@@ -132,6 +134,7 @@ extension CustomAppDelegate: @preconcurrency UNUserNotificationCenterDelegate {
 
 		// Process the notification based on its type
 		handleReceivedNotification(userInfo)
+		NotificationService.shared.handleActivityNotificationResponse(userInfo)
 
 		// Also handle cache updates
 		NotificationService.shared.handleNotificationData(userInfo)

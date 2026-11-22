@@ -20,6 +20,7 @@ struct ContentView: View {
 	@State private var feedViewModel: FeedViewModel?
 	private var tutorialViewModel = TutorialViewModel.shared
 	@ObservedObject private var inAppNotificationManager = InAppNotificationManager.shared
+	@ObservedObject private var notificationService = NotificationService.shared
 	@ObservedObject var deepLinkManager: DeepLinkManager
 
 	// Computed binding to convert Tabs <-> TabType for child views
@@ -251,6 +252,11 @@ struct ContentView: View {
 			backgroundRefreshTask?.cancel()
 			backgroundRefreshTask = nil
 		}
+		.task(id: notificationService.pendingActivityNotification) {
+			if let activityId = notificationService.pendingActivityNotification {
+				await openActivityNotification(activityId)
+			}
+		}
 		.onChange(of: deepLinkManager.pendingDeepLink, initial: true) { _, deepLink in
 			switch deepLink {
 			case .activity(let activityId):
@@ -308,6 +314,31 @@ struct ContentView: View {
 	}
 
 	// MARK: - Deep Link Handling
+	@MainActor
+	private func openActivityNotification(_ activityId: UUID) async {
+		let result: DataResult<FullFeedActivityDTO> = await DataService.shared.read(
+			.activity(activityId: activityId, requestingUserId: user.id, autoJoin: false),
+			cachePolicy: .apiOnly
+		)
+		guard !Task.isCancelled, notificationService.pendingActivityNotification == activityId else { return }
+
+		switch result {
+		case .success(let activity, _):
+			selectedTabsEnum = .home
+			globalPopupActivity = activity
+			globalPopupColor = ActivityColorService.shared.getColorForActivity(activityId)
+			globalPopupFromMapView = false
+			showingGlobalActivityPopup = true
+		case .failure:
+			inAppNotificationManager.showNotification(
+				title: "Couldn't Open Activity",
+				message: "This activity could not be loaded. Please try again.",
+				type: .error
+			)
+		}
+		notificationService.completeActivityNotification(activityId)
+	}
+
 	private func handleDeepLinkActivity(_ activityId: UUID) {
 		print("🎯 ContentView: Handling deep link for activity: \(activityId)")
 
