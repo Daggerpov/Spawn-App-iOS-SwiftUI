@@ -29,8 +29,10 @@ struct ActivityDateTimeView: View {
 	// State for comprehensive changes confirmation
 	@State private var showSaveConfirmation: Bool = false
 
-	// Hours/minutes picker for a length other than the presets
-	@State private var showCustomDurationPicker: Bool = false
+	// Inline hours/minutes wheel for a length other than the presets
+	@State private var showCustomDurationWheel: Bool = false
+	@State private var lastCustomMinutes: Int = ActivityDuration.defaultCustomMinutes
+	private let customHourOptions = Array(0...23)
 
 	// Available options for the pickers
 	private let hours = Array(1...12)
@@ -342,19 +344,101 @@ struct ActivityDateTimeView: View {
 		}
 	}
 
-	/// Full-width chip under the presets that opens the hours/minutes picker
+	/// Chip on the line under the presets (like the Confirm step's participant "Custom" chip).
+	/// Selecting it shows the hours/minutes wheel; tapping it again hides the wheel.
 	private var customDurationButton: some View {
 		durationChip(
 			title: selectedDuration.isCustom ? selectedDuration.title : "Custom",
-			isSelected: selectedDuration.isCustom,
-			fillsWidth: true
+			isSelected: selectedDuration.isCustom
 		) {
-			showCustomDurationPicker = true
+			if selectedDuration.isCustom {
+				showCustomDurationWheel.toggle()
+			} else {
+				selectDuration(.custom(minutes: lastCustomMinutes))
+				showCustomDurationWheel = true
+			}
 		}
 	}
 
+	private var customDurationMinutes: Int {
+		selectedDuration.isCustom ? (selectedDuration.minutes ?? lastCustomMinutes) : lastCustomMinutes
+	}
+
+	private func setCustomDuration(hours: Int, minutes: Int) {
+		// A zero-length activity isn't allowed, so 0 hr 00 min moves to 15 min
+		let total = max(hours * 60 + minutes, 15)
+		lastCustomMinutes = total
+		selectDuration(.custom(minutes: total))
+	}
+
+	/// Hours (0–23) and quarter-hour minutes, styled like the time picker above
+	private var customDurationWheel: some View {
+		let hoursBinding = Binding(
+			get: { min(customDurationMinutes / 60, 23) },
+			set: { setCustomDuration(hours: $0, minutes: (customDurationMinutes % 60) / 15 * 15) }
+		)
+		let minutesBinding = Binding(
+			get: { (customDurationMinutes % 60) / 15 * 15 },
+			set: { setCustomDuration(hours: min(customDurationMinutes / 60, 23), minutes: $0) }
+		)
+
+		return ZStack {
+			Rectangle()
+				.fill(pickerBackgroundColor)
+				.cornerRadius(12)
+
+			HStack(spacing: 10) {
+				Picker("Hours", selection: hoursBinding) {
+					ForEach(customHourOptions, id: \.self) { hour in
+						Text("\(hour)")
+							.font(.custom("Onest", size: 26))
+							.foregroundColor(pickerTextColor)
+							.tag(hour)
+					}
+				}
+				.pickerStyle(.wheel)
+				.frame(width: 60)
+				.clipped()
+
+				Text("hr")
+					.font(.custom("Onest", size: 22))
+					.foregroundColor(pickerTextColor)
+
+				Picker("Minutes", selection: minutesBinding) {
+					ForEach(minutes, id: \.self) { minute in
+						Text(String(format: "%02d", minute))
+							.font(.custom("Onest", size: 26))
+							.foregroundColor(pickerTextColor)
+							.tag(minute)
+					}
+				}
+				.pickerStyle(.wheel)
+				.frame(width: 60)
+				.clipped()
+
+				Text("min")
+					.font(.custom("Onest", size: 22))
+					.foregroundColor(pickerTextColor)
+			}
+
+			// Separator lines above and below the selected row, as on the time picker
+			ZStack {
+				Rectangle()
+					.fill(separatorColor)
+					.frame(height: 0.31)
+					.offset(y: -19.5)
+				Rectangle()
+					.fill(separatorColor)
+					.frame(height: 0.31)
+					.offset(y: 19.5)
+			}
+			.allowsHitTesting(false)
+		}
+		.frame(height: 180)
+	}
+
 	private func durationChip(
-		title: String, isSelected: Bool, fillsWidth: Bool = false, action: @escaping () -> Void
+		title: String, isSelected: Bool, action: @escaping () -> Void
 	) -> some View {
 		let borderColor = isSelected ? Color(hex: colorsIndigo500) : secondaryTextColor
 
@@ -372,7 +456,6 @@ struct ActivityDateTimeView: View {
 				.padding(.horizontal, 10)
 				.padding(.vertical, 12)
 				.fixedSize(horizontal: true, vertical: false)
-				.frame(maxWidth: fillsWidth ? .infinity : nil)
 				.background(durationButtonBackground(isSelected: isSelected, borderColor: borderColor))
 				.contentShape(RoundedRectangle(cornerRadius: 12))
 		}
@@ -550,8 +633,14 @@ struct ActivityDateTimeView: View {
 							}
 						}
 
-						customDurationButton
+						HStack {
+							customDurationButton
+							Spacer()
+						}
 
+						if selectedDuration.isCustom && showCustomDurationWheel {
+							customDurationWheel
+						}
 					}
 					.padding(.horizontal, screenEdgePadding())
 					.padding(.bottom, 50)
@@ -606,20 +695,6 @@ struct ActivityDateTimeView: View {
 		.background(universalBackgroundColor)
 		.onAppear {
 			initializeDateAndTime()
-		}
-		.sheet(isPresented: $showCustomDurationPicker) {
-			CustomDurationPickerView(
-				initialMinutes: selectedDuration.isCustom
-					? (selectedDuration.minutes ?? ActivityDuration.defaultCustomMinutes)
-					: ActivityDuration.defaultCustomMinutes,
-				onCancel: { showCustomDurationPicker = false },
-				onSet: { minutes in
-					showCustomDurationPicker = false
-					selectDuration(.custom(minutes: minutes))
-				}
-			)
-			.presentationDetents([.height(300)])
-			.presentationDragIndicator(.visible)
 		}
 		.alert("Save All Changes?", isPresented: $showSaveConfirmation) {
 			Button("Don't Save", role: .destructive) {
@@ -743,6 +818,9 @@ struct ActivityDateTimeView: View {
 	private func initializeDateAndTime() {
 		// Set initial duration in view model
 		viewModel.selectedDuration = selectedDuration
+		if selectedDuration.isCustom, let minutes = selectedDuration.minutes {
+			lastCustomMinutes = minutes
+		}
 
 		// Set initial title if not empty
 		if !activityTitle.isEmpty {
