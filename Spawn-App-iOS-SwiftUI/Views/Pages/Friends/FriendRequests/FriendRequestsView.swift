@@ -13,6 +13,7 @@ struct FriendRequestsView: View {
 	@State private var showSuccessDrawer = false
 	@State private var acceptedFriend: BaseUserDTO?
 	@State private var navigateToAddToActivityType = false
+	@State private var addToActivityTypeAfterDismissal = false
 
 	private let isPreviewMode: Bool
 
@@ -40,7 +41,15 @@ struct FriendRequestsView: View {
 				await viewModel.fetchFriendRequests()
 			}
 		}
-		.overlay(successDrawerOverlay)
+		.fullScreenCover(isPresented: $showSuccessDrawer, onDismiss: {
+			if addToActivityTypeAfterDismissal {
+				addToActivityTypeAfterDismissal = false
+				navigateToAddToActivityType = true
+			}
+		}) {
+			successDrawerOverlay
+				.presentationBackground(.clear)
+		}
 		.onChange(of: showSuccessDrawer) { _, isPresented in
 			if !isPresented && !isPreviewMode {
 				Task { await viewModel.fetchFriendRequests() }
@@ -198,12 +207,12 @@ struct FriendRequestsView: View {
 	// MARK: - Success Drawer Overlay
 	private var successDrawerOverlay: some View {
 		Group {
-			if showSuccessDrawer, let friend = acceptedFriend {
+			if let friend = acceptedFriend {
 				FriendRequestSuccessDrawer(
 					friendUser: friend,
 					isPresented: $showSuccessDrawer,
 					onAddToActivityType: {
-						navigateToAddToActivityType = true
+						addToActivityTypeAfterDismissal = true
 					}
 				)
 			}

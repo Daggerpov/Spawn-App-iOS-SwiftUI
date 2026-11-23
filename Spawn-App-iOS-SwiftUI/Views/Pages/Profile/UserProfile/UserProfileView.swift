@@ -24,6 +24,7 @@ struct UserProfileView: View {
 	@State private var showAddToActivityType: Bool = false
 	@State private var showSuccessDrawer: Bool = false
 	@State private var navigateToAddToActivityType: Bool = false
+	@State private var addToActivityTypeAfterDismissal = false
 
 	// Store background refresh task so we can cancel it on disappear
 	@State private var backgroundDataLoadTask: Task<Void, Never>?
@@ -72,18 +73,22 @@ struct UserProfileView: View {
 				.background(universalBackgroundColor.ignoresSafeArea())
 				.background(universalBackgroundColor)
 
-			// Success drawer overlay - placed at root level to cover tab bar
-			if showSuccessDrawer {
-				FriendRequestSuccessDrawer(
-					friendUser: user as! BaseUserDTO,
-					isPresented: $showSuccessDrawer,
-					onAddToActivityType: {
-						navigateToAddToActivityType = true
-					}
-				)
-			}
 		}
-		.toolbar(showSuccessDrawer ? .hidden : .visible, for: .tabBar)
+		.fullScreenCover(isPresented: $showSuccessDrawer, onDismiss: {
+			if addToActivityTypeAfterDismissal {
+				addToActivityTypeAfterDismissal = false
+				navigateToAddToActivityType = true
+			}
+		}) {
+			FriendRequestSuccessDrawer(
+				friendUser: user as! BaseUserDTO,
+				isPresented: $showSuccessDrawer,
+				onAddToActivityType: {
+					addToActivityTypeAfterDismissal = true
+				}
+			)
+			.presentationBackground(.clear)
+		}
 		.task {
 			// CRITICAL FIX: Load critical profile data on MainActor to block view appearance
 			// This prevents empty state flashes and ensures view renders with data
