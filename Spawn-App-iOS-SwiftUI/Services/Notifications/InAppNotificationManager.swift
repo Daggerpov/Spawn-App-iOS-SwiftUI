@@ -87,7 +87,8 @@ final class InAppNotificationManager: ObservableObject {
 		let aps = userInfo["aps"] as? [String: Any]
 		let alert = aps?["alert"] as? [String: Any]
 		let title = alert?["title"] as? String ?? extractTitle(from: userInfo, type: notificationType)
-		let message = alert?["body"] as? String
+		let message =
+			alert?["body"] as? String
 			?? aps?["alert"] as? String
 			?? extractMessage(from: userInfo, type: notificationType)
 
