@@ -714,7 +714,8 @@ final class APIService: IAPIService, @unchecked Sendable {
 			"auth/register/verification/check",
 			"auth/sign-in",
 			"auth/login",
-			"optional-details",
+			// optional-details is not listed: onboarding users already have a token, and the
+			// backend needs it to check that the user is updating their own account.
 			"contacts/cross-reference",
 		]
 		if whitelistedEndpoints.contains(where: { url.absoluteString.contains($0) }) {
