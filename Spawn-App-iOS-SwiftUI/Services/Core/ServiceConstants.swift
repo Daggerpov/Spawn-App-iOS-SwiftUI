@@ -34,61 +34,42 @@ struct ServiceConstants {
 	}
 
 	// MARK: - Share Code Generation
+	// Share codes come from an authenticated endpoint, so the request goes through APIService (which adds
+	// the signed-in user's token). A plain URLSession call got a 401 and fell back to UUID links, which
+	// getspawn.com can't open for people without the app (#197).
 	static func generateActivityShareCodeURL(for activityId: UUID, completion: @Sendable @escaping (URL?) -> Void) {
-		// Generate share code via backend API
-		let urlString = "\(URLs.apiBase)share/activity/\(activityId.uuidString)"
-
-		guard let url = URL(string: urlString) else {
-			completion(nil)
-			return
-		}
-
-		var request = URLRequest(url: url)
-		request.httpMethod = "POST"
-		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-		URLSession.shared.dataTask(with: request) { data, response, error in
-			guard let data = data,
-				let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-				let shareCode = json["shareCode"] as? String
-			else {
-				// Fall back to UUID-based URL if share code generation fails
-				let fallbackUrl = URL(string: "\(URLs.shareBase)/activity/\(activityId.uuidString)")
-				completion(fallbackUrl)
-				return
-			}
-
-			let shareUrl = URL(string: "\(URLs.shareBase)/activity/\(shareCode)")
-			completion(shareUrl)
-		}.resume()
+		generateShareCodeURL(kind: "activity", id: activityId, completion: completion)
 	}
 
 	static func generateProfileShareCodeURL(for userId: UUID, completion: @Sendable @escaping (URL?) -> Void) {
-		// Generate share code via backend API
-		let urlString = "\(URLs.apiBase)share/profile/\(userId.uuidString)"
+		generateShareCodeURL(kind: "profile", id: userId, completion: completion)
+	}
 
-		guard let url = URL(string: urlString) else {
-			completion(nil)
+	private static func generateShareCodeURL(
+		kind: String, id: UUID, completion: @Sendable @escaping (URL?) -> Void
+	) {
+		let fallbackUrl = URL(string: "\(URLs.shareBase)/\(kind)/\(id.uuidString)")
+		guard let url = URL(string: "\(URLs.apiBase)share/\(kind)/\(id.uuidString)") else {
+			completion(fallbackUrl)
 			return
 		}
 
-		var request = URLRequest(url: url)
-		request.httpMethod = "POST"
-		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-		URLSession.shared.dataTask(with: request) { data, response, error in
-			guard let data = data,
-				let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-				let shareCode = json["shareCode"] as? String
-			else {
-				// Fall back to UUID-based URL if share code generation fails
-				let fallbackUrl = URL(string: "\(URLs.shareBase)/profile/\(userId.uuidString)")
-				completion(fallbackUrl)
-				return
+		Task {
+			do {
+				let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService() : APIService()
+				let response: [String: String]? = try await apiService.sendData(
+					EmptyRequestBody(), to: url, parameters: nil)
+				if let shareCode = response?["shareCode"], !shareCode.isEmpty,
+					let shareUrl = URL(string: "\(URLs.shareBase)/\(kind)/\(shareCode)")
+				{
+					completion(shareUrl)
+					return
+				}
+				AppLog.warning("Share code response had no code for \(kind) \(id)", category: "API")
+			} catch {
+				AppLog.warning("Share code generation failed for \(kind) \(id): \(error)", category: "API")
 			}
-
-			let shareUrl = URL(string: "\(URLs.shareBase)/profile/\(shareCode)")
-			completion(shareUrl)
-		}.resume()
+			completion(fallbackUrl)
+		}
 	}
 }

@@ -32,6 +32,7 @@ struct TabBar: View {
 		// No withAnimation here: it also reached the tab content, which faded the new tab in from
 		// transparent and showed a blank screen. The pill animates via .animation(_:value:) in body.
 		selection = tab
+		UISelectionFeedbackGenerator().selectionChanged()
 
 		symbolTrigger = true
 
