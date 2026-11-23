@@ -33,6 +33,7 @@ struct ActivityDateTimeView: View {
 	// Inline hours/minutes wheel for a length other than the presets
 	@State private var showCustomDurationWheel: Bool = false
 	@State private var lastCustomMinutes: Int = ActivityDuration.defaultCustomMinutes
+	@State private var customMinutePickerReset = 0
 	private let customHourOptions = Array(0...23)
 
 	// Available options for the pickers
@@ -367,6 +368,10 @@ struct ActivityDateTimeView: View {
 
 	private func setCustomDuration(hours: Int, minutes: Int) {
 		// A zero-length activity isn't allowed, so 0 hr 00 min moves to 15 min
+		if hours == 0 && minutes == 0 && customDurationMinutes == 15 {
+			// The validated value stays 15, so UIKit needs a new picker to undo its rejected 00 selection.
+			customMinutePickerReset += 1
+		}
 		let total = max(hours * 60 + minutes, 15)
 		lastCustomMinutes = total
 		selectDuration(.custom(minutes: total))
@@ -414,6 +419,7 @@ struct ActivityDateTimeView: View {
 					}
 				}
 				.pickerStyle(.wheel)
+				.id(customMinutePickerReset)
 				.frame(width: 60)
 				.clipped()
 
