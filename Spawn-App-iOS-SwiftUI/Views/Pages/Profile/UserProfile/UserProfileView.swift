@@ -74,12 +74,15 @@ struct UserProfileView: View {
 				.background(universalBackgroundColor)
 
 		}
-		.fullScreenCover(isPresented: $showSuccessDrawer, onDismiss: {
-			if addToActivityTypeAfterDismissal {
-				addToActivityTypeAfterDismissal = false
-				navigateToAddToActivityType = true
+		.fullScreenCover(
+			isPresented: $showSuccessDrawer,
+			onDismiss: {
+				if addToActivityTypeAfterDismissal {
+					addToActivityTypeAfterDismissal = false
+					navigateToAddToActivityType = true
+				}
 			}
-		}) {
+		) {
 			FriendRequestSuccessDrawer(
 				friendUser: user as! BaseUserDTO,
 				isPresented: $showSuccessDrawer,

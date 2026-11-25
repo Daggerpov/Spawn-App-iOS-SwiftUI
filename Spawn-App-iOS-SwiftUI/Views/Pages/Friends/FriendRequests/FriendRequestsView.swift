@@ -41,12 +41,15 @@ struct FriendRequestsView: View {
 				await viewModel.fetchFriendRequests()
 			}
 		}
-		.fullScreenCover(isPresented: $showSuccessDrawer, onDismiss: {
-			if addToActivityTypeAfterDismissal {
-				addToActivityTypeAfterDismissal = false
-				navigateToAddToActivityType = true
+		.fullScreenCover(
+			isPresented: $showSuccessDrawer,
+			onDismiss: {
+				if addToActivityTypeAfterDismissal {
+					addToActivityTypeAfterDismissal = false
+					navigateToAddToActivityType = true
+				}
 			}
-		}) {
+		) {
 			successDrawerOverlay
 				.presentationBackground(.clear)
 		}
