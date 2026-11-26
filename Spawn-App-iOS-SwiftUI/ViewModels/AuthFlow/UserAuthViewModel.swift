@@ -26,7 +26,11 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var authProvider: AuthProviderType? = nil  // Track the auth provider - now sourced from server via BaseUserDTO.provider
 	@Published var externalUserId: String?  // For both Google and Apple
 	@Published var idToken: String?  // ID token for authentication
-	@Published var isLoggedIn: Bool = false
+	@Published var isLoggedIn: Bool = false {
+		didSet {
+			if !isLoggedIn { WidgetSyncService.clear() }
+		}
+	}
 	@Published var hasCheckedSpawnUserExistence: Bool = false
 
 	// Add separate OAuth credential storage for account completion
@@ -39,6 +43,7 @@ final class UserAuthViewModel: NSObject, ObservableObject {
 
 	@Published var spawnUser: BaseUserDTO? {
 		didSet {
+			if oldValue?.id != spawnUser?.id { WidgetSyncService.clear() }
 			if let user = spawnUser {
 				// Sync the hasCompletedOnboarding from backend with local state
 				if let backendOnboardingStatus = user.hasCompletedOnboarding {

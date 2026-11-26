@@ -6,6 +6,9 @@ enum DeepLinkType: Equatable {
 	case activity(UUID)
 	case profile(UUID)
 	case unknown
+	case createActivity
+	case widgetActivity(UUID)
+	case home
 }
 
 // MARK: - Deep Link Manager
@@ -111,6 +114,11 @@ final class DeepLinkManager: ObservableObject {
 			category: "DeepLink")
 
 		// Custom URL scheme format: spawn://activity/{activityId} or spawn://profile/{profileId}
+		if host == "widget-activity", let identifier = pathComponents.first, let id = UUID(uuidString: identifier) {
+			return .widgetActivity(id)
+		}
+		if host == "create" { return .createActivity }
+		if host == "home" { return .home }
 		if host == "activity" {
 			// Host-based format: spawn://activity/{activityId}
 			let activityIdString = pathComponents.first
@@ -203,6 +211,9 @@ final class DeepLinkManager: ObservableObject {
 				object: nil,
 				userInfo: ["profileId": profileId]
 			)
+
+		case .createActivity, .home, .widgetActivity:
+			pendingDeepLink = deepLink
 
 		case .unknown:
 			AppLog.warning("❌ DeepLinkManager: Unknown deep link type, ignoring", category: "DeepLink")

@@ -6,6 +6,18 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXCopyFilesBuildPhase section */
+		ABC12300000000000000000B = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (ABC12300000000000000000C, );
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXBuildFile section */
 		654DED2B2DC095400059C268 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = 654DED2A2DC095400059C268 /* MapLibre */; };
 		657BA6A42DCDEF9400C2ADDE /* MCEmojiPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 657BA6A32DCDEF9400C2ADDE /* MCEmojiPicker */; };
@@ -17,6 +29,7 @@
 		DC01715B2D43507E003BF3DB /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = DC01715A2D43507E003BF3DB /* GoogleSignInSwift */; };
 		DC46ADCE2E20E4850006CB18 /* ElegantEmojiPicker in Frameworks */ = {isa = PBXBuildFile; productRef = DC46ADCD2E20E4850006CB18 /* ElegantEmojiPicker */; };
 		DC46AFB22E232D160006CB18 /* RiveRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = DC46AFB12E232D160006CB18 /* RiveRuntime */; };
+		ABC12300000000000000000C = {isa = PBXBuildFile; fileRef = ABC123000000000000000002; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,12 +47,14 @@
 			remoteGlobalIDString = 65D503582CD86EB300923A01;
 			remoteInfo = "Spawn-App-iOS-SwiftUI";
 		};
+		ABC12300000000000000000E = {isa = PBXContainerItemProxy; containerPortal = 65D503512CD86EB300923A01; proxyType = 1; remoteGlobalIDString = ABC123000000000000000001; remoteInfo = SpawnWidgets; };
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		65D503592CD86EB300923A01 /* Spawn-App-iOS-SwiftUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Spawn-App-iOS-SwiftUI.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		65D5036E2CD86EB600923A01 /* Spawn-App-iOS-SwiftUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spawn-App-iOS-SwiftUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		65D503782CD86EB600923A01 /* Spawn-App-iOS-SwiftUIUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spawn-App-iOS-SwiftUIUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		ABC123000000000000000002 = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; path = SpawnWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -50,6 +65,7 @@
 			);
 			target = 65D503582CD86EB300923A01 /* Spawn-App-iOS-SwiftUI */;
 		};
+		ABC1230000000000000000FF = {isa = PBXFileSystemSynchronizedBuildFileExceptionSet; membershipExceptions = (Info.plist, ); target = ABC123000000000000000001; };
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -61,6 +77,8 @@
 			path = "Spawn-App-iOS-SwiftUI";
 			sourceTree = "<group>";
 		};
+		ABC123000000000000000003 = {isa = PBXFileSystemSynchronizedRootGroup; path = SpawnWidgets; sourceTree = "<group>"; exceptions = (ABC1230000000000000000FF, ); };
+		ABC123000000000000000004 = {isa = PBXFileSystemSynchronizedRootGroup; path = SharedWidget; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,6 +113,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		ABC123000000000000000006 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -103,6 +122,8 @@
 			children = (
 				65D5035B2CD86EB300923A01 /* Spawn-App-iOS-SwiftUI */,
 				65D5035A2CD86EB300923A01 /* Products */,
+                ABC123000000000000000003,
+                ABC123000000000000000004,
 			);
 			sourceTree = "<group>";
 		};
@@ -110,6 +131,7 @@
 			isa = PBXGroup;
 			children = (
 				65D503592CD86EB300923A01 /* Spawn-App-iOS-SwiftUI.app */,
+                ABC123000000000000000002,
 				65D5036E2CD86EB600923A01 /* Spawn-App-iOS-SwiftUITests.xctest */,
 				65D503782CD86EB600923A01 /* Spawn-App-iOS-SwiftUIUITests.xctest */,
 			);
@@ -126,12 +148,15 @@
 				65D503552CD86EB300923A01 /* Sources */,
 				65D503562CD86EB300923A01 /* Frameworks */,
 				65D503572CD86EB300923A01 /* Resources */,
+                ABC12300000000000000000B,
 			);
 			buildRules = (
 			);
 			dependencies = (
+                ABC12300000000000000000D,
 			);
 			fileSystemSynchronizedGroups = (
+                ABC123000000000000000004,
 				65D5035B2CD86EB300923A01 /* Spawn-App-iOS-SwiftUI */,
 			);
 			name = "Spawn-App-iOS-SwiftUI";
@@ -191,6 +216,18 @@
 			productReference = 65D503782CD86EB600923A01 /* Spawn-App-iOS-SwiftUIUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		ABC123000000000000000001 = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ABC123000000000000000008;
+			buildPhases = (ABC123000000000000000005, ABC123000000000000000006, ABC123000000000000000007, );
+			buildRules = ();
+			dependencies = ();
+			fileSystemSynchronizedGroups = (ABC123000000000000000003, ABC123000000000000000004, );
+			name = SpawnWidgets;
+			productName = SpawnWidgets;
+			productReference = ABC123000000000000000002;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -238,6 +275,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+                ABC123000000000000000001,
 				65D503582CD86EB300923A01 /* Spawn-App-iOS-SwiftUI */,
 				65D5036D2CD86EB600923A01 /* Spawn-App-iOS-SwiftUITests */,
 				65D503772CD86EB600923A01 /* Spawn-App-iOS-SwiftUIUITests */,
@@ -267,6 +305,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		ABC123000000000000000007 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -291,6 +330,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		ABC123000000000000000005 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -304,6 +344,7 @@
 			target = 65D503582CD86EB300923A01 /* Spawn-App-iOS-SwiftUI */;
 			targetProxy = 65D503792CD86EB600923A01 /* PBXContainerItemProxy */;
 		};
+		ABC12300000000000000000D = {isa = PBXTargetDependency; target = ABC123000000000000000001; targetProxy = ABC12300000000000000000E; };
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -578,6 +619,38 @@
 			};
 			name = Release;
 		};
+		ABC123000000000000000009 = {isa = XCBuildConfiguration; buildSettings = {
+ APPLICATION_EXTENSION_API_ONLY = YES;
+ CODE_SIGN_ENTITLEMENTS = SpawnWidgets/SpawnWidgets.entitlements;
+ CODE_SIGN_STYLE = Automatic;
+ DEVELOPMENT_TEAM = GUW483PXY6;
+ GENERATE_INFOPLIST_FILE = YES;
+ INFOPLIST_FILE = SpawnWidgets/Info.plist;
+ INFOPLIST_KEY_CFBundleDisplayName = Spawn;
+ IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+ PRODUCT_BUNDLE_IDENTIFIER = "danielagapov.Spawn-App-iOS-SwiftUI.widgets";
+ PRODUCT_NAME = "$(TARGET_NAME)";
+ SKIP_INSTALL = YES;
+ SWIFT_VERSION = 6.0;
+ TARGETED_DEVICE_FAMILY = "1,2";
+ LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
+ }; name = Debug; };
+		ABC12300000000000000000A = {isa = XCBuildConfiguration; buildSettings = {
+ APPLICATION_EXTENSION_API_ONLY = YES;
+ CODE_SIGN_ENTITLEMENTS = SpawnWidgets/SpawnWidgets.entitlements;
+ CODE_SIGN_STYLE = Automatic;
+ DEVELOPMENT_TEAM = GUW483PXY6;
+ GENERATE_INFOPLIST_FILE = YES;
+ INFOPLIST_FILE = SpawnWidgets/Info.plist;
+ INFOPLIST_KEY_CFBundleDisplayName = Spawn;
+ IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+ PRODUCT_BUNDLE_IDENTIFIER = "danielagapov.Spawn-App-iOS-SwiftUI.widgets";
+ PRODUCT_NAME = "$(TARGET_NAME)";
+ SKIP_INSTALL = YES;
+ SWIFT_VERSION = 6.0;
+ TARGETED_DEVICE_FAMILY = "1,2";
+ LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
+ }; name = Release; };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -614,6 +687,12 @@
 				65D503892CD86EB600923A01 /* Debug */,
 				65D5038A2CD86EB600923A01 /* Release */,
 			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		ABC123000000000000000008 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (ABC123000000000000000009, ABC12300000000000000000A, );
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
