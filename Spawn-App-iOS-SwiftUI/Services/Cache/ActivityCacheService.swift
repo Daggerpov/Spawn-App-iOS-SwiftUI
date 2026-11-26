@@ -15,7 +15,13 @@ final class ActivityCacheService: BaseCacheService, CacheService, ObservableObje
 	static let shared = ActivityCacheService()
 
 	// MARK: - Cached Data
-	@Published var activities: [UUID: [FullFeedActivityDTO]] = [:]
+	@Published var activities: [UUID: [FullFeedActivityDTO]] = [:] {
+		didSet {
+			if let userId = UserAuthViewModel.shared.spawnUser?.id {
+				WidgetSyncService.update(activities[userId] ?? [], userId: userId)
+			}
+		}
+	}
 	@Published var activityTypes: [UUID: [ActivityTypeDTO]] = [:]
 	@Published var upcomingActivities: [UUID: [FullFeedActivityDTO]] = [:]
 	/// Calendar activities keyed by "userId_month_year" (e.g., "uuid_1_2025") or "userId_all"

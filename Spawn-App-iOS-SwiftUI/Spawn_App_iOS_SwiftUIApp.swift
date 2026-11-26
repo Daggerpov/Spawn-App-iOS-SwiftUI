@@ -74,6 +74,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 				.task {
 					// Initialize and validate the cache
 					await appCache.validateCache()
+					WidgetSyncService.update(appCache.getCurrentUserActivities(), userId: spawnUser.id)
 					// Clean up any expired activities after cache validation
 					appCache.cleanupExpiredActivities()
 				}

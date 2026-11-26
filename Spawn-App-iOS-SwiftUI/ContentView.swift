@@ -283,6 +283,14 @@ struct ContentView: View {
 				handleDeepLinkActivity(activityId)
 			case .profile(let profileId):
 				handleDeepLinkProfile(profileId)
+			case .widgetActivity(let activityId):
+				Task { await openWidgetActivity(activityId) }
+			case .createActivity:
+				selectedTabsEnum = .activities
+				deepLinkManager.clearPendingDeepLink()
+			case .home:
+				selectedTabsEnum = .home
+				deepLinkManager.clearPendingDeepLink()
 			case .unknown, nil:
 				break
 			}
@@ -362,6 +370,33 @@ struct ContentView: View {
 			)
 		}
 		notificationService.completeActivityNotification(target)
+	}
+
+	@MainActor
+	private func openWidgetActivity(_ activityId: UUID) async {
+		let result: DataResult<FullFeedActivityDTO> = await DataService.shared.read(
+			.activity(activityId: activityId, requestingUserId: user.id, autoJoin: false),
+			cachePolicy: .apiOnly
+		)
+		guard UserAuthViewModel.shared.isLoggedIn, UserAuthViewModel.shared.spawnUser?.id == user.id,
+			  deepLinkManager.pendingDeepLink == .widgetActivity(activityId) else { return }
+		deepLinkManager.clearPendingDeepLink()
+		selectedTabsEnum = .home
+		switch result {
+		case .success(let activity, _):
+			globalPopupActivity = activity
+			globalPopupColor = ActivityColorService.shared.getColorForActivity(activityId)
+			globalPopupFromMapView = false
+			globalPopupShowsChatroom = false
+			globalPopupNotificationId = nil
+			showingGlobalActivityPopup = true
+		case .failure:
+			inAppNotificationManager.showNotification(
+				title: "Couldn't Open Activity",
+				message: "This activity could not be loaded. Please refresh your feed and try again.",
+				type: .error
+			)
+		}
 	}
 
 	private func handleDeepLinkActivity(_ activityId: UUID) {
